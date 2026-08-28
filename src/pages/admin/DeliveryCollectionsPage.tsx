@@ -38,7 +38,7 @@ export default function DeliveryCollectionsPage() {
       key: 'view',
       header: '',
       className: 'px-4 py-3 text-right',
-      render: () => <ChevronRight size={16} className="ml-auto text-slate-400" />,
+      render: () => <ChevronRight size={16} className="ml-auto text-slate-400 dark:text-slate-500" />,
     },
   ]
 
@@ -70,14 +70,14 @@ function CollectionLogs({ collectionId }: { collectionId: number }) {
   return (
     <div className="space-y-2">
       {logs.map((log) => (
-        <div key={log.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2">
+        <div key={log.id} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 dark:border-slate-800">
           <div>
-            <p className="text-sm text-slate-700">{log.message}</p>
-            <p className="text-xs text-slate-400">{formatDate(log.createdAt)}</p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">{log.message}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{formatDate(log.createdAt)}</p>
           </div>
           <div className="flex items-center gap-2">
             <Badge tone={log.type === 'credit' ? 'green' : 'red'}>{log.type}</Badge>
-            <span className="text-sm font-medium text-slate-700">{formatCurrency(log.amount)}</span>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{formatCurrency(log.amount)}</span>
           </div>
         </div>
       ))}

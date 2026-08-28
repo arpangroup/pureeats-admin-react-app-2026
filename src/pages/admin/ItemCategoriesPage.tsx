@@ -19,7 +19,7 @@ export default function ItemCategoriesPage() {
       defaultValues={{ isEnabled: true, userId: 1 }}
       searchPlaceholder="Search categories…"
       columns={[
-        { key: 'name', header: 'Name', render: (row) => <span className="font-medium text-slate-800">{row.name}</span> },
+        { key: 'name', header: 'Name', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{row.name}</span> },
         { key: 'status', header: 'Status', render: (row) => <ActiveBadge active={row.isEnabled} activeLabel="Enabled" inactiveLabel="Disabled" /> },
       ]}
     />

@@ -151,10 +151,10 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
       className: 'px-4 py-3 text-right',
       render: (row) => (
         <div className="flex justify-end gap-1">
-          <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600" onClick={(e) => { e.stopPropagation(); openEdit(row) }}>
+          <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300" onClick={(e) => { e.stopPropagation(); openEdit(row) }}>
             <Pencil size={15} />
           </button>
-          <button className="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row) }}>
+          <button className="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row) }}>
             <Trash2 size={15} />
           </button>
         </div>

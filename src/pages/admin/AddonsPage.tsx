@@ -29,7 +29,7 @@ export default function AddonsPage() {
       defaultValues={{ price: 0, isActive: true, userId: 1 }}
       searchPlaceholder="Search addons…"
       columns={[
-        { key: 'name', header: 'Name', render: (row) => <span className="font-medium text-slate-800">{row.name}</span> },
+        { key: 'name', header: 'Name', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{row.name}</span> },
         { key: 'category', header: 'Category', render: (row) => addonCategories.find((c) => c.id === row.addonCategoryId)?.name ?? '—' },
         { key: 'price', header: 'Price', render: (row) => formatCurrency(row.price) },
         { key: 'status', header: 'Status', render: (row) => <ActiveBadge active={row.isActive} /> },

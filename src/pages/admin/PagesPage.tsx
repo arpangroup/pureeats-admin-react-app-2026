@@ -20,8 +20,8 @@ export default function PagesPage() {
       defaultValues={{ body: '' }}
       searchPlaceholder="Search pages…"
       columns={[
-        { key: 'name', header: 'Title', render: (row) => <span className="font-medium text-slate-800">{row.name}</span> },
-        { key: 'slug', header: 'Slug', render: (row) => <span className="text-slate-500">/{row.slug}</span> },
+        { key: 'name', header: 'Title', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{row.name}</span> },
+        { key: 'slug', header: 'Slug', render: (row) => <span className="text-slate-500 dark:text-slate-400">/{row.slug}</span> },
         { key: 'updated', header: 'Last updated', render: (row) => formatDate(row.updatedAt) },
       ]}
     />

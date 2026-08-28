@@ -26,7 +26,7 @@ export default function TranslationsPage() {
           header: 'Language',
           render: (row) => (
             <div className="flex items-center gap-2">
-              <span className="font-medium text-slate-800">{row.languageName}</span>
+              <span className="font-medium text-slate-800 dark:text-slate-100">{row.languageName}</span>
               <Badge tone="slate">{row.languageCode}</Badge>
               {row.isDefault && <Badge tone="blue">Default</Badge>}
             </div>

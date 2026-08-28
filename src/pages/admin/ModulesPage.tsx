@@ -28,8 +28,8 @@ export default function ModulesPage() {
       header: 'Module',
       render: (row) => (
         <div>
-          <p className="font-medium text-slate-800">{row.name}</p>
-          <p className="text-xs text-slate-400">{row.description}</p>
+          <p className="font-medium text-slate-800 dark:text-slate-100">{row.name}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{row.description}</p>
         </div>
       ),
     },

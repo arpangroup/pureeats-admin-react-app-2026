@@ -22,22 +22,22 @@ export default function NotificationsPage() {
       ) : alerts.length === 0 ? (
         <EmptyState title="You're all caught up" description="No notifications right now." />
       ) : (
-        <div className="card divide-y divide-slate-100">
+        <div className="card divide-y divide-slate-100 dark:divide-slate-800">
           {alerts.map((alert) => (
             <button
               key={alert.id}
               onClick={() => !alert.isRead && markRead(alert.id)}
-              className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50"
+              className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/60"
             >
               <div className="flex items-start gap-3">
-                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${alert.isRead ? 'bg-slate-200' : 'bg-brand-600'}`} />
+                <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${alert.isRead ? 'bg-slate-200 dark:bg-slate-700' : 'bg-brand-600'}`} />
                 <div>
-                  <p className="text-sm font-medium text-slate-800">{alert.data.title}</p>
-                  <p className="text-sm text-slate-500">{alert.data.body}</p>
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100">{alert.data.title}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{alert.data.body}</p>
                 </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">
-                <span className="text-xs text-slate-400">{timeAgo(alert.createdAt)}</span>
+                <span className="text-xs text-slate-400 dark:text-slate-500">{timeAgo(alert.createdAt)}</span>
                 {!alert.isRead && <Badge tone="blue">New</Badge>}
               </div>
             </button>

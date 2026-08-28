@@ -65,9 +65,9 @@ export default function DeliveryGuyRestaurantsPage() {
       >
         <div className="space-y-2">
           {restaurants.map((r) => (
-            <label key={r.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-100 px-3 py-2 hover:bg-slate-50">
+            <label key={r.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-100 px-3 py-2 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
               <input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggle(r.id)} className="h-4 w-4 rounded border-slate-300 text-brand-600" />
-              <span className="text-sm text-slate-700">{r.name}</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">{r.name}</span>
             </label>
           ))}
         </div>
@@ -83,13 +83,13 @@ function RiderCard({ riderId, name, onEdit }: { riderId: number; name: string; o
   return (
     <div className="card p-4">
       <div className="mb-2 flex items-center justify-between">
-        <p className="font-medium text-slate-800">{name}</p>
-        <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600" onClick={onEdit} aria-label="Edit assignments">
+        <p className="font-medium text-slate-800 dark:text-slate-100">{name}</p>
+        <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300" onClick={onEdit} aria-label="Edit assignments">
           <Pencil size={15} />
         </button>
       </div>
       <div className="flex flex-wrap gap-1.5">
-        {assigned.length === 0 && <span className="text-sm text-slate-400">No restaurants assigned</span>}
+        {assigned.length === 0 && <span className="text-sm text-slate-400 dark:text-slate-500">No restaurants assigned</span>}
         {assigned.map((r) => (
           <Badge key={r!.id} tone="slate">
             <Store size={11} className="mr-1 inline" /> {r!.name}

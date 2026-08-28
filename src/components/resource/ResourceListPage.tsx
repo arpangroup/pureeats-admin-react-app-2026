@@ -123,7 +123,7 @@ export function ResourceListPage<T extends { id: number }>({
               {renderExtraActions?.(row)}
               {service.update && (
                 <button
-                  className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                  className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
                   onClick={(e) => {
                     e.stopPropagation()
                     openEdit(row)
@@ -135,7 +135,7 @@ export function ResourceListPage<T extends { id: number }>({
               )}
               {service.remove && (
                 <button
-                  className="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                  className="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
                   onClick={(e) => {
                     e.stopPropagation()
                     setDeleteTarget(row)

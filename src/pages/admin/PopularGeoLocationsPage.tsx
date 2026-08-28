@@ -21,7 +21,7 @@ export default function PopularGeoLocationsPage() {
       defaultValues={{ latitude: 12.9716, longitude: 77.5946, isActive: true }}
       searchPlaceholder="Search places…"
       columns={[
-        { key: 'name', header: 'Name', render: (row) => <span className="font-medium text-slate-800">{row.name}</span> },
+        { key: 'name', header: 'Name', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{row.name}</span> },
         { key: 'coords', header: 'Coordinates', render: (row) => `${row.latitude.toFixed(4)}, ${row.longitude.toFixed(4)}` },
         { key: 'status', header: 'Status', render: (row) => <ActiveBadge active={row.isActive} /> },
       ]}

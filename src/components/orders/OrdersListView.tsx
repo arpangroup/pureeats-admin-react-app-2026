@@ -41,7 +41,7 @@ export function OrdersListView({
   const { data, isLoading } = useAsync(() => orderService.list(params), [params])
 
   const columns: Column<OrderRow>[] = [
-    { key: 'id', header: 'Order', render: (row) => <span className="font-medium text-slate-800">{row.uniqueOrderId}</span> },
+    { key: 'id', header: 'Order', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{row.uniqueOrderId}</span> },
     ...(restaurantId ? [] : [{ key: 'restaurant', header: 'Restaurant', render: (row: OrderRow) => row.restaurantName } as Column<OrderRow>]),
     { key: 'customer', header: 'Customer', render: (row) => row.customerName },
     { key: 'items', header: 'Items', render: (row) => `${row.items.length} item${row.items.length !== 1 ? 's' : ''}` },
@@ -61,7 +61,7 @@ export function OrdersListView({
     },
     { key: 'payment', header: 'Payment', render: (row) => <span className="capitalize">{row.paymentMode}</span> },
     { key: 'status', header: 'Status', render: (row) => <OrderStatusBadge status={row.statusName} /> },
-    { key: 'placed', header: 'Placed', render: (row) => <span className="text-slate-500">{formatDate(row.createdAt)}</span> },
+    { key: 'placed', header: 'Placed', render: (row) => <span className="text-slate-500 dark:text-slate-400">{formatDate(row.createdAt)}</span> },
   ]
 
   return (

@@ -21,8 +21,8 @@ export default function LocationsPage() {
       defaultValues={{ isPopular: false, isActive: true }}
       searchPlaceholder="Search locations…"
       columns={[
-        { key: 'name', header: 'Name', render: (row) => <span className="font-medium text-slate-800">{row.name}</span> },
-        { key: 'description', header: 'Description', render: (row) => <span className="text-slate-500">{row.description}</span> },
+        { key: 'name', header: 'Name', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{row.name}</span> },
+        { key: 'description', header: 'Description', render: (row) => <span className="text-slate-500 dark:text-slate-400">{row.description}</span> },
         { key: 'popular', header: 'Popular', render: (row) => (row.isPopular ? <Badge tone="amber">Popular</Badge> : '—') },
         { key: 'status', header: 'Status', render: (row) => <ActiveBadge active={row.isActive} /> },
       ]}

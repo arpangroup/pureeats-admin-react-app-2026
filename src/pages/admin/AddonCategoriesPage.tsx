@@ -28,7 +28,7 @@ export default function AddonCategoriesPage() {
       defaultValues={{ type: 'single', userId: 1 }}
       searchPlaceholder="Search addon categories…"
       columns={[
-        { key: 'name', header: 'Name', render: (row) => <span className="font-medium text-slate-800">{row.name}</span> },
+        { key: 'name', header: 'Name', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{row.name}</span> },
         { key: 'type', header: 'Type', render: (row) => <Badge tone={row.type === 'single' ? 'blue' : 'purple'}>{row.type}</Badge> },
       ]}
     />
