@@ -1,0 +1,12 @@
+// Barrel export so services import fixtures from one place:
+//   import { restaurants, items } from '@/mocks/fixtures'
+export * from './locations'
+export * from './users'
+export * from './restaurants'
+export * from './items'
+export * from './orders'
+export * from './coupons'
+export * from './finance'
+export * from './content'
+export * from './settings'
+export * from './deliveryAssignments'
