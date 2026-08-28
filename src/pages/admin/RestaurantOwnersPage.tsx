@@ -7,6 +7,7 @@ export default function RestaurantOwnersPage() {
       title="Restaurant Owners"
       description="Owners who manage one or more restaurants on PureEats."
       createLabel="Add Restaurant Owner"
+      basePath="/admin/restaurant-owners"
     />
   )
 }

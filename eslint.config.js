@@ -28,6 +28,11 @@ export default [
         HTMLTextAreaElement: 'readonly',
         HTMLOptionElement: 'readonly',
         KeyboardEvent: 'readonly',
+        File: 'readonly',
+        FileReader: 'readonly',
+        FileList: 'readonly',
+        Blob: 'readonly',
+        URL: 'readonly',
       },
     },
     plugins: {

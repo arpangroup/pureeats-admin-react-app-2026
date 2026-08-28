@@ -2,10 +2,10 @@ import { apiClient } from '@/lib/apiClient'
 import { createCrudService } from '@/lib/crudServiceFactory'
 import { mockDelay, paginate } from '@/lib/mockUtils'
 import { IS_MOCK } from '@/config/env'
-import { users, restaurantUsers, restaurants } from '@/mocks/fixtures'
+import { users, restaurantUsers, restaurants, loginSessions } from '@/mocks/fixtures'
 import { mockDelay as delay, nextMockId } from '@/lib/mockUtils'
 import type { ListParams, Paginated, UserRole } from '@/types/common'
-import type { User, RestaurantUser } from '@/types/entities'
+import type { User, RestaurantUser, LoginSession } from '@/types/entities'
 
 const base = createCrudService<User>(users, '/users', ['name', 'email', 'phone'])
 
@@ -48,5 +48,18 @@ export const userService = {
       return
     }
     await apiClient.put(`/restaurant-owners/${ownerId}/restaurants`, { restaurantIds })
+  },
+
+  /** Last N login sessions for a user — powers the Activity card on the user detail page. */
+  async recentLoginSessions(userId: number, limit = 5): Promise<LoginSession[]> {
+    if (IS_MOCK) {
+      await delay(150)
+      return loginSessions
+        .filter((s) => s.userId === userId)
+        .sort((a, b) => new Date(b.loginAt).getTime() - new Date(a.loginAt).getTime())
+        .slice(0, limit)
+    }
+    const { data } = await apiClient.get<LoginSession[]>(`/users/${userId}/login-sessions`, { params: { limit } })
+    return data
   },
 }

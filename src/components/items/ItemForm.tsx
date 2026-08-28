@@ -1,4 +1,5 @@
 import { Field, Select, Switch, TextInput, Textarea } from '@/components/ui/FormControls'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 import { itemCategories, addonCategories, restaurants } from '@/mocks/fixtures'
 import type { Item } from '@/types/entities'
 
@@ -13,6 +14,9 @@ export function ItemForm({ values, onChange, showRestaurantPicker = true }: Item
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="sm:col-span-2">
+        <ImageUpload value={values.image} onChange={(v) => onChange('image', v ?? '')} hint="Shown in the menu and item cards." />
+      </div>
       {showRestaurantPicker && (
         <Field label="Restaurant" required>
           <Select value={values.restaurantId ?? ''} onChange={(e) => onChange('restaurantId', Number(e.target.value))}>

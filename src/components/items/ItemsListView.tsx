@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { Pencil, Plus, Trash2, UploadCloud, UtensilsCrossed } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/FormControls'
 import { ActiveBadge, Badge } from '@/components/ui/Feedback'
@@ -12,6 +12,8 @@ import { itemCategories, restaurants } from '@/mocks/fixtures'
 import { formatCurrency } from '@/lib/format'
 import type { Item } from '@/types/entities'
 import { ItemForm } from './ItemForm'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { SlideOver } from '../ui/SlideOver'
 
 const emptyItem = (restaurantId?: number): Partial<Item> => ({
   restaurantId,
@@ -31,9 +33,13 @@ const emptyItem = (restaurantId?: number): Partial<Item> => ({
 })
 
 export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const scopedRestaurant = restaurantId ? restaurants.find((r) => r.id === restaurantId) : undefined
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
-  const debouncedSearch = useDebounce(search, 300)
+  const debouncedSearch = useDebounce(search, 300)  
+  const [bulkUploadOpen, setBulkUploadOpen] = useState(searchParams.get('bulkUpload') === '1')
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Item | null>(null)
@@ -88,8 +94,30 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
     }
   }
 
+  function closeBulkUpload() {
+    setBulkUploadOpen(false)
+    if (searchParams.get('bulkUpload')) {
+      const next = new URLSearchParams(searchParams)
+      next.delete('bulkUpload')
+      setSearchParams(next)
+    }
+  }
+
   const columns: Column<Item>[] = [
-    { key: 'name', header: 'Item', render: (row) => <span className="font-medium text-slate-800">{row.name}</span> },
+    {
+      key: 'thumbnail',
+      header: '',
+      className: 'w-14 px-4 py-2',
+      render: (row) =>
+        row.image ? (
+          <img src={row.image} alt="" className="h-10 w-10 rounded-lg object-cover" />
+        ) : (
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-slate-300 dark:bg-slate-800 dark:text-slate-600">
+            <UtensilsCrossed size={16} />
+          </span>
+        ),
+    },
+    { key: 'name', header: 'Item', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{row.name}</span> },
     ...(restaurantId
       ? []
       : [{ key: 'restaurant', header: 'Restaurant', render: (row: Item) => restaurants.find((r) => r.id === row.restaurantId)?.name ?? '—' } as Column<Item>]),
@@ -136,12 +164,22 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
   return (
     <div>
       <PageHeader
-        title="Items"
-        description="Menu items available for ordering."
+        title={scopedRestaurant ? `Items — ${scopedRestaurant.name}` : 'Items'}
+        description={scopedRestaurant ? `Menu items for ${scopedRestaurant.name}.` : 'Menu items available for ordering.'}
         actions={
-          <button className="btn-primary" onClick={openCreate}>
-            <Plus size={16} /> Add Item
-          </button>
+          <>          
+            <button
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3.5 py-2 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-100 dark:border-sky-500/30 dark:bg-sky-500/10 dark:text-sky-400 dark:hover:bg-sky-500/20"
+              onClick={() => setBulkUploadOpen(true)}
+            >
+              <UploadCloud size={16} /> Bulk Upload
+            </button>
+
+            
+            <button className="btn-primary" onClick={openCreate}>
+              <Plus size={16} /> Add Item
+            </button>
+          </>
         }
       />
 
@@ -184,6 +222,22 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
+
+
+      <SlideOver
+        open={bulkUploadOpen}
+        onClose={closeBulkUpload}
+        title="Bulk CSV Upload"
+        description="Create multiple restaurants at once from a CSV file."
+        width="lg"
+      >
+        {/* <RestaurantBulkUploadForm onImported={reload} /> */}
+        <div className="flex h-full flex-col items-center justify-center gap-2">
+          <UploadCloud size={32} className="text-slate-400" />
+          <p className="text-center text-sm text-slate-500">Bulk upload is not yet implemented.</p>
+        </div>
+      </SlideOver>
+
     </div>
   )
 }

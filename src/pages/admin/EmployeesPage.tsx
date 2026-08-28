@@ -7,6 +7,7 @@ export default function EmployeesPage() {
       title="Employees"
       description="Internal staff who manage operations, support and finance."
       createLabel="Add Employee"
+      basePath="/admin/employees"
     />
   )
 }

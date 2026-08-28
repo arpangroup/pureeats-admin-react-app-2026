@@ -18,11 +18,11 @@ export function Pagination({
   const end = Math.min(page * perPage, total)
 
   return (
-    <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 sm:flex-row">
-      <p className="text-sm text-slate-500">
-        Showing <span className="font-medium text-slate-700">{start}</span>–
-        <span className="font-medium text-slate-700">{end}</span> of{' '}
-        <span className="font-medium text-slate-700">{total}</span>
+    <div className="flex flex-col items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 dark:border-slate-800 sm:flex-row">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        Showing <span className="font-medium text-slate-700 dark:text-slate-200">{start}</span>–
+        <span className="font-medium text-slate-700 dark:text-slate-200">{end}</span> of{' '}
+        <span className="font-medium text-slate-700 dark:text-slate-200">{total}</span>
       </p>
       <div className="flex items-center gap-1">
         <button
@@ -33,7 +33,7 @@ export function Pagination({
         >
           <ChevronLeft size={16} />
         </button>
-        <span className="px-2 text-sm text-slate-600">
+        <span className="px-2 text-sm text-slate-600 dark:text-slate-400">
           Page {page} of {totalPages}
         </span>
         <button

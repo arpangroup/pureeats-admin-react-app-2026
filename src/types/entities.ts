@@ -21,6 +21,8 @@ export interface User {
   deliveryPin?: string | null
   defaultAddressId?: Id | null
   deliveryGuyDetailId?: Id | null
+  createdBy?: Id | null
+  updatedBy?: Id | null
   createdAt: string
   updatedAt: string
 }
@@ -86,6 +88,7 @@ export interface Restaurant {
   locationId: Id
   image: string
   placeholderImage: string
+  images: string[]
   rating: number
   deliveryTime: number
   priceRange: 1 | 2 | 3
@@ -103,9 +106,9 @@ export interface Restaurant {
   isAccepted: boolean
   isFeatured: boolean
   commissionRate: number
-  deliveryType: 'own-rider' | 'platform-rider' | 'both'
+  deliveryType: 'self-pickup' | 'delivery' | 'both'
   deliveryRadius: number
-  deliveryChargeType: 'fixed' | 'distance-based'
+  deliveryChargeType: 'fixed' | 'dynamic'
   baseDeliveryCharge: number
   baseDeliveryDistance: number
   extraDeliveryCharge: number
@@ -116,6 +119,8 @@ export interface Restaurant {
   isSchedulable: boolean
   isAcceptCod: boolean
   categoryIds: Id[]
+  createdBy: Id | null
+  updatedBy: Id | null
   createdAt: string
   updatedAt: string
 }
@@ -321,6 +326,11 @@ export interface DeliveryGuyDetail {
   rating: number
   isActive: boolean
   isOnline: boolean
+  lastLat: number | null
+  lastLng: number | null
+  lastSeenAt: string | null
+  createdBy: Id | null
+  updatedBy: Id | null
   createdAt: string
   updatedAt: string
 }
@@ -430,6 +440,8 @@ export interface Alert {
     title: string
     body: string
     type: string
+    image?: string | null
+    url?: string | null
   }
   isRead: boolean
   createdAt: string

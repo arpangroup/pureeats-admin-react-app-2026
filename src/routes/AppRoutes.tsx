@@ -18,23 +18,28 @@ import AddonCategoriesPage from '@/pages/admin/AddonCategoriesPage'
 import AddonsPage from '@/pages/admin/AddonsPage'
 import CouponsPage from '@/pages/admin/CouponsPage'
 import UsersPage from '@/pages/admin/UsersPage'
+import UserDetailPage from '@/pages/admin/UserDetailPage'
 import EmployeesPage from '@/pages/admin/EmployeesPage'
+import EmployeeDetailPage from '@/pages/admin/EmployeeDetailPage'
 import RestaurantOwnersPage from '@/pages/admin/RestaurantOwnersPage'
+import RestaurantOwnerDetailPage from '@/pages/admin/RestaurantOwnerDetailPage'
 import RestaurantOwnerRestaurantsPage from '@/pages/admin/RestaurantOwnerRestaurantsPage'
 import DeliveryGuysPage from '@/pages/admin/DeliveryGuysPage'
+import DeliveryGuyDetailPage from '@/pages/admin/DeliveryGuyDetailPage'
 import DeliveryGuyRestaurantsPage from '@/pages/admin/DeliveryGuyRestaurantsPage'
 import RestaurantPayoutsPage from '@/pages/admin/RestaurantPayoutsPage'
 import WalletTransactionsPage from '@/pages/admin/WalletTransactionsPage'
 import DeliveryCollectionsPage from '@/pages/admin/DeliveryCollectionsPage'
 import LocationsPage from '@/pages/admin/LocationsPage'
 import PopularGeoLocationsPage from '@/pages/admin/PopularGeoLocationsPage'
-import RestaurantCategoriesPage from '@/pages/admin/RestaurantCategoriesPage'
 import RestaurantCategorySliderPage from '@/pages/admin/RestaurantCategorySliderPage'
 import SlidersPage from '@/pages/admin/SlidersPage'
 import PagesPage from '@/pages/admin/PagesPage'
 import TranslationsPage from '@/pages/admin/TranslationsPage'
 import RatingsPage from '@/pages/admin/RatingsPage'
 import NotificationsPage from '@/pages/admin/NotificationsPage'
+import SendNotificationPage from '@/pages/admin/SendNotificationPage'
+import ReportsPage from '@/pages/admin/ReportsPage'
 import ModulesPage from '@/pages/admin/ModulesPage'
 import SettingsPage from '@/pages/admin/SettingsPage'
 
@@ -79,7 +84,6 @@ export function AppRoutes() {
         <Route path="restaurants" element={<AdminRestaurantsPage />} />
         <Route path="restaurants/new" element={<AdminRestaurantFormPage />} />
         <Route path="restaurants/:id/edit" element={<AdminRestaurantFormPage />} />
-        <Route path="restaurant-categories" element={<RestaurantCategoriesPage />} />
         <Route path="restaurant-category-sliders" element={<RestaurantCategorySliderPage />} />
         <Route path="items" element={<AdminItemsPage />} />
         <Route path="item-categories" element={<ItemCategoriesPage />} />
@@ -87,10 +91,14 @@ export function AppRoutes() {
         <Route path="addons" element={<AddonsPage />} />
         <Route path="coupons" element={<CouponsPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="users/:id" element={<UserDetailPage />} />
         <Route path="employees" element={<EmployeesPage />} />
+        <Route path="employees/:id" element={<EmployeeDetailPage />} />
         <Route path="restaurant-owners" element={<RestaurantOwnersPage />} />
+        <Route path="restaurant-owners/:id" element={<RestaurantOwnerDetailPage />} />
         <Route path="restaurant-owners-restaurants" element={<RestaurantOwnerRestaurantsPage />} />
         <Route path="delivery-guys" element={<DeliveryGuysPage />} />
+        <Route path="delivery-guys/:id" element={<DeliveryGuyDetailPage />} />
         <Route path="delivery-guys-restaurants" element={<DeliveryGuyRestaurantsPage />} />
         <Route path="restaurant-payouts" element={<RestaurantPayoutsPage />} />
         <Route path="wallet-transactions" element={<WalletTransactionsPage />} />
@@ -102,6 +110,8 @@ export function AppRoutes() {
         <Route path="translations" element={<TranslationsPage />} />
         <Route path="ratings" element={<RatingsPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="send-notification" element={<SendNotificationPage />} />
+        <Route path="reports" element={<ReportsPage />} />
         <Route path="modules" element={<ModulesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />

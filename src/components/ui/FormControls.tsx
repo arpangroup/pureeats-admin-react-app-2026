@@ -65,7 +65,7 @@ export function Switch({
         onClick={() => onChange(!checked)}
         className={classNames(
           'relative h-5 w-9 shrink-0 rounded-full transition-colors',
-          checked ? 'bg-brand-600' : 'bg-slate-300',
+          checked ? 'bg-brand-600' : 'bg-slate-300 dark:bg-slate-700',
         )}
       >
         <span
@@ -75,7 +75,7 @@ export function Switch({
           )}
         />
       </button>
-      {label && <span className="text-sm text-slate-600">{label}</span>}
+      {label && <span className="text-sm text-slate-600 dark:text-slate-300">{label}</span>}
     </label>
   )
 }

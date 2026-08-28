@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput, Field, TextInput } from '@/components/ui/FormControls'
@@ -25,18 +26,20 @@ export function UsersListView({
   title,
   description,
   createLabel,
+  basePath,
 }: {
   role: UserRole
   title: string
   description: string
   createLabel: string
+  basePath: string
 }) {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 300)
 
   const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<User | null>(null)
   const [values, setValues] = useState<Partial<User>>({ role, isActive: true })
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
@@ -46,27 +49,17 @@ export function UsersListView({
   const { data, isLoading, reload } = useAsync(() => userService.listByRole(role, params), [role, params])
 
   function openCreate() {
-    setEditing(null)
     setValues({ role, isActive: true, name: '', email: '', phone: '' })
-    setFormOpen(true)
-  }
-
-  function openEdit(row: User) {
-    setEditing(row)
-    setValues(row)
     setFormOpen(true)
   }
 
   async function handleSave() {
     setSaving(true)
     try {
-      if (editing) {
-        await userService.update(editing.id, values)
-      } else {
-        await userService.create(values)
-      }
+      const created = await userService.create({ ...values, createdBy: 1, updatedBy: 1 })
       setFormOpen(false)
       reload()
+      navigate(`${basePath}/${created.id}`)
     } finally {
       setSaving(false)
     }
@@ -90,12 +83,12 @@ export function UsersListView({
       header: roleLabels[role],
       render: (row) => (
         <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-xs font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-400">
             {initials(row.name)}
           </span>
           <div>
-            <p className="font-medium text-slate-800">{row.name}</p>
-            <p className="text-xs text-slate-400">{row.email}</p>
+            <p className="font-medium text-slate-800 dark:text-slate-100">{row.name}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{row.email}</p>
           </div>
         </div>
       ),
@@ -108,10 +101,10 @@ export function UsersListView({
       className: 'px-4 py-3 text-right',
       render: (row) => (
         <div className="flex justify-end gap-1">
-          <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600" onClick={(e) => { e.stopPropagation(); openEdit(row) }}>
+          <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300" onClick={(e) => { e.stopPropagation(); navigate(`${basePath}/${row.id}`) }}>
             <Pencil size={15} />
           </button>
-          <button className="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row) }}>
+          <button className="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row) }}>
             <Trash2 size={15} />
           </button>
         </div>
@@ -143,12 +136,13 @@ export function UsersListView({
         emptyTitle="No records found"
         pagination={data ?? undefined}
         onPageChange={setPage}
+        onRowClick={(row) => navigate(`${basePath}/${row.id}`)}
       />
 
       <Modal
         open={formOpen}
         onClose={() => setFormOpen(false)}
-        title={editing ? `Edit ${roleLabels[role]}` : createLabel}
+        title={createLabel}
         footer={
           <>
             <button className="btn-secondary" onClick={() => setFormOpen(false)} disabled={saving}>Cancel</button>

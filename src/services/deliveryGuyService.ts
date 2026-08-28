@@ -1,9 +1,9 @@
 import { apiClient } from '@/lib/apiClient'
 import { mockDelay, nextMockId, paginate } from '@/lib/mockUtils'
 import { IS_MOCK } from '@/config/env'
-import { deliveryGuyDetails, users, deliveryGuyRestaurantAssignments } from '@/mocks/fixtures'
+import { deliveryGuyDetails, users, deliveryGuyRestaurantAssignments, tripDetails } from '@/mocks/fixtures'
 import type { ListParams, Paginated } from '@/types/common'
-import type { DeliveryGuyDetail, User } from '@/types/entities'
+import type { DeliveryGuyDetail, TripDetail, User } from '@/types/entities'
 
 export interface DeliveryGuyRow extends DeliveryGuyDetail {
   email: string
@@ -73,6 +73,11 @@ export const deliveryGuyService = {
         rating: payload.rating ?? 0,
         isActive: payload.isActive ?? true,
         isOnline: payload.isOnline ?? false,
+        lastLat: payload.lastLat ?? null,
+        lastLng: payload.lastLng ?? null,
+        lastSeenAt: payload.lastSeenAt ?? null,
+        createdBy: payload.createdBy ?? null,
+        updatedBy: payload.updatedBy ?? null,
         createdAt: now,
         updatedAt: now,
       }
@@ -126,6 +131,16 @@ export const deliveryGuyService = {
       return restaurantIds
     }
     const { data } = await apiClient.put<number[]>(`/delivery-guys/${deliveryGuyId}/restaurants`, { restaurantIds })
+    return data
+  },
+
+  /** Per-order rider earnings for the Earnings section of the delivery-partner detail page. */
+  async earningsForRider(riderId: number): Promise<TripDetail[]> {
+    if (IS_MOCK) {
+      await mockDelay(150)
+      return tripDetails.filter((t) => t.riderId === riderId).sort((a, b) => b.id - a.id)
+    }
+    const { data } = await apiClient.get<TripDetail[]>(`/delivery-guys/${riderId}/earnings`)
     return data
   },
 }

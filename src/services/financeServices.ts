@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/apiClient'
-import { mockDelay, paginate } from '@/lib/mockUtils'
+import { mockDelay, nextMockId, paginate } from '@/lib/mockUtils'
 import { IS_MOCK } from '@/config/env'
 import {
   wallets,
@@ -11,13 +11,14 @@ import {
   restaurants,
   users,
 } from '@/mocks/fixtures'
-import type { ListParams, Paginated } from '@/types/common'
+import type { ListParams, Paginated, Id } from '@/types/common'
 import type {
   Transaction,
   RestaurantPayout,
   RestaurantEarning,
   DeliveryCollection,
   DeliveryCollectionLog,
+  Wallet,
 } from '@/types/entities'
 
 export interface TransactionRow extends Transaction {
@@ -35,6 +36,74 @@ export const walletService = {
       return paginate(rows, params, ['walletName', 'payableType', 'uuid'])
     }
     const { data } = await apiClient.get<Paginated<TransactionRow>>('/wallet/transactions', { params })
+    return data
+  },
+
+  /** Looks up (or lazily creates) the wallet for a given holder — e.g. a User. */
+  async forHolder(holderType: string, holderId: Id, holderName: string): Promise<Wallet> {
+    if (IS_MOCK) {
+      await mockDelay(150)
+      const existing = wallets.find((w) => w.holderType === holderType && w.holderId === holderId)
+      if (existing) return existing
+      const now = new Date().toISOString()
+      const created: Wallet = {
+        id: nextMockId(),
+        holderType,
+        holderId,
+        name: holderName,
+        slug: holderName.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        description: `${holderType} wallet`,
+        balance: 0,
+        decimalPlaces: 2,
+        createdAt: now,
+        updatedAt: now,
+      }
+      wallets.push(created)
+      return created
+    }
+    const { data } = await apiClient.get<Wallet>('/wallet', { params: { holderType, holderId } })
+    return data
+  },
+
+  async transactionsForWallet(walletId: Id): Promise<Transaction[]> {
+    if (IS_MOCK) {
+      await mockDelay(150)
+      return transactions.filter((t) => t.walletId === walletId).sort((a, b) => b.id - a.id)
+    }
+    const { data } = await apiClient.get<Transaction[]>(`/wallet/${walletId}/transactions`)
+    return data
+  },
+
+  /** Credits or debits a wallet and logs the matching transaction — the admin-initiated
+   * counterpart to order-driven wallet changes elsewhere in the mock dataset. */
+  async adjustBalance(walletId: Id, type: 'credit' | 'debit', amount: number, message: string): Promise<Wallet> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const index = wallets.findIndex((w) => w.id === walletId)
+      if (index === -1) throw { message: 'Wallet not found' }
+      const now = new Date().toISOString()
+      wallets[index] = {
+        ...wallets[index],
+        balance: type === 'credit' ? wallets[index].balance + amount : wallets[index].balance - amount,
+        updatedAt: now,
+      }
+      const txn: Transaction = {
+        id: nextMockId(),
+        payableType: 'AdminAdjustment',
+        payableId: walletId,
+        walletId,
+        type,
+        amount,
+        confirmed: true,
+        meta: { reason: message },
+        uuid: `txn-uuid-${nextMockId()}`,
+        createdAt: now,
+        updatedAt: now,
+      }
+      transactions.unshift(txn)
+      return wallets[index]
+    }
+    const { data } = await apiClient.post<Wallet>(`/wallet/${walletId}/adjust`, { type, amount, message })
     return data
   },
 }

@@ -15,12 +15,21 @@ const emptyRestaurant: Partial<Restaurant> = {
   openingTime: '09:00',
   closingTime: '22:00',
   isPureveg: false,
+  image: '',
+  images: [],
+  certificate: null,
+  latitude: 0,
+  longitude: 0,
   restaurantCharges: 0,
+  deliveryChargeType: 'fixed',
   baseDeliveryCharge: 20,
+  baseDeliveryDistance: 2,
+  extraDeliveryCharge: 0,
+  extraDeliveryDistance: 0,
   minOrderPrice: 99,
   deliveryRadius: 6,
   deliveryTime: 30,
-  deliveryType: 'platform-rider',
+  deliveryType: 'delivery',
   isAcceptCod: true,
   isSchedulable: false,
   autoAcceptable: false,
@@ -30,6 +39,8 @@ const emptyRestaurant: Partial<Restaurant> = {
   isFeatured: false,
   isNotifiable: true,
   categoryIds: [],
+  createdBy: null,
+  updatedBy: null,
 }
 
 export default function AdminRestaurantFormPage() {
@@ -93,7 +104,7 @@ export default function AdminRestaurantFormPage() {
       />
       {error && <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</p>}
       <div className="card p-5">
-        <RestaurantForm values={values} onChange={handleChange} isAdmin />
+        <RestaurantForm values={values} onChange={handleChange} isAdmin isNew={isNew} />
       </div>
     </div>
   )

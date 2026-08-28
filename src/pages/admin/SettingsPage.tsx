@@ -8,8 +8,18 @@ import { settingsService } from '@/services/settingsService'
 
 const TABS = [
   { key: 'general', label: 'General' },
+  { key: 'design', label: 'Design' },
   { key: 'payments', label: 'Payment Gateways' },
-  { key: 'sms', label: 'SMS Gateways' },
+  { key: 'sms-gateways', label: 'SMS Gateways' },
+  { key: 'email-settings', label: 'Email Settings' },
+  { key: 'push-notifications', label: 'Push Notifications' },
+  { key: 'google-map', label: 'Google Map' },
+  { key: 'tax-settings', label: 'Tax Settings' },
+  { key: 'customer-app', label: 'Customer Application' },
+  { key: 'delivery-app', label: 'Delivery Application' },
+  { key: 'store-dashboard', label: 'Store Dashboard' },
+  { key: 'custom-css', label: 'Custom CSS' },
+  { key: 'cache-settings', label: 'Cache Settings' },
 ]
 
 export default function SettingsPage() {

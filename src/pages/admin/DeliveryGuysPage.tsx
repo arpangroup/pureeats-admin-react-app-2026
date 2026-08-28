@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bike, Pencil, Plus, Star, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput, Field, TextInput, Select } from '@/components/ui/FormControls'
@@ -11,7 +12,6 @@ import { deliveryGuyService, type DeliveryGuyRow } from '@/services/deliveryGuyS
 import type { DeliveryGuyDetail } from '@/types/entities'
 
 interface DeliveryGuyFormValues {
-  id?: number
   name: string
   email: string
   age: number
@@ -44,6 +44,7 @@ const emptyForm: DeliveryGuyFormValues = {
 }
 
 export default function DeliveryGuysPage() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 300)
@@ -51,34 +52,23 @@ export default function DeliveryGuysPage() {
   const { data, isLoading, reload } = useAsync(() => deliveryGuyService.list(params), [params])
 
   const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<DeliveryGuyRow | null>(null)
   const [values, setValues] = useState<DeliveryGuyFormValues>(emptyForm)
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<DeliveryGuyRow | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   function openCreate() {
-    setEditing(null)
     setValues(emptyForm)
-    setFormOpen(true)
-  }
-
-  function openEdit(row: DeliveryGuyRow) {
-    setEditing(row)
-    setValues(row)
     setFormOpen(true)
   }
 
   async function handleSave() {
     setSaving(true)
     try {
-      if (editing) {
-        await deliveryGuyService.update(editing.id, values)
-      } else {
-        await deliveryGuyService.create(values)
-      }
+      const created = await deliveryGuyService.create({ ...values, createdBy: 1, updatedBy: 1 })
       setFormOpen(false)
       reload()
+      navigate(`/admin/delivery-guys/${created.userId}`)
     } finally {
       setSaving(false)
     }
@@ -102,12 +92,12 @@ export default function DeliveryGuysPage() {
       header: 'Delivery Partner',
       render: (row) => (
         <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-400">
             <Bike size={15} />
           </span>
           <div>
-            <p className="font-medium text-slate-800">{row.name}</p>
-            <p className="text-xs text-slate-400">{row.phone || row.email}</p>
+            <p className="font-medium text-slate-800 dark:text-slate-100">{row.name}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{row.phone || row.email}</p>
           </div>
         </div>
       ),
@@ -133,10 +123,10 @@ export default function DeliveryGuysPage() {
       className: 'px-4 py-3 text-right',
       render: (row) => (
         <div className="flex justify-end gap-1">
-          <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600" onClick={(e) => { e.stopPropagation(); openEdit(row) }}>
+          <button className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300" onClick={(e) => { e.stopPropagation(); navigate(`/admin/delivery-guys/${row.userId}`) }}>
             <Pencil size={15} />
           </button>
-          <button className="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row) }}>
+          <button className="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400" onClick={(e) => { e.stopPropagation(); setDeleteTarget(row) }}>
             <Trash2 size={15} />
           </button>
         </div>
@@ -162,12 +152,13 @@ export default function DeliveryGuysPage() {
         emptyTitle="No delivery partners found"
         pagination={data ?? undefined}
         onPageChange={setPage}
+        onRowClick={(row) => navigate(`/admin/delivery-guys/${row.userId}`)}
       />
 
       <Modal
         open={formOpen}
         onClose={() => setFormOpen(false)}
-        title={editing ? 'Edit Delivery Partner' : 'Add Delivery Partner'}
+        title="Add Delivery Partner"
         size="lg"
         footer={
           <>
@@ -180,11 +171,9 @@ export default function DeliveryGuysPage() {
           <Field label="Full name" required>
             <TextInput value={values.name} onChange={(e) => setValues((p) => ({ ...p, name: e.target.value }))} />
           </Field>
-          {!editing && (
-            <Field label="Email" required>
-              <TextInput type="email" value={values.email} onChange={(e) => setValues((p) => ({ ...p, email: e.target.value }))} />
-            </Field>
-          )}
+          <Field label="Email" required>
+            <TextInput type="email" value={values.email} onChange={(e) => setValues((p) => ({ ...p, email: e.target.value }))} />
+          </Field>
           <Field label="Vehicle number" required>
             <TextInput value={values.vehicleNumber} onChange={(e) => setValues((p) => ({ ...p, vehicleNumber: e.target.value }))} />
           </Field>

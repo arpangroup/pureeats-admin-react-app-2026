@@ -68,9 +68,9 @@ export default function RestaurantPayoutsPage() {
 
   return (
     <div>
-      <PageHeader title="Restaurant Payouts" description="Settle earnings requested by restaurant partners." />
+      <PageHeader title="Store Payouts" description="Settle earnings requested by store owners." />
       <div className="mb-3">
-        <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Search by restaurant…" />
+        <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Search by store…" />
       </div>
       <DataTable
         columns={columns}

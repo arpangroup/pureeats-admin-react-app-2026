@@ -7,6 +7,7 @@ export default function UsersPage() {
       title="Users"
       description="Customers who have signed up on PureEats."
       createLabel="Add User"
+      basePath="/admin/users"
     />
   )
 }

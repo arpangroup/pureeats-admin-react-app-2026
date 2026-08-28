@@ -45,7 +45,20 @@ export function OrdersListView({
     ...(restaurantId ? [] : [{ key: 'restaurant', header: 'Restaurant', render: (row: OrderRow) => row.restaurantName } as Column<OrderRow>]),
     { key: 'customer', header: 'Customer', render: (row) => row.customerName },
     { key: 'items', header: 'Items', render: (row) => `${row.items.length} item${row.items.length !== 1 ? 's' : ''}` },
-    { key: 'total', header: 'Total', render: (row) => formatCurrency(row.total) },
+    {
+      key: 'total',
+      header: 'Total',
+      render: (row) => (
+        <div>
+          <p>{formatCurrency(row.total)}</p>
+          {row.couponName && (
+            <span className="mt-0.5 inline-flex items-center rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">
+              {row.couponName}
+            </span>
+          )}
+        </div>
+      ),
+    },
     { key: 'payment', header: 'Payment', render: (row) => <span className="capitalize">{row.paymentMode}</span> },
     { key: 'status', header: 'Status', render: (row) => <OrderStatusBadge status={row.statusName} /> },
     { key: 'placed', header: 'Placed', render: (row) => <span className="text-slate-500">{formatDate(row.createdAt)}</span> },
