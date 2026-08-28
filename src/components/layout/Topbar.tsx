@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Bell, ChevronDown, LogOut, Moon, Sun, Wifi, WifiOff } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, Menu, Moon, Sun, Wifi, WifiOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
 import { initials } from '@/lib/format'
 import { IS_MOCK } from '@/config/env'
 
-export function Topbar() {
+export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
@@ -19,7 +19,15 @@ export function Topbar() {
 
   return (
     <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 dark:border-slate-800 dark:bg-slate-900 lg:px-6">
-      <div className="flex items-center gap-2 text-xs font-medium">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onMenuClick}
+          className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 lg:hidden"
+          aria-label="Open menu"
+        >
+          <Menu size={20} />
+        </button>
+        <div className="flex items-center gap-2 text-xs font-medium">
         {IS_MOCK ? (
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400">
             <WifiOff size={13} /> Standalone demo data
@@ -29,6 +37,7 @@ export function Topbar() {
             <Wifi size={13} /> Connected to live API
           </span>
         )}
+        </div>
       </div>
 
       <div className="flex items-center gap-3">
