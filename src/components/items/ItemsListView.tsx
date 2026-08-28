@@ -12,6 +12,7 @@ import { itemCategories, restaurants } from '@/mocks/fixtures'
 import { formatCurrency } from '@/lib/format'
 import type { Item } from '@/types/entities'
 import { ItemForm } from './ItemForm'
+import { ItemBulkUploadForm } from './ItemBulkUploadForm'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { SlideOver } from '../ui/SlideOver'
 
@@ -228,16 +229,11 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
         open={bulkUploadOpen}
         onClose={closeBulkUpload}
         title="Bulk CSV Upload"
-        description="Create multiple restaurants at once from a CSV file."
+        description={scopedRestaurant ? `Create multiple items for ${scopedRestaurant.name} from a CSV file.` : 'Create multiple items at once from a CSV file.'}
         width="lg"
       >
-        {/* <RestaurantBulkUploadForm onImported={reload} /> */}
-        <div className="flex h-full flex-col items-center justify-center gap-2">
-          <UploadCloud size={32} className="text-slate-400" />
-          <p className="text-center text-sm text-slate-500">Bulk upload is not yet implemented.</p>
-        </div>
+        <ItemBulkUploadForm restaurantId={restaurantId} onImported={reload} />
       </SlideOver>
-
     </div>
   )
 }

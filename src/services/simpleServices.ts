@@ -10,6 +10,7 @@ import {
   addonCategories,
   addons,
   coupons,
+  couponUsages,
   locations,
   popularGeoPlaces,
   restaurantCategories,
@@ -21,6 +22,7 @@ import {
   modules,
   alerts,
   users,
+  restaurants,
 } from '@/mocks/fixtures'
 import type {
   ItemCategory,
@@ -50,9 +52,65 @@ export const restaurantCategorySliderService = createCrudService<RestaurantCateg
 export const translationService = createCrudService<Translation>(translations, '/translations', ['languageName'])
 export const pageService = createCrudService<Page>(pages, '/pages', ['name', 'slug'])
 export const promoSliderService = createCrudService<PromoSlider>(promoSliders, '/promo-sliders', ['name'])
-export const slideService = createCrudService<Slide>(slides, '/slides', ['name'])
+const slideBase = createCrudService<Slide>(slides, '/slides', ['name'])
+
+export const slideService = {
+  ...slideBase,
+
+  async forSlider(sliderType: Slide['sliderType'], sliderId: number): Promise<Slide[]> {
+    if (IS_MOCK) {
+      await mockDelay(150)
+      return slides
+        .filter((s) => s.sliderType === sliderType && s.sliderId === sliderId)
+        .sort((a, b) => a.positionId - b.positionId)
+    }
+    const { data } = await apiClient.get<Slide[]>('/slides', { params: { sliderType, sliderId } })
+    return data
+  },
+
+  async countsBySlider(sliderType: Slide['sliderType']): Promise<Record<number, number>> {
+    if (IS_MOCK) {
+      await mockDelay(50)
+      const counts: Record<number, number> = {}
+      slides.filter((s) => s.sliderType === sliderType).forEach((s) => {
+        counts[s.sliderId] = (counts[s.sliderId] ?? 0) + 1
+      })
+      return counts
+    }
+    const { data } = await apiClient.get<Record<number, number>>('/slides/counts', { params: { sliderType } })
+    return data
+  },
+}
 export const moduleService = createCrudService<Module>(modules, '/modules', ['name'])
 export const notificationService = createCrudService<Alert>(alerts, '/alerts', [])
+
+export interface CouponUsageRow {
+  id: number
+  userName: string
+  restaurantName: string
+  couponUsed: number
+  createdAt: string
+}
+
+export const couponUsageService = {
+  async forCoupon(couponId: number): Promise<CouponUsageRow[]> {
+    if (IS_MOCK) {
+      await mockDelay(150)
+      return couponUsages
+        .filter((u) => u.couponId === couponId)
+        .map((u) => ({
+          id: u.id,
+          userName: users.find((usr) => usr.id === u.userId)?.name ?? 'Unknown',
+          restaurantName: restaurants.find((r) => r.id === u.restaurantId)?.name ?? 'Unknown',
+          couponUsed: u.couponUsed,
+          createdAt: u.createdAt,
+        }))
+        .sort((a, b) => b.id - a.id)
+    }
+    const { data } = await apiClient.get<CouponUsageRow[]>(`/coupons/${couponId}/usages`)
+    return data
+  },
+}
 
 export interface PushNotificationPayload {
   title: string

@@ -46,9 +46,12 @@ export const promoSliders: PromoSlider[] = [
 ]
 
 export const slides: Slide[] = [
-  { id: 1, promoSliderId: 1, uniqueId: 'slide-001', name: '50% off first order', description: 'New users only', image: '', imagePlaceholder: '', url: '/coupons/WELCOME50', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
-  { id: 2, promoSliderId: 1, uniqueId: 'slide-002', name: 'Free delivery weekend', description: 'On orders above ₹299', image: '', imagePlaceholder: '', url: '/coupons/WEEKEND20', isActive: true, createdAt: '2025-10-02T09:00:00Z', updatedAt: '2025-10-02T09:00:00Z' },
-  { id: 3, promoSliderId: 2, uniqueId: 'slide-003', name: 'Try Pizza House', description: 'Now on PureEats', image: '', imagePlaceholder: '', url: '/restaurant/pizza-house', isActive: false, createdAt: '2025-10-06T09:00:00Z', updatedAt: '2025-10-06T09:00:00Z' },
+  { id: 1, sliderType: 'promo', sliderId: 1, uniqueId: 'slide-001', name: '50% off first order', description: 'New users only', image: '', imagePlaceholder: '', linkType: 'url', categoryId: null, restaurantId: null, url: '/coupons/WELCOME50', positionId: 1, isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 2, sliderType: 'promo', sliderId: 1, uniqueId: 'slide-002', name: 'Free delivery weekend', description: 'On orders above ₹299', image: '', imagePlaceholder: '', linkType: 'url', categoryId: null, restaurantId: null, url: '/coupons/WEEKEND20', positionId: 2, isActive: true, createdAt: '2025-10-02T09:00:00Z', updatedAt: '2025-10-02T09:00:00Z' },
+  { id: 3, sliderType: 'promo', sliderId: 2, uniqueId: 'slide-003', name: 'Try Pizza House', description: 'Now on PureEats', image: '', imagePlaceholder: '', linkType: 'restaurant', categoryId: null, restaurantId: 3, url: null, positionId: 1, isActive: false, createdAt: '2025-10-06T09:00:00Z', updatedAt: '2025-10-06T09:00:00Z' },
+  { id: 4, sliderType: 'category', sliderId: 1, uniqueId: 'slide-004', name: 'North Indian', description: 'Curries, tandoor and more', image: '', imagePlaceholder: '', linkType: 'category', categoryId: 1, restaurantId: null, url: null, positionId: 1, isActive: true, createdAt: '2025-10-02T09:00:00Z', updatedAt: '2025-10-02T09:00:00Z' },
+  { id: 5, sliderType: 'category', sliderId: 1, uniqueId: 'slide-005', name: 'South Indian', description: 'Dosas, idlis and filter coffee', image: '', imagePlaceholder: '', linkType: 'category', categoryId: 2, restaurantId: null, url: null, positionId: 2, isActive: true, createdAt: '2025-10-02T09:00:00Z', updatedAt: '2025-10-02T09:00:00Z' },
+  { id: 6, sliderType: 'category', sliderId: 2, uniqueId: 'slide-006', name: 'Mughlai Weekend', description: 'Kebabs and biryani specials', image: '', imagePlaceholder: '', linkType: 'category', categoryId: 5, restaurantId: null, url: null, positionId: 1, isActive: true, createdAt: '2025-10-03T09:00:00Z', updatedAt: '2025-10-03T09:00:00Z' },
 ]
 
 export const modules: Module[] = [

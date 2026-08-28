@@ -12,11 +12,13 @@ import AdminOrdersPage from '@/pages/admin/OrdersPage'
 import AdminOrderDetailPage from '@/pages/admin/OrderDetailPage'
 import AdminRestaurantsPage from '@/pages/admin/RestaurantsPage'
 import AdminRestaurantFormPage from '@/pages/admin/RestaurantFormPage'
+import RestaurantCategoriesPage from '@/pages/admin/RestaurantCategoriesPage'
 import AdminItemsPage from '@/pages/admin/ItemsPage'
 import ItemCategoriesPage from '@/pages/admin/ItemCategoriesPage'
 import AddonCategoriesPage from '@/pages/admin/AddonCategoriesPage'
 import AddonsPage from '@/pages/admin/AddonsPage'
 import CouponsPage from '@/pages/admin/CouponsPage'
+import CouponFormPage from '@/pages/admin/CouponFormPage'
 import UsersPage from '@/pages/admin/UsersPage'
 import UserDetailPage from '@/pages/admin/UserDetailPage'
 import EmployeesPage from '@/pages/admin/EmployeesPage'
@@ -84,12 +86,15 @@ export function AppRoutes() {
         <Route path="restaurants" element={<AdminRestaurantsPage />} />
         <Route path="restaurants/new" element={<AdminRestaurantFormPage />} />
         <Route path="restaurants/:id/edit" element={<AdminRestaurantFormPage />} />
+        <Route path="restaurant-categories" element={<RestaurantCategoriesPage />} />
         <Route path="restaurant-category-sliders" element={<RestaurantCategorySliderPage />} />
         <Route path="items" element={<AdminItemsPage />} />
         <Route path="item-categories" element={<ItemCategoriesPage />} />
         <Route path="addon-categories" element={<AddonCategoriesPage />} />
         <Route path="addons" element={<AddonsPage />} />
         <Route path="coupons" element={<CouponsPage />} />
+        <Route path="coupons/new" element={<CouponFormPage />} />
+        <Route path="coupons/:id/edit" element={<CouponFormPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="users/:id" element={<UserDetailPage />} />
         <Route path="employees" element={<EmployeesPage />} />

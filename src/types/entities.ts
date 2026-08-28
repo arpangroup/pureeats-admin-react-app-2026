@@ -69,12 +69,22 @@ export interface RestaurantCategory {
 export interface RestaurantCategorySlider {
   id: Id
   name: string
-  image: string
-  imagePlaceholder: string
-  categoriesIds: Id[]
   isActive: boolean
   createdAt: string
   updatedAt: string
+}
+
+export type DayOfWeek = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
+
+export interface TimeSlot {
+  open: string
+  close: string
+}
+
+export interface DaySchedule {
+  day: DayOfWeek
+  isOpen: boolean
+  slots: TimeSlot[]
 }
 
 export interface Restaurant {
@@ -83,8 +93,10 @@ export interface Restaurant {
   slug: string
   description: string
   contactNumber: string
+  /** Legacy single-window hours, kept for older records/screens — the weekly schedule below is authoritative once set. */
   openingTime: string
   closingTime: string
+  weeklySchedule: DaySchedule[]
   locationId: Id
   image: string
   placeholderImage: string
@@ -490,15 +502,23 @@ export interface PromoSlider {
   updatedAt: string
 }
 
+export type SlideLinkType = 'none' | 'category' | 'restaurant' | 'url'
+
 export interface Slide {
   id: Id
-  promoSliderId: Id
+  /** Which container this slide belongs to — a PromoSlider or a RestaurantCategorySlider. */
+  sliderType: 'promo' | 'category'
+  sliderId: Id
   uniqueId: string
   name: string
   description: string
   image: string
   imagePlaceholder: string
+  linkType: SlideLinkType
+  categoryId: Id | null
+  restaurantId: Id | null
   url: string | null
+  positionId: number
   isActive: boolean
   createdAt: string
   updatedAt: string

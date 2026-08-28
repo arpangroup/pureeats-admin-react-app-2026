@@ -23,16 +23,23 @@ import type {
 
 export interface TransactionRow extends Transaction {
   walletName: string
+  walletHolderType: string
+  walletHolderId: Id
 }
 
 export const walletService = {
   async transactions(params: ListParams = {}): Promise<Paginated<TransactionRow>> {
     if (IS_MOCK) {
       await mockDelay()
-      const rows: TransactionRow[] = transactions.map((t) => ({
-        ...t,
-        walletName: wallets.find((w) => w.id === t.walletId)?.name ?? 'Unknown wallet',
-      }))
+      const rows: TransactionRow[] = transactions.map((t) => {
+        const wallet = wallets.find((w) => w.id === t.walletId)
+        return {
+          ...t,
+          walletName: wallet?.name ?? 'Unknown wallet',
+          walletHolderType: wallet?.holderType ?? '',
+          walletHolderId: wallet?.holderId ?? 0,
+        }
+      })
       return paginate(rows, params, ['walletName', 'payableType', 'uuid'])
     }
     const { data } = await apiClient.get<Paginated<TransactionRow>>('/wallet/transactions', { params })

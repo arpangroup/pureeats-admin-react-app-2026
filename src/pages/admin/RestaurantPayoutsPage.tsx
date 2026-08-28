@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/FormControls'
 import { Badge } from '@/components/ui/Feedback'
@@ -7,6 +8,7 @@ import { useAsync } from '@/hooks/useAsync'
 import { useDebounce } from '@/hooks/useDebounce'
 import { payoutService, type PayoutRow } from '@/services/financeServices'
 import { formatCurrency, formatDate } from '@/lib/format'
+import { restaurantDetailPath } from '@/lib/routes'
 import type { RestaurantPayout } from '@/types/entities'
 
 const statusTone: Record<RestaurantPayout['status'], 'slate' | 'green' | 'amber' | 'red'> = {
@@ -17,6 +19,7 @@ const statusTone: Record<RestaurantPayout['status'], 'slate' | 'green' | 'amber'
 }
 
 export default function RestaurantPayoutsPage() {
+  const navigate = useNavigate()
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 300)
@@ -35,7 +38,21 @@ export default function RestaurantPayoutsPage() {
   }
 
   const columns: Column<PayoutRow>[] = [
-    { key: 'restaurant', header: 'Restaurant', render: (row) => <span className="font-medium text-slate-800">{row.restaurantName}</span> },
+    {
+      key: 'restaurant',
+      header: 'Restaurant',
+      render: (row) => (
+        <button
+          className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+          onClick={(e) => {
+            e.stopPropagation()
+            navigate(restaurantDetailPath(row.restaurantId))
+          }}
+        >
+          {row.restaurantName}
+        </button>
+      ),
+    },
     { key: 'amount', header: 'Amount', render: (row) => formatCurrency(row.amount) },
     { key: 'mode', header: 'Mode', render: (row) => row.transactionMode },
     { key: 'status', header: 'Status', render: (row) => <Badge tone={statusTone[row.status]}>{row.status}</Badge> },

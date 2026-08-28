@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { Select } from '@/components/ui/FormControls'
+import { Select, TextInput } from '@/components/ui/FormControls'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
 import { DataTable, type Column } from '@/components/DataTable'
@@ -9,29 +9,31 @@ import { useAsync } from '@/hooks/useAsync'
 import { reportService, type TopItemRow, type TopRestaurantRow, type TopRiderRow } from '@/services/reportService'
 import { restaurants } from '@/mocks/fixtures'
 import { formatCurrency } from '@/lib/format'
-
-const RANGE_OPTIONS = [
-  { label: 'Last 7 days', value: 7 },
-  { label: 'Last 30 days', value: 30 },
-  { label: 'Last 90 days', value: 90 },
-]
+import { DATE_RANGE_PRESETS, resolveDateRange, type DateRangePreset } from '@/lib/dateRanges'
 
 const PIE_COLORS = ['#f2612c', '#0ea5e9', '#f59e0b', '#a855f7', '#10b981', '#ef4444', '#64748b', '#ec4899', '#14b8a6']
 
 export default function ReportsPage() {
-  const [days, setDays] = useState(30)
+  const [preset, setPreset] = useState<DateRangePreset>('last-30-days')
+  const [customFrom, setCustomFrom] = useState('')
+  const [customTo, setCustomTo] = useState('')
   const [restaurantId, setRestaurantId] = useState<number | 'all'>('all')
 
+  const range = useMemo(
+    () => resolveDateRange(preset, { from: customFrom, to: customTo }),
+    [preset, customFrom, customTo],
+  )
+
   const filters = useMemo(
-    () => ({ days, restaurantId: restaurantId === 'all' ? undefined : restaurantId }),
-    [days, restaurantId],
+    () => ({ ...range, restaurantId: restaurantId === 'all' ? undefined : restaurantId }),
+    [range, restaurantId],
   )
 
   const { data: topItems, isLoading: loadingItems } = useAsync(() => reportService.topItems(filters), [filters])
   const { data: revenueTrend, isLoading: loadingTrend } = useAsync(() => reportService.revenueTrend(filters), [filters])
   const { data: statusSlices, isLoading: loadingStatus } = useAsync(() => reportService.ordersByStatus(filters), [filters])
-  const { data: topRestaurants, isLoading: loadingRestaurants } = useAsync(() => reportService.topRestaurants({ days }), [days])
-  const { data: topRiders, isLoading: loadingRiders } = useAsync(() => reportService.topRiders({ days }), [days])
+  const { data: topRestaurants, isLoading: loadingRestaurants } = useAsync(() => reportService.topRestaurants(range), [range])
+  const { data: topRiders, isLoading: loadingRiders } = useAsync(() => reportService.topRiders(range), [range])
 
   const itemColumns: Column<TopItemRow>[] = [
     { key: 'name', header: 'Item', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{row.name}</span> },
@@ -58,18 +60,25 @@ export default function ReportsPage() {
         title="Reports"
         description="Sales, item and delivery-partner performance reports."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Select value={restaurantId} onChange={(e) => setRestaurantId(e.target.value === 'all' ? 'all' : Number(e.target.value))} className="w-48">
               <option value="all">All restaurants</option>
               {restaurants.map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </Select>
-            <Select value={days} onChange={(e) => setDays(Number(e.target.value))} className="w-40">
-              {RANGE_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+            <Select value={preset} onChange={(e) => setPreset(e.target.value as DateRangePreset)} className="w-40">
+              {DATE_RANGE_PRESETS.map((o) => (
+                <option key={o.key} value={o.key}>{o.label}</option>
               ))}
             </Select>
+            {preset === 'custom' && (
+              <>
+                <TextInput type="date" value={customFrom} max={customTo || undefined} onChange={(e) => setCustomFrom(e.target.value)} className="w-40" />
+                <span className="text-sm text-slate-400 dark:text-slate-500">to</span>
+                <TextInput type="date" value={customTo} min={customFrom || undefined} onChange={(e) => setCustomTo(e.target.value)} className="w-40" />
+              </>
+            )}
           </div>
         }
       />

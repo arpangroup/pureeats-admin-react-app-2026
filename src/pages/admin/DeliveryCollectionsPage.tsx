@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
@@ -7,14 +8,30 @@ import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
 import { deliveryCollectionService, type DeliveryCollectionRow } from '@/services/financeServices'
 import { formatCurrency, formatDate } from '@/lib/format'
+import { deliveryGuyDetailPath } from '@/lib/routes'
 
 export default function DeliveryCollectionsPage() {
+  const navigate = useNavigate()
   const params = useMemo(() => ({ page: 1, perPage: 20 }), [])
   const { data, isLoading } = useAsync(() => deliveryCollectionService.list(params), [params])
   const [viewing, setViewing] = useState<DeliveryCollectionRow | null>(null)
 
   const columns: Column<DeliveryCollectionRow>[] = [
-    { key: 'rider', header: 'Delivery Partner', render: (row) => <span className="font-medium text-slate-800">{row.riderName}</span> },
+    {
+      key: 'rider',
+      header: 'Delivery Partner',
+      render: (row) => (
+        <button
+          className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+          onClick={(e) => {
+            e.stopPropagation()
+            navigate(deliveryGuyDetailPath(row.userId))
+          }}
+        >
+          {row.riderName}
+        </button>
+      ),
+    },
     { key: 'amount', header: 'Cash in hand', render: (row) => formatCurrency(row.amount) },
     { key: 'updated', header: 'Last updated', render: (row) => formatDate(row.updatedAt) },
     {

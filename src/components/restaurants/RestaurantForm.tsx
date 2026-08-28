@@ -5,6 +5,7 @@ import { ImageGalleryUpload } from '@/components/ui/ImageGalleryUpload'
 import { MapEmbed } from '@/components/ui/MapEmbed'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { AuditInfo } from '@/components/ui/AuditInfo'
+import { WeeklyScheduleEditor } from './WeeklyScheduleEditor'
 import { locations, restaurantCategories } from '@/mocks/fixtures'
 import type { Restaurant } from '@/types/entities'
 
@@ -57,15 +58,22 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
         </div>
       </SectionCard>
 
-      <SectionCard title="Hours" description="Set the restaurant's operating hours" icon={Clock}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Opening time" required>
-            <TextInput type="time" value={values.openingTime ?? ''} onChange={(e) => onChange('openingTime', e.target.value)} />
-          </Field>
-          <Field label="Closing time" required>
-            <TextInput type="time" value={values.closingTime ?? ''} onChange={(e) => onChange('closingTime', e.target.value)} />
-          </Field>
-        </div>
+      <SectionCard
+        title="Operating hours"
+        description="Turn on the days this restaurant is open and set one or more time slots for each — useful for split lunch/dinner hours or days with different timings."
+        icon={Clock}
+      >
+        <WeeklyScheduleEditor
+          value={values.weeklySchedule ?? []}
+          onChange={(schedule) => {
+            onChange('weeklySchedule', schedule)
+            const firstOpenDay = schedule.find((d) => d.isOpen && d.slots.length > 0)
+            if (firstOpenDay) {
+              onChange('openingTime', firstOpenDay.slots[0].open)
+              onChange('closingTime', firstOpenDay.slots[firstOpenDay.slots.length - 1].close)
+            }
+          }}
+        />
       </SectionCard>
 
       <SectionCard title="Location" description="Enter the restaurant's location details" icon={MapPin}>

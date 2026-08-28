@@ -2,10 +2,10 @@ import { apiClient } from '@/lib/apiClient'
 import { mockDelay } from '@/lib/mockUtils'
 import { IS_MOCK } from '@/config/env'
 import { orders, restaurants, items, orderStatuses, tripDetails, users } from '@/mocks/fixtures'
+import type { DateRange } from '@/lib/dateRanges'
 
-export interface ReportFilters {
+export interface ReportFilters extends DateRange {
   restaurantId?: number
-  days: number
 }
 
 export interface TopItemRow {
@@ -41,13 +41,14 @@ export interface TopRiderRow {
   earnings: number
 }
 
-function inRange(createdAt: string, days: number): boolean {
-  const daysAgo = Math.floor((Date.now() - new Date(createdAt).getTime()) / 86400000)
-  return daysAgo >= 0 && daysAgo < days
+function inRange(createdAt: string, range: DateRange): boolean {
+  const dateStr = createdAt.slice(0, 10)
+  if (range.from && dateStr < range.from) return false
+  return dateStr <= range.to
 }
 
 function scopedOrders(filters: ReportFilters) {
-  return orders.filter((o) => inRange(o.createdAt, filters.days) && (!filters.restaurantId || o.restaurantId === filters.restaurantId))
+  return orders.filter((o) => inRange(o.createdAt, filters) && (!filters.restaurantId || o.restaurantId === filters.restaurantId))
 }
 
 export const reportService = {
@@ -85,10 +86,20 @@ export const reportService = {
   async revenueTrend(filters: ReportFilters): Promise<RevenuePoint[]> {
     if (IS_MOCK) {
       await mockDelay(200)
+      const to = new Date(`${filters.to}T00:00:00`)
+      const earliestOrder = orders.reduce<Date | null>((min, o) => {
+        const d = new Date(o.createdAt)
+        return !min || d < min ? d : min
+      }, null)
+      const from = filters.from
+        ? new Date(`${filters.from}T00:00:00`)
+        : earliestOrder ?? to
+      // Cap at 90 daily buckets even for very wide ranges (e.g. "All time") so the chart stays legible.
+      const spanDays = Math.min(90, Math.max(1, Math.round((to.getTime() - from.getTime()) / 86400000) + 1))
+
       const buckets = new Map<string, RevenuePoint>()
-      const now = new Date()
-      for (let i = filters.days - 1; i >= 0; i -= 1) {
-        const d = new Date(now)
+      for (let i = spanDays - 1; i >= 0; i -= 1) {
+        const d = new Date(to)
         d.setDate(d.getDate() - i)
         const label = d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })
         buckets.set(label, { label, revenue: 0, orders: 0 })
@@ -120,10 +131,10 @@ export const reportService = {
     return data
   },
 
-  async topRestaurants(filters: Pick<ReportFilters, 'days'>, limit = 10): Promise<TopRestaurantRow[]> {
+  async topRestaurants(filters: DateRange, limit = 10): Promise<TopRestaurantRow[]> {
     if (IS_MOCK) {
       await mockDelay(200)
-      const rows = orders.filter((o) => inRange(o.createdAt, filters.days))
+      const rows = orders.filter((o) => inRange(o.createdAt, filters))
       return restaurants
         .map((r) => ({
           restaurantId: r.id,
@@ -138,10 +149,10 @@ export const reportService = {
     return data
   },
 
-  async topRiders(filters: Pick<ReportFilters, 'days'>, limit = 10): Promise<TopRiderRow[]> {
+  async topRiders(filters: DateRange, limit = 10): Promise<TopRiderRow[]> {
     if (IS_MOCK) {
       await mockDelay(200)
-      const rows = tripDetails.filter((t) => inRange(t.createdAt, filters.days))
+      const rows = tripDetails.filter((t) => inRange(t.createdAt, filters))
       const totals = new Map<number, TopRiderRow>()
       rows.forEach((t) => {
         const existing = totals.get(t.riderId)

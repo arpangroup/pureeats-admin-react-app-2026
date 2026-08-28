@@ -1,69 +1,117 @@
-import { ResourceListPage } from '@/components/resource/ResourceListPage'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Trash2 } from 'lucide-react'
+import { PageHeader } from '@/components/ui/PageHeader'
+import { SearchInput } from '@/components/ui/FormControls'
 import { ActiveBadge, Badge } from '@/components/ui/Feedback'
+import { ConfirmDialog } from '@/components/ui/Modal'
+import { DataTable, type Column } from '@/components/DataTable'
+import { useAsync } from '@/hooks/useAsync'
+import { useDebounce } from '@/hooks/useDebounce'
 import { couponService } from '@/services/simpleServices'
 import { restaurants } from '@/mocks/fixtures'
 import { formatCurrency, formatDate } from '@/lib/format'
 import type { Coupon } from '@/types/entities'
-import type { FormFieldConfig } from '@/components/resource/resourceTypes'
-
-const fields: FormFieldConfig<Coupon>[] = [
-  { name: 'name', label: 'Coupon name', type: 'text', required: true },
-  { name: 'code', label: 'Coupon code', type: 'text', required: true, hint: 'Shown to customers, e.g. WELCOME50' },
-  { name: 'description', label: 'Description', type: 'textarea', colSpan: 2 },
-  {
-    name: 'restaurantId',
-    label: 'Applies to',
-    type: 'select',
-    options: [{ label: 'All restaurants', value: 0 }, ...restaurants.map((r) => ({ label: r.name, value: r.id }))],
-    hint: '"All restaurants" makes this a platform-wide coupon',
-  },
-  {
-    name: 'discountType',
-    label: 'Discount type',
-    type: 'select',
-    required: true,
-    options: [
-      { label: 'Flat amount', value: 'flat' },
-      { label: 'Percentage', value: 'percentage' },
-    ],
-  },
-  { name: 'discount', label: 'Discount value', type: 'number', required: true },
-  { name: 'uptoAmount', label: 'Max discount (₹)', type: 'number' },
-  { name: 'minOrderAmount', label: 'Minimum order value (₹)', type: 'number' },
-  { name: 'maxCount', label: 'Uses per customer', type: 'number' },
-  { name: 'expiryDate', label: 'Expiry date', type: 'date', required: true },
-  { name: 'isActive', label: 'Active', type: 'switch' },
-]
 
 export default function CouponsPage() {
+  const navigate = useNavigate()
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 300)
+  const params = useMemo(() => ({ page, perPage: 10, search: debouncedSearch }), [page, debouncedSearch])
+  const { data, isLoading, reload } = useAsync(() => couponService.list(params), [params])
+
+  const [deleteTarget, setDeleteTarget] = useState<Coupon | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      await couponService.remove(deleteTarget.id)
+      setDeleteTarget(null)
+      reload()
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const columns: Column<Coupon>[] = [
+    {
+      key: 'name',
+      header: 'Coupon',
+      render: (row) => (
+        <div>
+          <p className="font-medium text-slate-800 dark:text-slate-100">{row.name}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{row.code}</p>
+        </div>
+      ),
+    },
+    {
+      key: 'discount',
+      header: 'Discount',
+      render: (row) => (row.discountType === 'flat' ? formatCurrency(row.discount) : `${row.discount}%`),
+    },
+    {
+      key: 'scope',
+      header: 'Applies to',
+      render: (row) => (row.restaurantId ? restaurants.find((r) => r.id === row.restaurantId)?.name ?? '—' : <Badge tone="blue">All restaurants</Badge>),
+    },
+    { key: 'expiry', header: 'Expires', render: (row) => formatDate(row.expiryDate, false) },
+    { key: 'status', header: 'Status', render: (row) => <ActiveBadge active={row.isActive} /> },
+    {
+      key: 'actions',
+      header: '',
+      className: 'px-4 py-3 text-right',
+      render: (row) => (
+        <button
+          className="rounded-md p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+          onClick={(e) => { e.stopPropagation(); setDeleteTarget(row) }}
+          aria-label="Delete coupon"
+        >
+          <Trash2 size={15} />
+        </button>
+      ),
+    },
+  ]
+
   return (
-    <ResourceListPage<Coupon>
-      title="Coupons"
-      description="Discount codes customers can apply at checkout."
-      service={couponService}
-      formFields={fields}
-      defaultValues={{ discountType: 'flat', discount: 0, minOrderAmount: 0, uptoAmount: 0, maxCount: 1, isActive: true, count: 0, totalCoupon: 0, restaurantId: 0 }}
-      searchPlaceholder="Search by name or code…"
-      columns={[
-        {
-          key: 'name',
-          header: 'Coupon',
-          render: (row) => (
-            <div>
-              <p className="font-medium text-slate-800">{row.name}</p>
-              <p className="text-xs text-slate-400">{row.code}</p>
-            </div>
-          ),
-        },
-        {
-          key: 'discount',
-          header: 'Discount',
-          render: (row) => (row.discountType === 'flat' ? formatCurrency(row.discount) : `${row.discount}%`),
-        },
-        { key: 'scope', header: 'Applies to', render: (row) => (row.restaurantId ? restaurants.find((r) => r.id === row.restaurantId)?.name ?? '—' : <Badge tone="blue">All restaurants</Badge>) },
-        { key: 'expiry', header: 'Expires', render: (row) => formatDate(row.expiryDate, false) },
-        { key: 'status', header: 'Status', render: (row) => <ActiveBadge active={row.isActive} /> },
-      ]}
-    />
+    <div>
+      <PageHeader
+        title="Coupons"
+        description="Discount codes customers can apply at checkout."
+        actions={
+          <button className="btn-primary" onClick={() => navigate('/admin/coupons/new')}>
+            <Plus size={16} /> Add Coupon
+          </button>
+        }
+      />
+
+      <div className="mb-3">
+        <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Search by name or code…" />
+      </div>
+
+      <DataTable
+        columns={columns}
+        rows={data?.data ?? []}
+        rowKey={(row) => row.id}
+        isLoading={isLoading}
+        emptyTitle="No coupons found"
+        pagination={data ?? undefined}
+        onPageChange={setPage}
+        onRowClick={(row) => navigate(`/admin/coupons/${row.id}/edit`)}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete coupon"
+        description="This action can't be undone."
+        confirmLabel="Delete"
+        danger
+        isBusy={deleting}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
+    </div>
   )
 }

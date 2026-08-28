@@ -54,6 +54,7 @@ export const adminNav: NavSection[] = [
     title: 'Stores',
     items: [
       { label: 'Stores', to: '/admin/restaurants', icon: Store },
+      { label: 'Store Category', to: '/admin/restaurant-categories', icon: LayoutGrid },
       { label: 'Items', to: '/admin/items', icon: UtensilsCrossed },
       { label: 'Item Categories', to: '/admin/item-categories', icon: Layers },
       { label: 'Addon Categories', to: '/admin/addon-categories', icon: PlusSquare },

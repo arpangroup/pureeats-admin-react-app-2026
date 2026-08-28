@@ -33,6 +33,7 @@ export default [
         FileList: 'readonly',
         Blob: 'readonly',
         URL: 'readonly',
+        URLSearchParams: 'readonly',
       },
     },
     plugins: {

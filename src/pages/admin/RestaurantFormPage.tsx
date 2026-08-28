@@ -6,7 +6,9 @@ import { LoadingBlock } from '@/components/ui/Feedback'
 import { RestaurantForm } from '@/components/restaurants/RestaurantForm'
 import { useAsync } from '@/hooks/useAsync'
 import { restaurantService } from '@/services/restaurantService'
-import type { Restaurant } from '@/types/entities'
+import type { DayOfWeek, Restaurant } from '@/types/entities'
+
+const DAYS: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 
 const emptyRestaurant: Partial<Restaurant> = {
   name: '',
@@ -14,6 +16,7 @@ const emptyRestaurant: Partial<Restaurant> = {
   description: '',
   openingTime: '09:00',
   closingTime: '22:00',
+  weeklySchedule: DAYS.map((day) => ({ day, isOpen: true, slots: [{ open: '09:00', close: '22:00' }] })),
   isPureveg: false,
   image: '',
   images: [],

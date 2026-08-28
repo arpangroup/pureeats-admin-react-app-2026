@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Plus, Star, UploadCloud, UtensilsCrossed, Users } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { SearchInput } from '@/components/ui/FormControls'
+import { SearchInput, Select } from '@/components/ui/FormControls'
 import { ActiveBadge, Badge } from '@/components/ui/Feedback'
 import { Tabs } from '@/components/ui/Tabs'
 import { SlideOver } from '@/components/ui/SlideOver'
@@ -11,8 +11,8 @@ import { RestaurantBulkUploadForm } from '@/components/restaurants/RestaurantBul
 import { useAsync } from '@/hooks/useAsync'
 import { useDebounce } from '@/hooks/useDebounce'
 import { restaurantService } from '@/services/restaurantService'
-import { locations } from '@/mocks/fixtures'
-import type { Restaurant } from '@/types/entities'
+import { locations, restaurantCategories } from '@/mocks/fixtures'
+import type { DayOfWeek, Restaurant } from '@/types/entities'
 
 type TabKey = 'all' | 'active' | 'inactive' | 'pending-approval' | 'closed' | 'pure-veg' | 'self-pickup' | 'delivery'
 
@@ -27,18 +27,38 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'delivery', label: 'Delivery' },
 ]
 
-// "Closed now" is a real-time computed status (current time outside opening/closing
-// hours) — distinct from the admin-controlled isActive flag, which is why it isn't
-// just folded into the Active/Inactive tabs.
+const JS_DAY_TO_KEY: DayOfWeek[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(':').map(Number)
+  return h * 60 + m
+}
+
+// "Closed now" is a real-time computed status against today's weekly-schedule
+// slots — distinct from the admin-controlled isActive flag, which is why it
+// isn't just folded into the Active/Inactive tabs.
 function isClosedNow(restaurant: Restaurant): boolean {
   const now = new Date()
+  const today = restaurant.weeklySchedule?.find((d) => d.day === JS_DAY_TO_KEY[now.getDay()])
+  if (!today || !today.isOpen || today.slots.length === 0) {
+    // No weekly schedule set (e.g. legacy record) — fall back to the flat hours.
+    if (restaurant.weeklySchedule?.length) return true
+    return isOutsideWindow(now, restaurant.openingTime, restaurant.closingTime)
+  }
   const minutesNow = now.getHours() * 60 + now.getMinutes()
-  const [openH, openM] = restaurant.openingTime.split(':').map(Number)
-  const [closeH, closeM] = restaurant.closingTime.split(':').map(Number)
-  const openMinutes = openH * 60 + openM
-  const closeMinutes = closeH * 60 + closeM
+  return !today.slots.some((slot) => {
+    const open = timeToMinutes(slot.open)
+    const close = timeToMinutes(slot.close)
+    if (close <= open) return minutesNow >= open || minutesNow < close // overnight slot
+    return minutesNow >= open && minutesNow < close
+  })
+}
+
+function isOutsideWindow(now: Date, openingTime: string, closingTime: string): boolean {
+  const minutesNow = now.getHours() * 60 + now.getMinutes()
+  const openMinutes = timeToMinutes(openingTime)
+  const closeMinutes = timeToMinutes(closingTime)
   if (closeMinutes <= openMinutes) {
-    // Overnight window (e.g. 12:00–00:00) — open unless within the closed gap.
     return minutesNow >= closeMinutes && minutesNow < openMinutes
   }
   return minutesNow < openMinutes || minutesNow >= closeMinutes
@@ -72,15 +92,31 @@ export default function AdminRestaurantsPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const debouncedSearch = useDebounce(search, 300)
+  const [categoryId, setCategoryId] = useState<number | 'all'>('all')
   const [bulkUploadOpen, setBulkUploadOpen] = useState(searchParams.get('bulkUpload') === '1')
 
-  const params = useMemo(() => ({ page: 1, perPage: 500, search: debouncedSearch }), [debouncedSearch])
+  // Fetch everything unfiltered — search spans fields (location, id) the mock
+  // service's own search param doesn't cover, so filtering happens here instead.
+  const params = useMemo(() => ({ page: 1, perPage: 500 }), [])
   const { data, isLoading, reload } = useAsync(() => restaurantService.list(params), [params])
 
-  const filtered = useMemo(
-    () => (data?.data ?? []).filter((r) => matchesTab(r, activeTab)),
-    [data, activeTab],
-  )
+  const filtered = useMemo(() => {
+    const q = debouncedSearch.trim().toLowerCase()
+    return (data?.data ?? []).filter((r) => {
+      if (!matchesTab(r, activeTab)) return false
+      if (categoryId !== 'all' && !r.categoryIds.includes(categoryId)) return false
+      if (!q) return true
+      const locationName = locations.find((l) => l.id === r.locationId)?.name ?? ''
+      return (
+        r.name.toLowerCase().includes(q) ||
+        String(r.id).includes(q) ||
+        r.sku.toLowerCase().includes(q) ||
+        r.contactNumber.includes(q) ||
+        locationName.toLowerCase().includes(q) ||
+        r.address.toLowerCase().includes(q)
+      )
+    })
+  }, [data, activeTab, categoryId, debouncedSearch])
   const pageSize = 10
   const pageRows = filtered.slice((page - 1) * pageSize, page * pageSize)
 
@@ -188,8 +224,22 @@ export default function AdminRestaurantsPage() {
         <Tabs items={TABS} activeKey={activeTab} onChange={setTab} />
       </div>
 
-      <div className="mb-3">
-        <SearchInput value={search} onChange={(v) => { setSearch(v); setPage(1) }} placeholder="Search by name or SKU…" />
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <SearchInput
+          value={search}
+          onChange={(v) => { setSearch(v); setPage(1) }}
+          placeholder="Search by name, ID, SKU, phone or location…"
+        />
+        <Select
+          value={categoryId}
+          onChange={(e) => { setCategoryId(e.target.value === 'all' ? 'all' : Number(e.target.value)); setPage(1) }}
+          className="w-48"
+        >
+          <option value="all">All categories</option>
+          {restaurantCategories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
+        </Select>
       </div>
 
       <DataTable

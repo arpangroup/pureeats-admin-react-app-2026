@@ -1,22 +1,19 @@
 import { useRef, useState } from 'react'
 import { CheckCircle2, Download, UploadCloud, XCircle } from 'lucide-react'
-import { restaurantService } from '@/services/restaurantService'
-import { locations } from '@/mocks/fixtures'
-import type { DayOfWeek, Restaurant } from '@/types/entities'
+import { itemService } from '@/services/itemService'
+import { itemCategories, restaurants } from '@/mocks/fixtures'
+import type { Item } from '@/types/entities'
 
-const DAYS: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-
-const COLUMNS = ['name', 'contactNumber', 'address', 'pincode', 'locationId', 'openingTime', 'closingTime', 'minOrderPrice'] as const
+const BASE_COLUMNS = ['name', 'description', 'price', 'oldPrice', 'itemCategoryId', 'isVeg'] as const
 
 interface ParsedRow {
   name: string
-  contactNumber: string
-  address: string
-  pincode: string
-  locationId: number
-  openingTime: string
-  closingTime: string
-  minOrderPrice: number
+  description: string
+  price: number
+  oldPrice: number | null
+  itemCategoryId: number
+  restaurantId: number
+  isVeg: boolean
 }
 
 interface RowResult {
@@ -25,9 +22,8 @@ interface RowResult {
   message?: string
 }
 
-// No CSV parsing library in the project — this is a simple comma-split with
-// light double-quote support, enough for the plain address/name fields this
-// form expects (not a general-purpose RFC 4180 parser).
+// Same lightweight comma-split parser as RestaurantBulkUploadForm — good enough
+// for these plain text/number columns, not a general-purpose RFC 4180 parser.
 function parseCsv(text: string): string[][] {
   return text
     .split(/\r?\n/)
@@ -52,21 +48,25 @@ function parseCsv(text: string): string[][] {
     })
 }
 
-function downloadSampleCsv() {
-  const sample = [
-    COLUMNS.join(','),
-    'Curry Leaf Kitchen,9811100099,"22, Main Road, Koramangala",560095,1,09:00,22:00,99',
-  ].join('\n')
+function downloadSampleCsv(includeRestaurantColumn: boolean) {
+  const columns = includeRestaurantColumn ? ['restaurantId', ...BASE_COLUMNS] : BASE_COLUMNS
+  const sampleRow = includeRestaurantColumn
+    ? `${restaurants[0]?.id ?? 1},Paneer Wrap,Grilled paneer with mint chutney,179,,${itemCategories[0]?.id ?? 1},true`
+    : `Paneer Wrap,Grilled paneer with mint chutney,179,,${itemCategories[0]?.id ?? 1},true`
+  const sample = [columns.join(','), sampleRow].join('\n')
   const blob = new Blob([sample], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'restaurants-sample.csv'
+  a.download = 'items-sample.csv'
   a.click()
   URL.revokeObjectURL(url)
 }
 
-export function RestaurantBulkUploadForm({ onImported }: { onImported?: () => void }) {
+export function ItemBulkUploadForm({ restaurantId, onImported }: { restaurantId?: number; onImported?: () => void }) {
+  const requiresRestaurantColumn = !restaurantId
+  const columns = requiresRestaurantColumn ? ['restaurantId', ...BASE_COLUMNS] : BASE_COLUMNS
+
   const inputRef = useRef<HTMLInputElement>(null)
   const [rows, setRows] = useState<RowResult[]>([])
   const [parseError, setParseError] = useState<string | null>(null)
@@ -84,7 +84,7 @@ export function RestaurantBulkUploadForm({ onImported }: { onImported?: () => vo
       return
     }
     const normalizedHeader = header.map((h) => h.trim())
-    const missing = COLUMNS.filter((c) => !normalizedHeader.includes(c))
+    const missing = columns.filter((c) => !normalizedHeader.includes(c))
     if (missing.length) {
       setParseError(`Missing required column(s): ${missing.join(', ')}`)
       setRows([])
@@ -99,13 +99,12 @@ export function RestaurantBulkUploadForm({ onImported }: { onImported?: () => vo
       return {
         row: {
           name: record.name,
-          contactNumber: record.contactNumber,
-          address: record.address,
-          pincode: record.pincode,
-          locationId: Number(record.locationId) || locations[0]?.id || 1,
-          openingTime: record.openingTime || '09:00',
-          closingTime: record.closingTime || '22:00',
-          minOrderPrice: Number(record.minOrderPrice) || 99,
+          description: record.description ?? '',
+          price: Number(record.price) || 0,
+          oldPrice: record.oldPrice ? Number(record.oldPrice) : null,
+          itemCategoryId: Number(record.itemCategoryId) || itemCategories[0]?.id || 1,
+          restaurantId: restaurantId ?? (Number(record.restaurantId) || restaurants[0]?.id || 1),
+          isVeg: record.isVeg?.toLowerCase() !== 'false',
         },
         status: 'pending',
       }
@@ -118,61 +117,32 @@ export function RestaurantBulkUploadForm({ onImported }: { onImported?: () => vo
     const next = [...rows]
     for (let i = 0; i < next.length; i += 1) {
       const entry = next[i]
-      if (!entry.row.name || !entry.row.contactNumber) {
-        next[i] = { ...entry, status: 'error', message: 'Name and contact number are required.' }
+      if (!entry.row.name || !entry.row.price) {
+        next[i] = { ...entry, status: 'error', message: 'Name and price are required.' }
         setRows([...next])
         continue
       }
       try {
         const now = new Date().toISOString()
-        const payload: Partial<Restaurant> = {
+        const payload: Partial<Item> = {
+          restaurantId: entry.row.restaurantId,
+          itemCategoryId: entry.row.itemCategoryId,
           name: entry.row.name,
-          slug: entry.row.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-          description: '',
-          contactNumber: entry.row.contactNumber,
-          openingTime: entry.row.openingTime,
-          closingTime: entry.row.closingTime,
-          weeklySchedule: DAYS.map((day) => ({ day, isOpen: true, slots: [{ open: entry.row.openingTime, close: entry.row.closingTime }] })),
-          locationId: entry.row.locationId,
+          desc: entry.row.description,
+          price: entry.row.price,
+          oldPrice: entry.row.oldPrice,
           image: '',
           placeholderImage: '',
-          images: [],
-          rating: 0,
-          deliveryTime: 30,
-          priceRange: 2,
-          isPureveg: false,
-          address: entry.row.address,
-          pincode: entry.row.pincode,
-          landmark: '',
-          sku: `RES-${Math.floor(Math.random() * 90000 + 10000)}`,
-          latitude: 0,
-          longitude: 0,
-          certificate: null,
-          restaurantCharges: 0,
-          deliveryCharges: 20,
+          isRecommended: false,
+          isPopular: false,
+          isNew: true,
           isActive: true,
-          isAccepted: false,
-          isFeatured: false,
-          commissionRate: 15,
-          deliveryType: 'delivery',
-          deliveryRadius: 6,
-          deliveryChargeType: 'fixed',
-          baseDeliveryCharge: 20,
-          baseDeliveryDistance: 2,
-          extraDeliveryCharge: 0,
-          extraDeliveryDistance: 0,
-          minOrderPrice: entry.row.minOrderPrice,
-          isNotifiable: true,
-          autoAcceptable: false,
-          isSchedulable: false,
-          isAcceptCod: true,
-          categoryIds: [],
-          createdBy: null,
-          updatedBy: null,
+          isVeg: entry.row.isVeg,
+          addonCategoryIds: [],
           createdAt: now,
           updatedAt: now,
         }
-        await restaurantService.create(payload)
+        await itemService.create(payload)
         next[i] = { ...entry, status: 'success' }
         onImported?.()
       } catch (err) {
@@ -190,9 +160,9 @@ export function RestaurantBulkUploadForm({ onImported }: { onImported?: () => vo
     <div>
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs text-slate-400 dark:text-slate-500">
-          Required columns: <code className="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">{COLUMNS.join(', ')}</code>
+          Required columns: <code className="rounded bg-slate-100 px-1 py-0.5 dark:bg-slate-800">{columns.join(', ')}</code>
         </p>
-        <button className="btn-secondary shrink-0" onClick={downloadSampleCsv}>
+        <button className="btn-secondary shrink-0" onClick={() => downloadSampleCsv(requiresRestaurantColumn)}>
           <Download size={15} /> Sample CSV
         </button>
       </div>
@@ -229,8 +199,9 @@ export function RestaurantBulkUploadForm({ onImported }: { onImported?: () => vo
               <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
                 <tr>
                   <th className="px-3 py-2 font-medium">Name</th>
-                  <th className="px-3 py-2 font-medium">Contact</th>
-                  <th className="px-3 py-2 font-medium">Location</th>
+                  <th className="px-3 py-2 font-medium">Restaurant</th>
+                  <th className="px-3 py-2 font-medium">Category</th>
+                  <th className="px-3 py-2 font-medium">Price</th>
                   <th className="px-3 py-2 font-medium">Status</th>
                 </tr>
               </thead>
@@ -238,8 +209,9 @@ export function RestaurantBulkUploadForm({ onImported }: { onImported?: () => vo
                 {rows.map((r, i) => (
                   <tr key={i}>
                     <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{r.row.name || '—'}</td>
-                    <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{r.row.contactNumber || '—'}</td>
-                    <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{locations.find((l) => l.id === r.row.locationId)?.name ?? r.row.locationId}</td>
+                    <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{restaurants.find((res) => res.id === r.row.restaurantId)?.name ?? r.row.restaurantId}</td>
+                    <td className="px-3 py-2 text-slate-700 dark:text-slate-300">{itemCategories.find((c) => c.id === r.row.itemCategoryId)?.name ?? r.row.itemCategoryId}</td>
+                    <td className="px-3 py-2 text-slate-700 dark:text-slate-300">₹{r.row.price}</td>
                     <td className="px-3 py-2">
                       {r.status === 'pending' && <span className="text-xs text-slate-400 dark:text-slate-500">Pending</span>}
                       {r.status === 'success' && (
@@ -265,7 +237,7 @@ export function RestaurantBulkUploadForm({ onImported }: { onImported?: () => vo
               {(successCount > 0 || errorCount > 0) && ` — ${successCount} created, ${errorCount} failed`}
             </p>
             <button className="btn-primary" onClick={handleImport} disabled={isUploading}>
-              {isUploading ? 'Importing…' : 'Import restaurants'}
+              {isUploading ? 'Importing…' : 'Import items'}
             </button>
           </div>
         </>
