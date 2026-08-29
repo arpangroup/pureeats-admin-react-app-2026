@@ -1,7 +1,19 @@
 import { apiClient } from './apiClient'
 import { mockDelay, nextMockId, paginate } from './mockUtils'
+import { toPaginated, type PageResponse } from './pageResponse'
 import { IS_MOCK } from '@/config/env'
 import type { ListParams, Paginated } from '@/types/common'
+
+/** Translates the frontend's 1-indexed ListParams into the query params every /admin/* list endpoint expects. */
+function toListQuery(params: ListParams): Record<string, unknown> {
+  const { page, perPage, filters, ...rest } = params
+  return {
+    ...rest,
+    ...filters,
+    page: (page ?? 1) - 1,
+    size: perPage ?? 10,
+  }
+}
 
 /**
  * Builds a standard list/get/create/update/remove service for one entity.
@@ -26,8 +38,8 @@ export function createCrudService<T extends { id: number }>(
         await mockDelay()
         return paginate(mockStore, params, searchableFields)
       }
-      const { data } = await apiClient.get<Paginated<T>>(apiPath, { params })
-      return data
+      const { data } = await apiClient.get<{ data: PageResponse<T> }>(apiPath, { params: toListQuery(params) })
+      return toPaginated(data.data)
     },
 
     async listAll(): Promise<T[]> {
@@ -35,8 +47,8 @@ export function createCrudService<T extends { id: number }>(
         await mockDelay()
         return [...mockStore]
       }
-      const { data } = await apiClient.get<T[]>(`${apiPath}/all`)
-      return data
+      const { data } = await apiClient.get<{ data: T[] }>(`${apiPath}/all`)
+      return data.data
     },
 
     async get(id: number): Promise<T | undefined> {
@@ -44,8 +56,8 @@ export function createCrudService<T extends { id: number }>(
         await mockDelay()
         return mockStore.find((row) => row.id === id)
       }
-      const { data } = await apiClient.get<T>(`${apiPath}/${id}`)
-      return data
+      const { data } = await apiClient.get<{ data: T }>(`${apiPath}/${id}`)
+      return data.data
     },
 
     async create(payload: Partial<T>): Promise<T> {
@@ -55,8 +67,8 @@ export function createCrudService<T extends { id: number }>(
         mockStore.unshift(record)
         return record
       }
-      const { data } = await apiClient.post<T>(apiPath, payload)
-      return data
+      const { data } = await apiClient.post<{ data: T }>(apiPath, payload)
+      return data.data
     },
 
     async update(id: number, payload: Partial<T>): Promise<T> {
@@ -67,8 +79,8 @@ export function createCrudService<T extends { id: number }>(
         mockStore[index] = { ...mockStore[index], ...payload }
         return mockStore[index]
       }
-      const { data } = await apiClient.put<T>(`${apiPath}/${id}`, payload)
-      return data
+      const { data } = await apiClient.put<{ data: T }>(`${apiPath}/${id}`, payload)
+      return data.data
     },
 
     async remove(id: number): Promise<void> {

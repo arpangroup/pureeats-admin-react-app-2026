@@ -6,7 +6,7 @@ import { restaurants, restaurantUsers } from '@/mocks/fixtures'
 import type { ListParams, Paginated } from '@/types/common'
 import type { Restaurant } from '@/types/entities'
 
-const base = createCrudService<Restaurant>(restaurants, '/restaurants', ['name', 'sku', 'contactNumber'])
+const base = createCrudService<Restaurant>(restaurants, '/admin/restaurants', ['name', 'sku', 'contactNumber'])
 
 export const restaurantService = {
   ...base,

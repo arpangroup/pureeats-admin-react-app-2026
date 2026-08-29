@@ -16,7 +16,7 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
   const orderId = Number(id)
   const { data: order, isLoading, reload } = useAsync(() => orderService.get(orderId), [orderId])
   const [updating, setUpdating] = useState(false)
-  const statuses = orderService.statuses()
+  const { data: statuses } = useAsync(() => orderService.statuses(), [])
   const isAdmin = basePath.startsWith('/admin')
 
   async function handleStatusChange(statusId: number) {
@@ -53,7 +53,7 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
               onChange={(e) => handleStatusChange(Number(e.target.value))}
               className="w-44"
             >
-              {statuses.map((s) => (
+              {(statuses ?? []).map((s) => (
                 <option key={s.id} value={s.id}>
                   Mark as {s.name}
                 </option>

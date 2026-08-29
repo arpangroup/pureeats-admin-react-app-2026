@@ -6,6 +6,7 @@
   "description": "React (Vite + TypeScript + Tailwind) UI for the PureEats Admin and Restaurant Owner panels. Runs standalone against organized mock data; switch to a live backend by setting VITE_DATA_SOURCE=live.",
   "scripts": {
     "dev": "vite",
+    "dev:uat": "vite --mode uat",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint ."

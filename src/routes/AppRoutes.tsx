@@ -6,6 +6,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { ProtectedRoute } from './ProtectedRoute'
 
 import LoginPage from '@/pages/auth/LoginPage'
+import RegisterPage from '@/pages/auth/RegisterPage'
+import VerifyPage from '@/pages/auth/VerifyPage'
 
 import AdminDashboardPage from '@/pages/admin/DashboardPage'
 import AdminOrdersPage from '@/pages/admin/OrdersPage'
@@ -44,6 +46,13 @@ import SendNotificationPage from '@/pages/admin/SendNotificationPage'
 import ReportsPage from '@/pages/admin/ReportsPage'
 import ModulesPage from '@/pages/admin/ModulesPage'
 import SettingsPage from '@/pages/admin/SettingsPage'
+import AuditLogsPage from '@/pages/admin/audit/AuditLogsPage'
+import LoginHistoryPage from '@/pages/admin/audit/LoginHistoryPage'
+import OtpChallengesPage from '@/pages/admin/audit/OtpChallengesPage'
+import RateLimitBucketsPage from '@/pages/admin/audit/RateLimitBucketsPage'
+import SecurityBlockEntriesPage from '@/pages/admin/audit/SecurityBlockEntriesPage'
+import UserDevicesPage from '@/pages/admin/audit/UserDevicesPage'
+import UserSessionsPage from '@/pages/admin/audit/UserSessionsPage'
 
 import OwnerDashboardPage from '@/pages/restaurant-owner/DashboardPage'
 import OwnerOrdersPage from '@/pages/restaurant-owner/OrdersPage'
@@ -70,6 +79,8 @@ export function AppRoutes() {
 
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/verify" element={<VerifyPage />} />
       </Route>
 
       <Route
@@ -119,6 +130,13 @@ export function AppRoutes() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="modules" element={<ModulesPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="audit/audit-logs" element={<AuditLogsPage />} />
+        <Route path="audit/login-history" element={<LoginHistoryPage />} />
+        <Route path="audit/otp-challenges" element={<OtpChallengesPage />} />
+        <Route path="audit/rate-limit-buckets" element={<RateLimitBucketsPage />} />
+        <Route path="audit/security-blocklist" element={<SecurityBlockEntriesPage />} />
+        <Route path="audit/user-devices" element={<UserDevicesPage />} />
+        <Route path="audit/user-sessions" element={<UserSessionsPage />} />
         <Route index element={<Navigate to="dashboard" replace />} />
       </Route>
 

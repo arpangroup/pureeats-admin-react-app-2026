@@ -28,6 +28,13 @@ import {
   UploadCloud,
   Send,
   BarChart3,
+  ShieldAlert,
+  History,
+  KeyRound,
+  Gauge,
+  ShieldOff,
+  Smartphone,
+  Cable,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -113,6 +120,18 @@ export const adminNav: NavSection[] = [
     items: [
       { label: 'Modules', to: '/admin/modules', icon: Puzzle },
       { label: 'Settings', to: '/admin/settings', icon: Settings },
+    ],
+  },
+  {
+    title: 'Security & Audit',
+    items: [
+      { label: 'Audit Logs', to: '/admin/audit/audit-logs', icon: ShieldAlert },
+      { label: 'Login History', to: '/admin/audit/login-history', icon: History },
+      { label: 'OTP Challenges', to: '/admin/audit/otp-challenges', icon: KeyRound },
+      { label: 'Rate Limit Buckets', to: '/admin/audit/rate-limit-buckets', icon: Gauge },
+      { label: 'Security Blocklist', to: '/admin/audit/security-blocklist', icon: ShieldOff },
+      { label: 'User Devices', to: '/admin/audit/user-devices', icon: Smartphone },
+      { label: 'User Sessions', to: '/admin/audit/user-sessions', icon: Cable },
     ],
   },
 ]

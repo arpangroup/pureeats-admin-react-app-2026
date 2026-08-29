@@ -6,7 +6,7 @@ import { items } from '@/mocks/fixtures'
 import type { ListParams, Paginated } from '@/types/common'
 import type { Item } from '@/types/entities'
 
-const base = createCrudService<Item>(items, '/items', ['name', 'desc'])
+const base = createCrudService<Item>(items, '/admin/items', ['name', 'desc'])
 
 export const itemService = {
   ...base,

@@ -9,6 +9,7 @@ It runs **completely on its own**, no backend required: every screen is backed b
 ```bash
 npm install
 npm run dev
+npm run dev:uat
 ```
 
 Open the printed local URL, then sign in with one of the demo accounts shown on the login screen (any password works in mock mode):

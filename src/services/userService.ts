@@ -1,13 +1,15 @@
 import { apiClient } from '@/lib/apiClient'
 import { createCrudService } from '@/lib/crudServiceFactory'
 import { mockDelay, paginate } from '@/lib/mockUtils'
+import { toPaginated, type PageResponse } from '@/lib/pageResponse'
 import { IS_MOCK } from '@/config/env'
 import { users, restaurantUsers, restaurants, loginSessions } from '@/mocks/fixtures'
 import { mockDelay as delay, nextMockId } from '@/lib/mockUtils'
+import { mapFrontendRole } from '@/types/auth'
 import type { ListParams, Paginated, UserRole } from '@/types/common'
 import type { User, RestaurantUser, LoginSession } from '@/types/entities'
 
-const base = createCrudService<User>(users, '/users', ['name', 'email', 'phone'])
+const base = createCrudService<User>(users, '/admin/users', ['name', 'email', 'phone'])
 
 /** Users list scoped to one role — powers Users, Employees and Restaurant Owners screens. */
 async function listByRole(role: UserRole, params: ListParams = {}): Promise<Paginated<User>> {
@@ -16,8 +18,10 @@ async function listByRole(role: UserRole, params: ListParams = {}): Promise<Pagi
     const rows = users.filter((u) => u.role === role)
     return paginate(rows, params, ['name', 'email', 'phone'])
   }
-  const { data } = await apiClient.get<Paginated<User>>('/users', { params: { ...params, role } })
-  return data
+  const { data } = await apiClient.get<{ data: PageResponse<User> }>('/admin/users', {
+    params: { userType: mapFrontendRole(role), search: params.search, page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
+  })
+  return toPaginated(data.data)
 }
 
 export const userService = {

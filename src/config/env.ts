@@ -22,3 +22,4 @@ export const MOCK_DELAY_MS = Number(import.meta.env.VITE_MOCK_DELAY_MS ?? 350)
 
 export const AUTH_TOKEN_STORAGE_KEY = 'pureeats.auth.token'
 export const AUTH_USER_STORAGE_KEY = 'pureeats.auth.user'
+export const AUTH_REFRESH_TOKEN_STORAGE_KEY = 'pureeats.auth.refreshToken'

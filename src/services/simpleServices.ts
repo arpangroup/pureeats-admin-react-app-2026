@@ -41,13 +41,13 @@ import type {
   Alert,
 } from '@/types/entities'
 
-export const itemCategoryService = createCrudService<ItemCategory>(itemCategories, '/item-categories', ['name'])
-export const addonCategoryService = createCrudService<AddonCategory>(addonCategories, '/addon-categories', ['name'])
-export const addonService = createCrudService<Addon>(addons, '/addons', ['name'])
-export const couponService = createCrudService<Coupon>(coupons, '/coupons', ['name', 'code'])
+export const itemCategoryService = createCrudService<ItemCategory>(itemCategories, '/admin/item-categories', ['name'])
+export const addonCategoryService = createCrudService<AddonCategory>(addonCategories, '/admin/addon-categories', ['name'])
+export const addonService = createCrudService<Addon>(addons, '/admin/addons', ['name'])
+export const couponService = createCrudService<Coupon>(coupons, '/admin/coupons', ['name', 'code'])
 export const locationService = createCrudService<Location>(locations, '/locations', ['name'])
 export const popularGeoPlaceService = createCrudService<PopularGeoPlace>(popularGeoPlaces, '/popular-geo-places', ['name'])
-export const restaurantCategoryService = createCrudService<RestaurantCategory>(restaurantCategories, '/restaurant-categories', ['name'])
+export const restaurantCategoryService = createCrudService<RestaurantCategory>(restaurantCategories, '/admin/restaurant-categories', ['name'])
 export const restaurantCategorySliderService = createCrudService<RestaurantCategorySlider>(restaurantCategorySliders, '/restaurant-category-sliders', ['name'])
 export const translationService = createCrudService<Translation>(translations, '/translations', ['languageName'])
 export const pageService = createCrudService<Page>(pages, '/pages', ['name', 'slug'])

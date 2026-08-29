@@ -25,7 +25,7 @@ export function OrdersListView({
   const [statusId, setStatusId] = useState<string>('all')
   const debouncedSearch = useDebounce(search, 300)
 
-  const statuses = orderService.statuses()
+  const { data: statuses } = useAsync(() => orderService.statuses(), [])
 
   const params = useMemo(
     () => ({
@@ -70,7 +70,7 @@ export function OrdersListView({
 
       <div className="mb-3">
         <Tabs
-          items={[{ key: 'all', label: 'All' }, ...statuses.map((s) => ({ key: String(s.id), label: s.name }))]}
+          items={[{ key: 'all', label: 'All' }, ...(statuses ?? []).map((s) => ({ key: String(s.id), label: s.name }))]}
           activeKey={statusId}
           onChange={(key) => {
             setStatusId(key)

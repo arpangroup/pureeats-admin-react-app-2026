@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Bell, ChevronDown, LogOut, Menu, Moon, Sun, Wifi, WifiOff } from 'lucide-react'
+import { Bell, ChevronDown, LogOut, Menu, Moon, ShieldOff, Sun, Wifi, WifiOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
@@ -7,13 +7,18 @@ import { initials } from '@/lib/format'
 import { IS_MOCK } from '@/config/env'
 
 export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
-  const { user, logout } = useAuth()
+  const { user, logout, logoutAll } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
 
   async function handleLogout() {
     await logout()
+    navigate('/login')
+  }
+
+  async function handleLogoutAll() {
+    await logoutAll()
     navigate('/login')
   }
 
@@ -80,6 +85,14 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
                 >
                   <LogOut size={15} /> Sign out
                 </button>
+                {!IS_MOCK && (
+                  <button
+                    onClick={handleLogoutAll}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                  >
+                    <ShieldOff size={15} /> Sign out of all devices
+                  </button>
+                )}
               </div>
             </>
           )}
