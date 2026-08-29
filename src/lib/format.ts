@@ -44,6 +44,13 @@ export function timeAgo(value: string | null | undefined): string {
   return `${value_} ${unit}${value_ !== 1 ? 's' : ''} ago`
 }
 
+/** Ratings can be null/unset (e.g. a freshly created restaurant with no reviews yet) or arrive as a string from the API. */
+export function formatRating(rating: number | string | null | undefined): string {
+  if (rating === null || rating === undefined) return '—'
+  const value = typeof rating === 'string' ? Number(rating) : rating
+  return Number.isFinite(value) ? value.toFixed(1) : '—'
+}
+
 export function initials(name: string): string {
   return name
     .split(' ')

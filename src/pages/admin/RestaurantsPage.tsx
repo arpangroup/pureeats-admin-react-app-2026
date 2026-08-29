@@ -11,6 +11,7 @@ import { RestaurantBulkUploadForm } from '@/components/restaurants/RestaurantBul
 import { useAsync } from '@/hooks/useAsync'
 import { useDebounce } from '@/hooks/useDebounce'
 import { restaurantService } from '@/services/restaurantService'
+import { formatRating } from '@/lib/format'
 import { locations, restaurantCategories } from '@/mocks/fixtures'
 import type { DayOfWeek, Restaurant } from '@/types/entities'
 
@@ -54,7 +55,8 @@ function isClosedNow(restaurant: Restaurant): boolean {
   })
 }
 
-function isOutsideWindow(now: Date, openingTime: string, closingTime: string): boolean {
+function isOutsideWindow(now: Date, openingTime: string | undefined, closingTime: string | undefined): boolean {
+  if (!openingTime || !closingTime) return false
   const minutesNow = now.getHours() * 60 + now.getMinutes()
   const openMinutes = timeToMinutes(openingTime)
   const closeMinutes = timeToMinutes(closingTime)
@@ -104,16 +106,16 @@ export default function AdminRestaurantsPage() {
     const q = debouncedSearch.trim().toLowerCase()
     return (data?.data ?? []).filter((r) => {
       if (!matchesTab(r, activeTab)) return false
-      if (categoryId !== 'all' && !r.categoryIds.includes(categoryId)) return false
+      if (categoryId !== 'all' && !(r.categoryIds ?? []).includes(categoryId)) return false
       if (!q) return true
       const locationName = locations.find((l) => l.id === r.locationId)?.name ?? ''
       return (
         r.name.toLowerCase().includes(q) ||
         String(r.id).includes(q) ||
-        r.sku.toLowerCase().includes(q) ||
-        r.contactNumber.includes(q) ||
+        (r.sku ?? '').toLowerCase().includes(q) ||
+        (r.contactNumber ?? '').includes(q) ||
         locationName.toLowerCase().includes(q) ||
-        r.address.toLowerCase().includes(q)
+        (r.address ?? '').toLowerCase().includes(q)
       )
     })
   }, [data, activeTab, categoryId, debouncedSearch])
@@ -151,11 +153,11 @@ export default function AdminRestaurantsPage() {
       header: 'Rating',
       render: (row) => (
         <span className="inline-flex items-center gap-1">
-          <Star size={13} className="fill-amber-400 text-amber-400" /> {row.rating.toFixed(1)}
+          <Star size={13} className="fill-amber-400 text-amber-400" /> {formatRating(row.rating)}
         </span>
       ),
     },
-    { key: 'commission', header: 'Commission', render: (row) => `${row.commissionRate}%` },
+    { key: 'commission', header: 'Commission', render: (row) => (row.commissionRate != null ? `${row.commissionRate}%` : '—') },
     {
       key: 'status',
       header: 'Status',
