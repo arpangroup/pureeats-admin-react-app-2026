@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Bike, MapPin, MessageSquare, Phone, Receipt, Store, User as UserIcon } from 'lucide-react'
+import { ArrowLeft, Bike, MapPin, MessageSquare, Phone, Receipt, Store, Tag, User as UserIcon } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
 import { Select } from '@/components/ui/FormControls'
@@ -180,6 +180,20 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
               <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{order.restaurantName}</p>
             )}
             <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 capitalize">{order.deliveryType} · from {order.orderFrom}</p>
+          </div>
+
+          <div className="card p-4">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <Tag size={16} /> Coupon
+            </h2>
+            {isAdmin ? (
+              <Link to={`/admin/coupons/1/edit`} className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
+                {order.couponName ?? 'No coupon applied'}
+              </Link>
+            ) : (
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{order.couponName ?? 'No coupon applied'}</p>
+            )}
+            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 capitalize">{order.couponCode ?? 'No coupon code'} · from {order.orderFrom}</p>
           </div>
 
           {order.deliveryGuyName && (
