@@ -2,7 +2,6 @@ import { useRef, useState } from 'react'
 import { CheckCircle2, Download, UploadCloud, XCircle } from 'lucide-react'
 import { itemService } from '@/services/itemService'
 import { itemCategories, restaurants } from '@/mocks/fixtures'
-import type { Item } from '@/types/entities'
 
 const BASE_COLUMNS = ['name', 'description', 'price', 'oldPrice', 'itemCategoryId', 'isVeg'] as const
 
@@ -114,43 +113,31 @@ export function ItemBulkUploadForm({ restaurantId, onImported }: { restaurantId?
 
   async function handleImport() {
     setIsUploading(true)
-    const next = [...rows]
-    for (let i = 0; i < next.length; i += 1) {
-      const entry = next[i]
-      if (!entry.row.name || !entry.row.price) {
-        next[i] = { ...entry, status: 'error', message: 'Name and price are required.' }
-        setRows([...next])
-        continue
-      }
-      try {
-        const now = new Date().toISOString()
-        const payload: Partial<Item> = {
+    try {
+      const { results } = await itemService.bulkCreate(
+        rows.map((entry) => ({
           restaurantId: entry.row.restaurantId,
           itemCategoryId: entry.row.itemCategoryId,
           name: entry.row.name,
           desc: entry.row.description,
           price: entry.row.price,
           oldPrice: entry.row.oldPrice,
-          image: '',
-          placeholderImage: '',
-          isRecommended: false,
-          isPopular: false,
-          isNew: true,
-          isActive: true,
           isVeg: entry.row.isVeg,
-          addonCategoryIds: [],
-          createdAt: now,
-          updatedAt: now,
-        }
-        await itemService.create(payload)
-        next[i] = { ...entry, status: 'success' }
-        onImported?.()
-      } catch (err) {
-        next[i] = { ...entry, status: 'error', message: (err as { message?: string })?.message ?? 'Failed to create' }
-      }
-      setRows([...next])
+        })),
+      )
+      setRows((prev) =>
+        prev.map((entry, i) => {
+          const result = results.find((r) => r.index === i)
+          if (!result) return entry
+          return { ...entry, status: result.success ? 'success' : 'error', message: result.message ?? undefined }
+        }),
+      )
+      if (results.some((r) => r.success)) onImported?.()
+    } catch (err) {
+      setParseError((err as { message?: string })?.message ?? 'Bulk import failed. Please try again.')
+    } finally {
+      setIsUploading(false)
     }
-    setIsUploading(false)
   }
 
   const successCount = rows.filter((r) => r.status === 'success').length

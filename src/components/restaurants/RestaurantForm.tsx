@@ -2,11 +2,13 @@ import { Bike, Clock, FileBadge, Image as ImageIcon, MapPin, Settings2, ShieldCh
 import { Field, Select, Switch, TextInput, Textarea } from '@/components/ui/FormControls'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { ImageGalleryUpload } from '@/components/ui/ImageGalleryUpload'
+import { RestaurantImageGallery } from './RestaurantImageGallery'
 import { MapEmbed } from '@/components/ui/MapEmbed'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { AuditInfo } from '@/components/ui/AuditInfo'
 import { WeeklyScheduleEditor } from './WeeklyScheduleEditor'
 import { locations, restaurantCategories } from '@/mocks/fixtures'
+import { IS_MOCK } from '@/config/env'
 import type { Restaurant } from '@/types/entities'
 
 interface RestaurantFormProps {
@@ -49,12 +51,19 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
           hint="Main image shown across the app — recommended 1200×675px."
         />
         <div className="mt-4">
-          <ImageGalleryUpload
-            label="Additional photos"
-            values={values.images ?? []}
-            onChange={(v) => onChange('images', v)}
-            hint="Interior, food and ambience shots shown on the restaurant's page."
-          />
+          {!IS_MOCK && !isNew && values.id ? (
+            <>
+              <p className="label">Additional photos</p>
+              <RestaurantImageGallery restaurantId={values.id} />
+            </>
+          ) : (
+            <ImageGalleryUpload
+              label="Additional photos"
+              values={values.images ?? []}
+              onChange={(v) => onChange('images', v)}
+              hint="Interior, food and ambience shots shown on the restaurant's page."
+            />
+          )}
         </div>
       </SectionCard>
 

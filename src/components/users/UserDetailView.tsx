@@ -29,6 +29,7 @@ import { userService } from '@/services/userService'
 import { deliveryGuyService } from '@/services/deliveryGuyService'
 import { walletService } from '@/services/financeServices'
 import { formatCurrency, formatDate, timeAgo } from '@/lib/format'
+import { IS_MOCK } from '@/config/env'
 import type { User, DeliveryGuyDetail, Transaction, TripDetail, Wallet } from '@/types/entities'
 import type { UserRole } from '@/types/common'
 
@@ -166,7 +167,13 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
         <div className="space-y-4 xl:col-span-2">
           <SectionCard title="User details" description="Manage user information and preferences" icon={UserIcon}>
             <div className="mb-4">
-              <ImageUpload value={values.photo} onChange={(v) => handleChange('photo', v)} className="h-20 w-20 rounded-full" label="Photo" />
+              <ImageUpload
+                value={values.photo}
+                onChange={(v) => handleChange('photo', v)}
+                onFileSelected={IS_MOCK ? undefined : (file) => userService.uploadPhoto(userId, file)}
+                className="h-20 w-20 rounded-full"
+                label="Photo"
+              />
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="Full name" required>

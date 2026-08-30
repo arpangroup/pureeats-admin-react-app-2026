@@ -68,8 +68,8 @@ export const walletService = {
       wallets.push(created)
       return created
     }
-    const { data } = await apiClient.get<Wallet>('/wallet', { params: { holderType, holderId } })
-    return data
+    const { data } = await apiClient.get<{ data: Wallet }>('/admin/wallet', { params: { holderType, holderId } })
+    return data.data
   },
 
   async transactionsForWallet(walletId: Id): Promise<Transaction[]> {
@@ -77,8 +77,8 @@ export const walletService = {
       await mockDelay(150)
       return transactions.filter((t) => t.walletId === walletId).sort((a, b) => b.id - a.id)
     }
-    const { data } = await apiClient.get<Transaction[]>(`/wallet/${walletId}/transactions`)
-    return data
+    const { data } = await apiClient.get<{ data: Transaction[] }>(`/admin/wallet/${walletId}/transactions`)
+    return data.data
   },
 
   /** Credits or debits a wallet and logs the matching transaction — the admin-initiated
@@ -110,8 +110,8 @@ export const walletService = {
       transactions.unshift(txn)
       return wallets[index]
     }
-    const { data } = await apiClient.post<Wallet>(`/wallet/${walletId}/adjust`, { type, amount, message })
-    return data
+    const { data } = await apiClient.post<{ data: Wallet }>(`/admin/wallet/${walletId}/adjust`, { type, amount, message })
+    return data.data
   },
 }
 

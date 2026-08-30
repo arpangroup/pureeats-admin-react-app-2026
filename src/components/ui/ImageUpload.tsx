@@ -15,15 +15,17 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 interface ImageUploadProps {
   value: string | null | undefined
-  onChange: (dataUrl: string | null) => void
+  onChange: (url: string | null) => void
   label?: string
   hint?: string
   /** Tailwind height/aspect classes for the drop target — defaults to a square tile. */
   className?: string
   fullWidth?: boolean
+  /** Live mode: actually upload the file and resolve to a real URL, instead of just previewing it as a data URL. */
+  onFileSelected?: (file: File) => Promise<string>
 }
 
-export function ImageUpload({ value, onChange, label, hint, className, fullWidth }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, label, hint, className, fullWidth, onFileSelected }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -42,8 +44,10 @@ export function ImageUpload({ value, onChange, label, hint, className, fullWidth
     }
     setIsLoading(true)
     try {
-      const dataUrl = await readFileAsDataUrl(file)
-      onChange(dataUrl)
+      const url = onFileSelected ? await onFileSelected(file) : await readFileAsDataUrl(file)
+      onChange(url)
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? 'Upload failed. Please try again.')
     } finally {
       setIsLoading(false)
     }

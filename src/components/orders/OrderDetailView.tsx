@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Bike, MapPin, MessageSquare, Phone, Receipt, Store, Tag, User as UserIcon } from 'lucide-react'
+import { ArrowLeft, Bike, History, MapPin, MessageSquare, Phone, Printer, Receipt, Store, Tag, User as UserIcon } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
 import { Select } from '@/components/ui/FormControls'
@@ -17,12 +17,15 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
   const { data: order, isLoading, reload } = useAsync(() => orderService.get(orderId), [orderId])
   const [updating, setUpdating] = useState(false)
   const { data: statuses } = useAsync(() => orderService.statuses(), [])
+  const { data: journey } = useAsync(() => orderService.journey(orderId), [orderId, order?.statusName])
   const isAdmin = basePath.startsWith('/admin')
 
   async function handleStatusChange(statusId: number) {
+    const status = statuses?.find((s) => s.id === statusId)
+    if (!status) return
     setUpdating(true)
     try {
-      await orderService.updateStatus(orderId, statusId)
+      await orderService.updateStatus(orderId, status)
       reload()
     } finally {
       setUpdating(false)
@@ -37,7 +40,7 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
 
   return (
     <div>
-      <button onClick={() => navigate(basePath)} className="btn-ghost mb-3 px-2">
+      <button onClick={() => navigate(basePath)} className="btn-ghost mb-3 px-2 print:hidden">
         <ArrowLeft size={15} /> Back to orders
       </button>
 
@@ -45,7 +48,7 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
         title={order.uniqueOrderId}
         description={`Placed ${formatDate(order.createdAt)}`}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 print:hidden">
             <OrderStatusBadge status={order.statusName} />
             <Select
               value={order.orderstatusId}
@@ -53,12 +56,18 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
               onChange={(e) => handleStatusChange(Number(e.target.value))}
               className="w-44"
             >
-              {(statuses ?? []).map((s) => (
-                <option key={s.id} value={s.id}>
-                  Mark as {s.name}
-                </option>
-              ))}
+              {(statuses ?? []).map((s) => {
+                const legal = order.legalNextStatuses === null || order.legalNextStatuses.includes(s.name)
+                return (
+                  <option key={s.id} value={s.id} disabled={!legal}>
+                    Mark as {s.name}
+                  </option>
+                )
+              })}
             </Select>
+            <button className="btn-secondary" onClick={() => window.print()}>
+              <Printer size={15} /> Print
+            </button>
           </div>
         }
       />
@@ -186,14 +195,39 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
             <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
               <Tag size={16} /> Coupon
             </h2>
-            {isAdmin ? (
-              <Link to={`/admin/coupons/1/edit`} className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400">
-                {order.couponName ?? 'No coupon applied'}
-              </Link>
+            {order.couponName ? (
+              <>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">Code applied</p>
+                <p className="mt-1 font-mono text-xs text-emerald-600 dark:text-emerald-400">{order.couponName}</p>
+              </>
             ) : (
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">{order.couponName ?? 'No coupon applied'}</p>
+              <p className="text-sm text-slate-400 dark:text-slate-500">No coupon applied</p>
             )}
-            <p className="mt-1 text-xs text-slate-400 dark:text-slate-500 capitalize">{order.couponCode ?? 'No coupon code'} · from {order.orderFrom}</p>
+          </div>
+
+          <div className="card p-4 print:hidden">
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+              <History size={16} /> Order journey
+            </h2>
+            {journey && journey.length > 0 ? (
+              <ol className="space-y-3 text-sm">
+                {journey.map((entry) => (
+                  <li key={entry.id} className="border-b border-slate-50 pb-2 last:border-0 last:pb-0 dark:border-slate-800/60">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-slate-700 dark:text-slate-200">
+                        {entry.fromStatus ? `${entry.fromStatus} → ${entry.toStatus}` : entry.toStatus}
+                      </span>
+                      <span className="text-xs text-slate-400 dark:text-slate-500">{formatDate(entry.createdAt)}</span>
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                      {entry.actorName ?? entry.actorType} ({entry.actorType.toLowerCase()}){entry.note ? ` — ${entry.note}` : ''}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="text-sm text-slate-400 dark:text-slate-500">No history recorded yet.</p>
+            )}
           </div>
 
           {order.deliveryGuyName && (

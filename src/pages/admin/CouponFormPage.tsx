@@ -9,7 +9,7 @@ import { AuditInfo } from '@/components/ui/AuditInfo'
 import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
 import { couponService, couponUsageService, type CouponUsageRow } from '@/services/simpleServices'
-import { restaurants } from '@/mocks/fixtures'
+import { restaurantService } from '@/services/restaurantService'
 import { formatDate } from '@/lib/format'
 import type { Coupon } from '@/types/entities'
 
@@ -42,6 +42,8 @@ export default function CouponFormPage() {
     () => (isNew ? Promise.resolve([]) : couponUsageService.forCoupon(Number(id))),
     [id],
   )
+  const { data: restaurantsData } = useAsync(() => restaurantService.list({ perPage: 100 }), [])
+  const restaurants = restaurantsData?.data ?? []
 
   const [values, setValues] = useState<Partial<Coupon>>(emptyCoupon)
   const [initialized, setInitialized] = useState(false)

@@ -11,6 +11,19 @@ export interface OrderRow extends Order {
   restaurantName: string
   statusName: string
   deliveryGuyName: string | null
+  /** Live mode only — which statuses this order may legally move to next; null in mock mode (all statuses stay selectable, as before). */
+  legalNextStatuses: string[] | null
+}
+
+export interface OrderStatusLogRow {
+  id: number
+  fromStatus: string | null
+  toStatus: string
+  actorType: string
+  actorUserId: number | null
+  actorName: string | null
+  note: string | null
+  createdAt: string
 }
 
 function toRow(order: Order): OrderRow {
@@ -20,6 +33,7 @@ function toRow(order: Order): OrderRow {
     restaurantName: restaurants.find((r) => r.id === order.restaurantId)?.name ?? 'Unknown',
     statusName: orderStatuses.find((s) => s.id === order.orderstatusId)?.name ?? 'Unknown',
     deliveryGuyName: order.deliveryGuyId ? users.find((u) => u.id === order.deliveryGuyId)?.name ?? null : null,
+    legalNextStatuses: null,
   }
 }
 
@@ -69,6 +83,7 @@ interface LiveOrderDetail {
   riderDeliverAt: string | null
   createdAt: string
   items: LiveOrderItem[]
+  legalNextStatuses: string[]
 }
 
 interface LiveOrderSummary {
@@ -130,7 +145,7 @@ function liveSummaryToRow(row: LiveOrderSummary): OrderRow {
     createdAt: row.createdAt,
     updatedAt: row.createdAt,
   }
-  return { ...order, customerName: row.customerName, restaurantName: row.restaurantName, statusName: row.status, deliveryGuyName: null }
+  return { ...order, customerName: row.customerName, restaurantName: row.restaurantName, statusName: row.status, deliveryGuyName: null, legalNextStatuses: null }
 }
 
 function liveDetailToRow(d: LiveOrderDetail): OrderRow {
@@ -184,7 +199,14 @@ function liveDetailToRow(d: LiveOrderDetail): OrderRow {
     createdAt: d.createdAt,
     updatedAt: d.createdAt,
   }
-  return { ...order, customerName: d.customerName, restaurantName: d.restaurantName, statusName: d.status, deliveryGuyName: null }
+  return {
+    ...order,
+    customerName: d.customerName,
+    restaurantName: d.restaurantName,
+    statusName: d.status,
+    deliveryGuyName: null,
+    legalNextStatuses: d.legalNextStatuses,
+  }
 }
 
 export interface OrderListParams extends ListParams {
@@ -234,15 +256,25 @@ export const orderService = {
     return liveDetailToRow(data.data)
   },
 
-  async updateStatus(id: number, orderstatusId: number): Promise<OrderRow> {
+  /** `status` is the full selected OrderStatus row — mock mode keys off its numeric id, live mode off its name (the OrderStatusCode enum value). */
+  async updateStatus(id: number, status: OrderStatus): Promise<OrderRow> {
     if (IS_MOCK) {
       await mockDelay()
       const index = orders.findIndex((o) => o.id === id)
       if (index === -1) throw { message: 'Order not found' }
-      orders[index] = { ...orders[index], orderstatusId, updatedAt: new Date().toISOString() }
+      orders[index] = { ...orders[index], orderstatusId: status.id, updatedAt: new Date().toISOString() }
       return toRow(orders[index])
     }
-    const { data } = await apiClient.patch<OrderRow>(`/orders/${id}/status`, { orderstatusId })
-    return data
+    const { data } = await apiClient.patch<{ data: LiveOrderDetail }>(`/admin/orders/${id}/status`, { toStatus: status.name })
+    return liveDetailToRow(data.data)
+  },
+
+  async journey(id: number): Promise<OrderStatusLogRow[]> {
+    if (IS_MOCK) {
+      await mockDelay(100)
+      return []
+    }
+    const { data } = await apiClient.get<{ data: OrderStatusLogRow[] }>(`/admin/orders/${id}/log`)
+    return data.data
   },
 }

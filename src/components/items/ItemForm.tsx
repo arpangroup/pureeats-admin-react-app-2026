@@ -1,6 +1,8 @@
 import { Field, Select, Switch, TextInput, Textarea } from '@/components/ui/FormControls'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { itemCategories, addonCategories, restaurants } from '@/mocks/fixtures'
+import { itemService } from '@/services/itemService'
+import { IS_MOCK } from '@/config/env'
 import type { Item } from '@/types/entities'
 
 interface ItemFormProps {
@@ -15,7 +17,18 @@ export function ItemForm({ values, onChange, showRestaurantPicker = true }: Item
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2">
-        <ImageUpload value={values.image} onChange={(v) => onChange('image', v ?? '')} hint="Shown in the menu and item cards." />
+        {!IS_MOCK && !values.id ? (
+          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+            Save the item first, then edit it to add a photo.
+          </p>
+        ) : (
+          <ImageUpload
+            value={values.image}
+            onChange={(v) => onChange('image', v ?? '')}
+            hint="Shown in the menu and item cards."
+            onFileSelected={!IS_MOCK && values.id ? (file) => itemService.uploadImage(values.id as number, file) : undefined}
+          />
+        )}
       </div>
       {showRestaurantPicker && (
         <Field label="Restaurant" required>

@@ -11,8 +11,9 @@ import { RestaurantBulkUploadForm } from '@/components/restaurants/RestaurantBul
 import { useAsync } from '@/hooks/useAsync'
 import { useDebounce } from '@/hooks/useDebounce'
 import { restaurantService } from '@/services/restaurantService'
+import { restaurantCategoryService } from '@/services/simpleServices'
 import { formatRating } from '@/lib/format'
-import { locations, restaurantCategories } from '@/mocks/fixtures'
+import { locations } from '@/mocks/fixtures'
 import type { DayOfWeek, Restaurant } from '@/types/entities'
 
 type TabKey = 'all' | 'active' | 'inactive' | 'pending-approval' | 'closed' | 'pure-veg' | 'self-pickup' | 'delivery'
@@ -101,6 +102,8 @@ export default function AdminRestaurantsPage() {
   // service's own search param doesn't cover, so filtering happens here instead.
   const params = useMemo(() => ({ page: 1, perPage: 500 }), [])
   const { data, isLoading, reload } = useAsync(() => restaurantService.list(params), [params])
+  const { data: categoryPage } = useAsync(() => restaurantCategoryService.list({ perPage: 100 }), [])
+  const categories = categoryPage?.data ?? []
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase()
@@ -238,7 +241,7 @@ export default function AdminRestaurantsPage() {
           className="w-48"
         >
           <option value="all">All categories</option>
-          {restaurantCategories.map((c) => (
+          {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </Select>
