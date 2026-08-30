@@ -9,7 +9,7 @@ import { AuditInfo } from '@/components/ui/AuditInfo'
 import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
 import { couponService, couponUsageService, type CouponUsageRow } from '@/services/simpleServices'
-import { restaurants } from '@/mocks/fixtures'
+import { restaurantService } from '@/services/restaurantService'
 import { formatDate } from '@/lib/format'
 import type { Coupon } from '@/types/entities'
 
@@ -27,6 +27,7 @@ const emptyCoupon: Partial<Coupon> = {
   expiryDate: '',
   isActive: true,
   restaurantId: null,
+  firstOrderOnly: false,
 }
 
 export default function CouponFormPage() {
@@ -42,6 +43,8 @@ export default function CouponFormPage() {
     () => (isNew ? Promise.resolve([]) : couponUsageService.forCoupon(Number(id))),
     [id],
   )
+  const { data: restaurantsData } = useAsync(() => restaurantService.list({ perPage: 100 }), [])
+  const restaurants = restaurantsData?.data ?? []
 
   const [values, setValues] = useState<Partial<Coupon>>(emptyCoupon)
   const [initialized, setInitialized] = useState(false)
@@ -125,14 +128,25 @@ export default function CouponFormPage() {
               <Select value={values.discountType ?? 'flat'} onChange={(e) => handleChange('discountType', e.target.value as Coupon['discountType'])}>
                 <option value="flat">Flat amount</option>
                 <option value="percentage">Percentage</option>
+                <option value="free_delivery">Free delivery</option>
               </Select>
             </Field>
-            <Field label={values.discountType === 'percentage' ? 'Discount (%)' : 'Discount (₹)'} required>
-              <TextInput type="number" value={values.discount ?? 0} onChange={(e) => handleChange('discount', Number(e.target.value))} />
-            </Field>
-            <Field label="Max discount (₹)" hint="Caps the discount on percentage coupons">
-              <TextInput type="number" value={values.uptoAmount ?? 0} onChange={(e) => handleChange('uptoAmount', Number(e.target.value))} />
-            </Field>
+            {values.discountType === 'free_delivery' ? (
+              <div className="flex items-end sm:col-span-2">
+                <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+                  Waives the delivery charge entirely — no discount amount or cap to set.
+                </p>
+              </div>
+            ) : (
+              <>
+                <Field label={values.discountType === 'percentage' ? 'Discount (%)' : 'Discount (₹)'} required>
+                  <TextInput type="number" value={values.discount ?? 0} onChange={(e) => handleChange('discount', Number(e.target.value))} />
+                </Field>
+                <Field label="Max discount (₹)" hint="Caps the discount on percentage coupons">
+                  <TextInput type="number" value={values.uptoAmount ?? 0} onChange={(e) => handleChange('uptoAmount', Number(e.target.value))} />
+                </Field>
+              </>
+            )}
             <Field label="Minimum order value (₹)">
               <TextInput type="number" value={values.minOrderAmount ?? 0} onChange={(e) => handleChange('minOrderAmount', Number(e.target.value))} />
             </Field>
@@ -168,6 +182,9 @@ export default function CouponFormPage() {
             </Field>
             <Field label="Active">
               <Switch checked={!!values.isActive} onChange={(v) => handleChange('isActive', v)} />
+            </Field>
+            <Field label="First order only" hint="Usable only on a customer's very first order">
+              <Switch checked={!!values.firstOrderOnly} onChange={(v) => handleChange('firstOrderOnly', v)} />
             </Field>
           </div>
         </SectionCard>

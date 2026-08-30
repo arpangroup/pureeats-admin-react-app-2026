@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/apiClient'
 import { mockDelay, nextMockId, paginate } from '@/lib/mockUtils'
+import { toPaginated, type PageResponse } from '@/lib/pageResponse'
 import { IS_MOCK } from '@/config/env'
 import { deliveryGuyDetails, users, deliveryGuyRestaurantAssignments, tripDetails } from '@/mocks/fixtures'
 import type { ListParams, Paginated } from '@/types/common'
@@ -27,8 +28,10 @@ export const deliveryGuyService = {
       await mockDelay()
       return paginate(deliveryGuyDetails.map(toRow), params, ['name', 'vehicleNumber', 'phone'])
     }
-    const { data } = await apiClient.get<Paginated<DeliveryGuyRow>>('/delivery-guys', { params })
-    return data
+    const { data } = await apiClient.get<{ data: PageResponse<DeliveryGuyRow> }>('/admin/delivery-guys', {
+      params: { search: params.search, page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
+    })
+    return toPaginated(data.data)
   },
 
   async get(id: number): Promise<DeliveryGuyRow | undefined> {
@@ -37,8 +40,8 @@ export const deliveryGuyService = {
       const found = deliveryGuyDetails.find((d) => d.id === id)
       return found ? toRow(found) : undefined
     }
-    const { data } = await apiClient.get<DeliveryGuyRow>(`/delivery-guys/${id}`)
-    return data
+    const { data } = await apiClient.get<{ data: DeliveryGuyRow }>(`/admin/delivery-guys/${id}`)
+    return data.data
   },
 
   async create(payload: Partial<DeliveryGuyDetail> & { name: string; email: string }): Promise<DeliveryGuyRow> {
@@ -85,8 +88,8 @@ export const deliveryGuyService = {
       newUser.deliveryGuyDetailId = detail.id
       return toRow(detail)
     }
-    const { data } = await apiClient.post<DeliveryGuyRow>('/delivery-guys', payload)
-    return data
+    const { data } = await apiClient.post<{ data: DeliveryGuyRow }>('/admin/delivery-guys', payload)
+    return data.data
   },
 
   async update(id: number, payload: Partial<DeliveryGuyDetail>): Promise<DeliveryGuyRow> {
@@ -97,8 +100,8 @@ export const deliveryGuyService = {
       deliveryGuyDetails[index] = { ...deliveryGuyDetails[index], ...payload }
       return toRow(deliveryGuyDetails[index])
     }
-    const { data } = await apiClient.put<DeliveryGuyRow>(`/delivery-guys/${id}`, payload)
-    return data
+    const { data } = await apiClient.put<{ data: DeliveryGuyRow }>(`/admin/delivery-guys/${id}`, payload)
+    return data.data
   },
 
   async remove(id: number): Promise<void> {
@@ -108,7 +111,7 @@ export const deliveryGuyService = {
       if (index !== -1) deliveryGuyDetails.splice(index, 1)
       return
     }
-    await apiClient.delete(`/delivery-guys/${id}`)
+    await apiClient.delete(`/admin/delivery-guys/${id}`)
   },
 
   async toggleActive(id: number, isActive: boolean) {
@@ -120,8 +123,8 @@ export const deliveryGuyService = {
       await mockDelay(150)
       return deliveryGuyRestaurantAssignments[deliveryGuyId] ?? []
     }
-    const { data } = await apiClient.get<number[]>(`/delivery-guys/${deliveryGuyId}/restaurants`)
-    return data
+    const { data } = await apiClient.get<{ data: number[] }>(`/admin/delivery-guys/${deliveryGuyId}/restaurants`)
+    return data.data
   },
 
   async updateAssignedRestaurants(deliveryGuyId: number, restaurantIds: number[]): Promise<number[]> {
@@ -130,17 +133,17 @@ export const deliveryGuyService = {
       deliveryGuyRestaurantAssignments[deliveryGuyId] = restaurantIds
       return restaurantIds
     }
-    const { data } = await apiClient.put<number[]>(`/delivery-guys/${deliveryGuyId}/restaurants`, { restaurantIds })
-    return data
+    const { data } = await apiClient.put<{ data: number[] }>(`/admin/delivery-guys/${deliveryGuyId}/restaurants`, { restaurantIds })
+    return data.data
   },
 
-  /** Per-order rider earnings for the Earnings section of the delivery-partner detail page. */
+  /** Per-order rider earnings for the Earnings section of the delivery-partner detail page — riderId here is the rider's User id. */
   async earningsForRider(riderId: number): Promise<TripDetail[]> {
     if (IS_MOCK) {
       await mockDelay(150)
       return tripDetails.filter((t) => t.riderId === riderId).sort((a, b) => b.id - a.id)
     }
-    const { data } = await apiClient.get<TripDetail[]>(`/delivery-guys/${riderId}/earnings`)
-    return data
+    const { data } = await apiClient.get<{ data: TripDetail[] }>(`/admin/delivery-guys/${riderId}/earnings`)
+    return data.data
   },
 }

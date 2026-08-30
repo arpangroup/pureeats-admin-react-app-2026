@@ -11,7 +11,9 @@ import { RestaurantBulkUploadForm } from '@/components/restaurants/RestaurantBul
 import { useAsync } from '@/hooks/useAsync'
 import { useDebounce } from '@/hooks/useDebounce'
 import { restaurantService } from '@/services/restaurantService'
-import { locations, restaurantCategories } from '@/mocks/fixtures'
+import { restaurantCategoryService } from '@/services/simpleServices'
+import { formatRating } from '@/lib/format'
+import { locations } from '@/mocks/fixtures'
 import type { DayOfWeek, Restaurant } from '@/types/entities'
 
 type TabKey = 'all' | 'active' | 'inactive' | 'pending-approval' | 'closed' | 'pure-veg' | 'self-pickup' | 'delivery'
@@ -54,7 +56,8 @@ function isClosedNow(restaurant: Restaurant): boolean {
   })
 }
 
-function isOutsideWindow(now: Date, openingTime: string, closingTime: string): boolean {
+function isOutsideWindow(now: Date, openingTime: string | undefined, closingTime: string | undefined): boolean {
+  if (!openingTime || !closingTime) return false
   const minutesNow = now.getHours() * 60 + now.getMinutes()
   const openMinutes = timeToMinutes(openingTime)
   const closeMinutes = timeToMinutes(closingTime)
@@ -99,21 +102,23 @@ export default function AdminRestaurantsPage() {
   // service's own search param doesn't cover, so filtering happens here instead.
   const params = useMemo(() => ({ page: 1, perPage: 500 }), [])
   const { data, isLoading, reload } = useAsync(() => restaurantService.list(params), [params])
+  const { data: categoryPage } = useAsync(() => restaurantCategoryService.list({ perPage: 100 }), [])
+  const categories = categoryPage?.data ?? []
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase()
     return (data?.data ?? []).filter((r) => {
       if (!matchesTab(r, activeTab)) return false
-      if (categoryId !== 'all' && !r.categoryIds.includes(categoryId)) return false
+      if (categoryId !== 'all' && !(r.categoryIds ?? []).includes(categoryId)) return false
       if (!q) return true
       const locationName = locations.find((l) => l.id === r.locationId)?.name ?? ''
       return (
         r.name.toLowerCase().includes(q) ||
         String(r.id).includes(q) ||
-        r.sku.toLowerCase().includes(q) ||
-        r.contactNumber.includes(q) ||
+        (r.sku ?? '').toLowerCase().includes(q) ||
+        (r.contactNumber ?? '').includes(q) ||
         locationName.toLowerCase().includes(q) ||
-        r.address.toLowerCase().includes(q)
+        (r.address ?? '').toLowerCase().includes(q)
       )
     })
   }, [data, activeTab, categoryId, debouncedSearch])
@@ -151,11 +156,11 @@ export default function AdminRestaurantsPage() {
       header: 'Rating',
       render: (row) => (
         <span className="inline-flex items-center gap-1">
-          <Star size={13} className="fill-amber-400 text-amber-400" /> {row.rating.toFixed(1)}
+          <Star size={13} className="fill-amber-400 text-amber-400" /> {formatRating(row.rating)}
         </span>
       ),
     },
-    { key: 'commission', header: 'Commission', render: (row) => `${row.commissionRate}%` },
+    { key: 'commission', header: 'Commission', render: (row) => (row.commissionRate != null ? `${row.commissionRate}%` : '—') },
     {
       key: 'status',
       header: 'Status',
@@ -236,7 +241,7 @@ export default function AdminRestaurantsPage() {
           className="w-48"
         >
           <option value="all">All categories</option>
-          {restaurantCategories.map((c) => (
+          {categories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </Select>

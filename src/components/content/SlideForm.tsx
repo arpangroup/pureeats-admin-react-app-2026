@@ -1,5 +1,7 @@
 import { Field, Select, Switch, TextInput, Textarea } from '@/components/ui/FormControls'
 import { ImageUpload } from '@/components/ui/ImageUpload'
+import { slideService } from '@/services/simpleServices'
+import { IS_MOCK } from '@/config/env'
 import { restaurantCategories, restaurants } from '@/mocks/fixtures'
 import type { Slide } from '@/types/entities'
 
@@ -11,12 +13,19 @@ interface SlideFormProps {
 export function SlideForm({ values, onChange }: SlideFormProps) {
   return (
     <div className="space-y-4">
-      <ImageUpload
-        value={values.image}
-        onChange={(v) => onChange('image', v ?? '')}
-        fullWidth
-        hint="Recommended 1200×500px."
-      />
+      {!IS_MOCK && !values.id ? (
+        <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+          Save the slide first, then edit it to add a photo.
+        </p>
+      ) : (
+        <ImageUpload
+          value={values.image}
+          onChange={(v) => onChange('image', v ?? '')}
+          fullWidth
+          hint="Recommended 1200×500px."
+          onFileSelected={!IS_MOCK && values.id ? (file) => slideService.uploadImage(values.id as number, file) : undefined}
+        />
+      )}
       <Field label="Slide name" required>
         <TextInput value={values.name ?? ''} onChange={(e) => onChange('name', e.target.value)} />
       </Field>

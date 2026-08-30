@@ -9,7 +9,7 @@ import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
 import { useDebounce } from '@/hooks/useDebounce'
 import { couponService } from '@/services/simpleServices'
-import { restaurants } from '@/mocks/fixtures'
+import { restaurantService } from '@/services/restaurantService'
 import { formatCurrency, formatDate } from '@/lib/format'
 import type { Coupon } from '@/types/entities'
 
@@ -20,6 +20,8 @@ export default function CouponsPage() {
   const debouncedSearch = useDebounce(search, 300)
   const params = useMemo(() => ({ page, perPage: 10, search: debouncedSearch }), [page, debouncedSearch])
   const { data, isLoading, reload } = useAsync(() => couponService.list(params), [params])
+  const { data: restaurantsData } = useAsync(() => restaurantService.list({ perPage: 100 }), [])
+  const restaurants = restaurantsData?.data ?? []
 
   const [deleteTarget, setDeleteTarget] = useState<Coupon | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -50,7 +52,10 @@ export default function CouponsPage() {
     {
       key: 'discount',
       header: 'Discount',
-      render: (row) => (row.discountType === 'flat' ? formatCurrency(row.discount) : `${row.discount}%`),
+      render: (row) => {
+        if (row.discountType === 'free_delivery') return <Badge tone="blue">Free delivery</Badge>
+        return row.discountType === 'percentage' ? `${row.discount}%` : formatCurrency(row.discount)
+      },
     },
     {
       key: 'scope',

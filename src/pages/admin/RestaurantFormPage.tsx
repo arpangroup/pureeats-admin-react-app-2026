@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, History } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingBlock } from '@/components/ui/Feedback'
+import { SectionCard } from '@/components/ui/SectionCard'
 import { RestaurantForm } from '@/components/restaurants/RestaurantForm'
+import { RestaurantAuditLogTable } from '@/components/restaurants/RestaurantAuditLogTable'
 import { useAsync } from '@/hooks/useAsync'
 import { restaurantService } from '@/services/restaurantService'
+import { IS_MOCK } from '@/config/env'
 import type { DayOfWeek, Restaurant } from '@/types/entities'
 
 const DAYS: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -109,6 +112,14 @@ export default function AdminRestaurantFormPage() {
       <div className="card p-5">
         <RestaurantForm values={values} onChange={handleChange} isAdmin isNew={isNew} />
       </div>
+
+      {!IS_MOCK && !isNew && (
+        <div className="mt-5">
+          <SectionCard title="Audit log" description="Every field changed on this store, and by whom." icon={History}>
+            <RestaurantAuditLogTable restaurantId={Number(id)} />
+          </SectionCard>
+        </div>
+      )}
     </div>
   )
 }

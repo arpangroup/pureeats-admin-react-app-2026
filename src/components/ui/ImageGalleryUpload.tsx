@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Plus, X } from 'lucide-react'
 
-const MAX_FILE_BYTES = 4 * 1024 * 1024
+const DEFAULT_MAX_FILE_BYTES = 4 * 1024 * 1024
 
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -17,9 +17,24 @@ interface ImageGalleryUploadProps {
   onChange: (images: string[]) => void
   label?: string
   hint?: string
+  maxFileBytes?: number
+  maxCount?: number
+  /** Live mode: actually upload each file and resolve to a real URL, instead of just previewing it as a data URL. */
+  onFileSelected?: (file: File) => Promise<string>
+  /** Live mode: called after a gallery image is removed, so the server-side asset can be deleted too. */
+  onRemove?: (index: number) => void
 }
 
-export function ImageGalleryUpload({ values, onChange, label, hint }: ImageGalleryUploadProps) {
+export function ImageGalleryUpload({
+  values,
+  onChange,
+  label,
+  hint,
+  maxFileBytes = DEFAULT_MAX_FILE_BYTES,
+  maxCount,
+  onFileSelected,
+  onRemove,
+}: ImageGalleryUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,20 +43,29 @@ export function ImageGalleryUpload({ values, onChange, label, hint }: ImageGalle
     setError(null)
     const additions: string[] = []
     for (const file of Array.from(files)) {
+      if (maxCount && values.length + additions.length >= maxCount) {
+        setError(`You can add at most ${maxCount} images.`)
+        break
+      }
       if (!file.type.startsWith('image/')) {
         setError('Please choose image files only.')
         continue
       }
-      if (file.size > MAX_FILE_BYTES) {
-        setError('Each image must be smaller than 4 MB.')
+      if (file.size > maxFileBytes) {
+        setError(`Each image must be smaller than ${Math.round(maxFileBytes / (1024 * 1024))} MB.`)
         continue
       }
-      additions.push(await readFileAsDataUrl(file))
+      try {
+        additions.push(onFileSelected ? await onFileSelected(file) : await readFileAsDataUrl(file))
+      } catch (err) {
+        setError((err as { message?: string })?.message ?? 'Upload failed. Please try again.')
+      }
     }
     if (additions.length) onChange([...values, ...additions])
   }
 
   function removeAt(index: number) {
+    onRemove?.(index)
     onChange(values.filter((_, i) => i !== index))
   }
 

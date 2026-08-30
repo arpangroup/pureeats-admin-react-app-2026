@@ -1,6 +1,7 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from 'axios'
 import { API_BASE_URL, AUTH_REFRESH_TOKEN_STORAGE_KEY, AUTH_TOKEN_STORAGE_KEY, AUTH_USER_STORAGE_KEY, IS_MOCK } from '@/config/env'
 import { getDeviceId } from '@/lib/deviceId'
+import { readStorage, removeStorage, writeStorage } from '@/lib/storage'
 import type { ApiError } from '@/types/common'
 import type { AuthTokenResponse } from '@/types/auth'
 
@@ -17,11 +18,18 @@ export const apiClient = axios.create({
 })
 
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+  const token = readStorage<string | null>(AUTH_TOKEN_STORAGE_KEY, null)
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
   config.headers['X-Device-Id'] = getDeviceId()
+  // The instance-level default 'Content-Type: application/json' header (set above) sticks even
+  // for a FormData body, which stops the browser from setting its own multipart boundary — every
+  // file upload (photos, gallery images, etc.) would otherwise silently go out as an empty/invalid
+  // JSON-typed request. Let the browser set the correct multipart Content-Type itself instead.
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    delete config.headers['Content-Type']
+  }
   return config
 })
 
@@ -35,12 +43,12 @@ let refreshInFlight: Promise<string | null> | null = null
 function refreshAccessToken(): Promise<string | null> {
   if (!refreshInFlight) {
     refreshInFlight = (async () => {
-      const refreshToken = localStorage.getItem(AUTH_REFRESH_TOKEN_STORAGE_KEY)
+      const refreshToken = readStorage<string | null>(AUTH_REFRESH_TOKEN_STORAGE_KEY, null)
       if (!refreshToken) return null
       try {
         const { data } = await apiClient.post<{ data: AuthTokenResponse }>('/auth/refresh', { refreshToken })
-        localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, data.data.accessToken)
-        localStorage.setItem(AUTH_REFRESH_TOKEN_STORAGE_KEY, data.data.refreshToken)
+        writeStorage(AUTH_TOKEN_STORAGE_KEY, data.data.accessToken)
+        writeStorage(AUTH_REFRESH_TOKEN_STORAGE_KEY, data.data.refreshToken)
         return data.data.accessToken
       } catch {
         return null
@@ -65,9 +73,9 @@ apiClient.interceptors.response.use(
         config.headers.Authorization = `Bearer ${newAccessToken}`
         return apiClient(config)
       }
-      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
-      localStorage.removeItem(AUTH_REFRESH_TOKEN_STORAGE_KEY)
-      localStorage.removeItem(AUTH_USER_STORAGE_KEY)
+      removeStorage(AUTH_TOKEN_STORAGE_KEY)
+      removeStorage(AUTH_REFRESH_TOKEN_STORAGE_KEY)
+      removeStorage(AUTH_USER_STORAGE_KEY)
     }
 
     const apiError: ApiError = {

@@ -37,6 +37,7 @@ export default [
         File: 'readonly',
         FileReader: 'readonly',
         FileList: 'readonly',
+        FormData: 'readonly',
         Blob: 'readonly',
         URL: 'readonly',
         URLSearchParams: 'readonly',

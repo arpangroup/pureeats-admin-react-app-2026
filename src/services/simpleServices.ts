@@ -45,14 +45,16 @@ export const itemCategoryService = createCrudService<ItemCategory>(itemCategorie
 export const addonCategoryService = createCrudService<AddonCategory>(addonCategories, '/admin/addon-categories', ['name'])
 export const addonService = createCrudService<Addon>(addons, '/admin/addons', ['name'])
 export const couponService = createCrudService<Coupon>(coupons, '/admin/coupons', ['name', 'code'])
+/** Store-owner scoped — same shape, but hits /store-owner/coupons (list/update/delete are ownership-checked server-side: only the coupon's creator may edit/delete it). */
+export const ownerCouponService = createCrudService<Coupon>(coupons, '/store-owner/coupons', ['name', 'code'])
 export const locationService = createCrudService<Location>(locations, '/locations', ['name'])
 export const popularGeoPlaceService = createCrudService<PopularGeoPlace>(popularGeoPlaces, '/popular-geo-places', ['name'])
 export const restaurantCategoryService = createCrudService<RestaurantCategory>(restaurantCategories, '/admin/restaurant-categories', ['name'])
-export const restaurantCategorySliderService = createCrudService<RestaurantCategorySlider>(restaurantCategorySliders, '/restaurant-category-sliders', ['name'])
+export const restaurantCategorySliderService = createCrudService<RestaurantCategorySlider>(restaurantCategorySliders, '/admin/restaurant-category-sliders', ['name'])
 export const translationService = createCrudService<Translation>(translations, '/translations', ['languageName'])
 export const pageService = createCrudService<Page>(pages, '/pages', ['name', 'slug'])
-export const promoSliderService = createCrudService<PromoSlider>(promoSliders, '/promo-sliders', ['name'])
-const slideBase = createCrudService<Slide>(slides, '/slides', ['name'])
+export const promoSliderService = createCrudService<PromoSlider>(promoSliders, '/admin/promo-sliders', ['name'])
+const slideBase = createCrudService<Slide>(slides, '/admin/slides', ['name'])
 
 export const slideService = {
   ...slideBase,
@@ -64,8 +66,8 @@ export const slideService = {
         .filter((s) => s.sliderType === sliderType && s.sliderId === sliderId)
         .sort((a, b) => a.positionId - b.positionId)
     }
-    const { data } = await apiClient.get<Slide[]>('/slides', { params: { sliderType, sliderId } })
-    return data
+    const { data } = await apiClient.get<{ data: Slide[] }>('/admin/slides', { params: { sliderType, sliderId } })
+    return data.data
   },
 
   async countsBySlider(sliderType: Slide['sliderType']): Promise<Record<number, number>> {
@@ -77,12 +79,60 @@ export const slideService = {
       })
       return counts
     }
-    const { data } = await apiClient.get<Record<number, number>>('/slides/counts', { params: { sliderType } })
-    return data
+    const { data } = await apiClient.get<{ data: Record<number, number> }>('/admin/slides/counts', { params: { sliderType } })
+    return data.data
+  },
+
+  /** Live mode only — slide's image field is set immediately on upload, returning the resolved URL. */
+  async uploadImage(id: number, file: File): Promise<string> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const { data } = await apiClient.post<{ data: { url: string } }>(`/admin/slides/${id}/image`, formData)
+    return data.data.url
   },
 }
 export const moduleService = createCrudService<Module>(modules, '/modules', ['name'])
-export const notificationService = createCrudService<Alert>(alerts, '/alerts', [])
+
+/** The signed-in user's own alerts (last 7 days, max 20) — not a generic paginated admin resource. */
+export const notificationService = {
+  async list(): Promise<Alert[]> {
+    if (IS_MOCK) {
+      await mockDelay()
+      return [...alerts].sort((a, b) => b.id - a.id)
+    }
+    const { data } = await apiClient.get<{ data: Alert[] }>('/notifications')
+    return data.data
+  },
+
+  async markRead(id: number): Promise<void> {
+    if (IS_MOCK) {
+      await mockDelay(150)
+      const index = alerts.findIndex((a) => a.id === id)
+      if (index !== -1) alerts[index] = { ...alerts[index], isRead: true }
+      return
+    }
+    await apiClient.patch(`/notifications/${id}/read`)
+  },
+
+  async markAllRead(): Promise<void> {
+    if (IS_MOCK) {
+      await mockDelay(150)
+      alerts.forEach((a, i) => { alerts[i] = { ...a, isRead: true } })
+      return
+    }
+    await apiClient.patch('/notifications/read-all')
+  },
+
+  async remove(id: number): Promise<void> {
+    if (IS_MOCK) {
+      await mockDelay(150)
+      const index = alerts.findIndex((a) => a.id === id)
+      if (index !== -1) alerts.splice(index, 1)
+      return
+    }
+    await apiClient.delete(`/notifications/${id}`)
+  },
+}
 
 export interface CouponUsageRow {
   id: number
@@ -107,8 +157,8 @@ export const couponUsageService = {
         }))
         .sort((a, b) => b.id - a.id)
     }
-    const { data } = await apiClient.get<CouponUsageRow[]>(`/coupons/${couponId}/usages`)
-    return data
+    const { data } = await apiClient.get<{ data: CouponUsageRow[] }>(`/admin/coupons/${couponId}/usages`)
+    return data.data
   },
 }
 

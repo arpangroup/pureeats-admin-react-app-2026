@@ -94,8 +94,11 @@ export const dashboardService = {
         topRestaurants: restaurantRevenue.sort((a, b) => b.revenue - a.revenue).slice(0, 5),
       }
     }
-    const { data } = await apiClient.get<AdminDashboardStats>('/dashboard/admin')
-    return data
+    const [{ data }, recent] = await Promise.all([
+      apiClient.get<{ data: Omit<AdminDashboardStats, 'recentOrders'> }>('/admin/dashboard'),
+      orderService.list({ page: 1, perPage: 6 }),
+    ])
+    return { ...data.data, recentOrders: recent.data }
   },
 
   async restaurantOwner(restaurantId: number): Promise<OwnerDashboardStats> {
@@ -117,7 +120,10 @@ export const dashboardService = {
         recentOrders: recent.data,
       }
     }
-    const { data } = await apiClient.get<OwnerDashboardStats>(`/dashboard/restaurant-owner/${restaurantId}`)
-    return data
+    const [{ data }, recent] = await Promise.all([
+      apiClient.get<{ data: Omit<OwnerDashboardStats, 'recentOrders'> }>(`/store-owner/dashboard/${restaurantId}`),
+      orderService.list({ restaurantId, page: 1, perPage: 6 }),
+    ])
+    return { ...data.data, recentOrders: recent.data }
   },
 }

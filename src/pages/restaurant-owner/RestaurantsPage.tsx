@@ -6,6 +6,7 @@ import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { restaurantService } from '@/services/restaurantService'
+import { formatRating } from '@/lib/format'
 import { locations } from '@/mocks/fixtures'
 import type { Restaurant } from '@/types/entities'
 
@@ -22,7 +23,7 @@ export default function OwnerRestaurantsPage() {
       header: 'Rating',
       render: (row) => (
         <span className="inline-flex items-center gap-1">
-          <Star size={13} className="fill-amber-400 text-amber-400" /> {row.rating.toFixed(1)}
+          <Star size={13} className="fill-amber-400 text-amber-400" /> {formatRating(row.rating)}
         </span>
       ),
     },

@@ -54,7 +54,26 @@ export const userService = {
     await apiClient.put(`/restaurant-owners/${ownerId}/restaurants`, { restaurantIds })
   },
 
-  /** Last N login sessions for a user — powers the Activity card on the user detail page. */
+  /** Uploads/replaces a user's photo (admin-scoped — works for any user, not just the caller). */
+  async uploadPhoto(userId: number, file: File): Promise<string> {
+    if (IS_MOCK) {
+      await delay(200)
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.onerror = () => reject(reader.error)
+        reader.readAsDataURL(file)
+      })
+    }
+    const formData = new FormData()
+    formData.append('file', file)
+    const { data } = await apiClient.post<{ data: User }>(`/admin/users/${userId}/photo`, formData)
+    return data.data.photo ?? ''
+  },
+
+  /** Last N login sessions for a user — powers the Activity card on the user detail page.
+   * Backed by the admin login-history (attempt) log, not a session-lifecycle table, so
+   * lastCheckoutAt/logoutAt have no equivalent there and are always null. */
   async recentLoginSessions(userId: number, limit = 5): Promise<LoginSession[]> {
     if (IS_MOCK) {
       await delay(150)
@@ -63,7 +82,27 @@ export const userService = {
         .sort((a, b) => new Date(b.loginAt).getTime() - new Date(a.loginAt).getTime())
         .slice(0, limit)
     }
-    const { data } = await apiClient.get<LoginSession[]>(`/users/${userId}/login-sessions`, { params: { limit } })
-    return data
+    interface LoginHistoryEntry {
+      id: number
+      userId: number
+      status: string
+      city: string | null
+      region: string | null
+      country: string | null
+      occurredAt: string
+    }
+    const { data } = await apiClient.get<{ data: PageResponse<LoginHistoryEntry> }>('/admin/login-history', {
+      params: { userId, page: 0, size: limit },
+    })
+    return data.data.content.map((entry) => ({
+      id: entry.id,
+      userId: entry.userId,
+      location: [entry.city, entry.region, entry.country].filter(Boolean).join(', ') || 'Unknown location',
+      loginAt: entry.occurredAt,
+      lastCheckoutAt: null,
+      logoutAt: null,
+      createdAt: entry.occurredAt,
+      updatedAt: entry.occurredAt,
+    }))
   },
 }

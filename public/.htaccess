@@ -1,0 +1,14 @@
+# SPA fallback: React Router handles routing client-side, so any request
+# for a path that isn't a real file on disk must fall back to index.html
+# instead of a 404 (e.g. a hard refresh on /admin/dashboard).
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Let real files/directories (assets, index.html itself) pass through.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  RewriteRule ^ index.html [L]
+</IfModule>

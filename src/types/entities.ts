@@ -7,7 +7,7 @@ import type { Id } from './common'
 
 export type PaymentMode = 'cod' | 'online' | 'wallet'
 export type DeliveryType = 'delivery' | 'pickup'
-export type DiscountType = 'flat' | 'percentage'
+export type DiscountType = 'flat' | 'percentage' | 'free_delivery'
 export type OrderFrom = 'app' | 'web' | 'pos'
 
 export interface User {
@@ -217,6 +217,7 @@ export interface Coupon {
   totalCoupon: number
   count: number
   maxCount: number
+  firstOrderOnly: boolean
   createdAt: string
   updatedAt: string
 }
