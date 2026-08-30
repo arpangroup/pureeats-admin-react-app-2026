@@ -8,6 +8,7 @@ import { SectionCard } from '@/components/ui/SectionCard'
 import { AuditInfo } from '@/components/ui/AuditInfo'
 import { WeeklyScheduleEditor } from './WeeklyScheduleEditor'
 import { locations, restaurantCategories } from '@/mocks/fixtures'
+import { restaurantService } from '@/services/restaurantService'
 import { IS_MOCK } from '@/config/env'
 import type { Restaurant } from '@/types/entities'
 
@@ -44,12 +45,26 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
       </SectionCard>
       
       <SectionCard title="Restaurant images" description="One main image, plus additional gallery photos." icon={ImageIcon}>
-        <ImageUpload
-          value={values.image}
-          onChange={(v) => onChange('image', v ?? '')}
-          fullWidth
-          hint="Main image shown across the app — recommended 1200×675px."
-        />
+        {!IS_MOCK && !isNew && values.id ? (
+          <ImageUpload
+            value={values.image}
+            onChange={(v) => onChange('image', v ?? '')}
+            fullWidth
+            hint="Main image shown across the app — recommended 1200×675px."
+            onFileSelected={(file) => restaurantService.uploadImage(values.id as number, file)}
+          />
+        ) : !IS_MOCK ? (
+          <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+            Save the restaurant first, then edit it to add a main image.
+          </p>
+        ) : (
+          <ImageUpload
+            value={values.image}
+            onChange={(v) => onChange('image', v ?? '')}
+            fullWidth
+            hint="Main image shown across the app — recommended 1200×675px."
+          />
+        )}
         <div className="mt-4">
           {!IS_MOCK && !isNew && values.id ? (
             <>

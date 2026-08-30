@@ -47,6 +47,14 @@ export const restaurantService = {
     return base.update(id, { isAccepted } as Partial<Restaurant>)
   },
 
+  /** Main/cover image (live mode only — separate from the gallery, immediate upload once the restaurant exists). */
+  async uploadImage(restaurantId: number, file: File): Promise<string> {
+    const formData = new FormData()
+    formData.append('file', file)
+    const { data } = await apiClient.post<{ data: RestaurantImage }>(`/admin/restaurants/${restaurantId}/image`, formData)
+    return data.data.url
+  },
+
   /** Gallery images (live mode only — mock mode keeps using the plain values.images array on the form). */
   async listImages(restaurantId: number): Promise<RestaurantImage[]> {
     if (IS_MOCK) return []
