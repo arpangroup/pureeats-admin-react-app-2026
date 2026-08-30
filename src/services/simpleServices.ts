@@ -45,6 +45,8 @@ export const itemCategoryService = createCrudService<ItemCategory>(itemCategorie
 export const addonCategoryService = createCrudService<AddonCategory>(addonCategories, '/admin/addon-categories', ['name'])
 export const addonService = createCrudService<Addon>(addons, '/admin/addons', ['name'])
 export const couponService = createCrudService<Coupon>(coupons, '/admin/coupons', ['name', 'code'])
+/** Store-owner scoped — same shape, but hits /store-owner/coupons (list/update/delete are ownership-checked server-side: only the coupon's creator may edit/delete it). */
+export const ownerCouponService = createCrudService<Coupon>(coupons, '/store-owner/coupons', ['name', 'code'])
 export const locationService = createCrudService<Location>(locations, '/locations', ['name'])
 export const popularGeoPlaceService = createCrudService<PopularGeoPlace>(popularGeoPlaces, '/popular-geo-places', ['name'])
 export const restaurantCategoryService = createCrudService<RestaurantCategory>(restaurantCategories, '/admin/restaurant-categories', ['name'])

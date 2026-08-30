@@ -54,21 +54,26 @@ export default function DeliveryGuysPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [values, setValues] = useState<DeliveryGuyFormValues>(emptyForm)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<DeliveryGuyRow | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   function openCreate() {
     setValues(emptyForm)
+    setError(null)
     setFormOpen(true)
   }
 
   async function handleSave() {
     setSaving(true)
+    setError(null)
     try {
       const created = await deliveryGuyService.create({ ...values, createdBy: 1, updatedBy: 1 })
       setFormOpen(false)
       reload()
       navigate(`/admin/delivery-guys/${created.userId}`)
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? 'Unable to save delivery partner')
     } finally {
       setSaving(false)
     }
@@ -167,6 +172,7 @@ export default function DeliveryGuysPage() {
           </>
         }
       >
+        {error && <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{error}</p>}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Full name" required>
             <TextInput value={values.name} onChange={(e) => setValues((p) => ({ ...p, name: e.target.value }))} />
