@@ -155,8 +155,8 @@ export const couponUsageService = {
         }))
         .sort((a, b) => b.id - a.id)
     }
-    const { data } = await apiClient.get<CouponUsageRow[]>(`/coupons/${couponId}/usages`)
-    return data
+    const { data } = await apiClient.get<{ data: CouponUsageRow[] }>(`/admin/coupons/${couponId}/usages`)
+    return data.data
   },
 }
 

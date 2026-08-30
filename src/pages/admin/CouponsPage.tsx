@@ -52,7 +52,10 @@ export default function CouponsPage() {
     {
       key: 'discount',
       header: 'Discount',
-      render: (row) => (row.discountType === 'flat' ? formatCurrency(row.discount) : `${row.discount}%`),
+      render: (row) => {
+        if (row.discountType === 'free_delivery') return <Badge tone="blue">Free delivery</Badge>
+        return row.discountType === 'percentage' ? `${row.discount}%` : formatCurrency(row.discount)
+      },
     },
     {
       key: 'scope',

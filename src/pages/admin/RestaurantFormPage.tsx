@@ -82,7 +82,7 @@ export default function AdminRestaurantFormPage() {
       } else {
         await restaurantService.update(Number(id), values)
       }
-      // navigate('/admin/restaurants')
+      navigate('/admin/restaurants')
     } catch (err) {
       setError((err as { message?: string })?.message ?? 'Unable to save restaurant')
     } finally {

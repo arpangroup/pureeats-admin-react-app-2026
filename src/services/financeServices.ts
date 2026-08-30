@@ -1,5 +1,6 @@
 import { apiClient } from '@/lib/apiClient'
 import { mockDelay, nextMockId, paginate } from '@/lib/mockUtils'
+import { toPaginated, type PageResponse } from '@/lib/pageResponse'
 import { IS_MOCK } from '@/config/env'
 import {
   wallets,
@@ -42,8 +43,10 @@ export const walletService = {
       })
       return paginate(rows, params, ['walletName', 'payableType', 'uuid'])
     }
-    const { data } = await apiClient.get<Paginated<TransactionRow>>('/wallet/transactions', { params })
-    return data
+    const { data } = await apiClient.get<{ data: PageResponse<TransactionRow> }>('/admin/wallet/transactions', {
+      params: { page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
+    })
+    return toPaginated(data.data)
   },
 
   /** Looks up (or lazily creates) the wallet for a given holder — e.g. a User. */
@@ -129,8 +132,10 @@ export const payoutService = {
       }))
       return paginate(rows, params, ['restaurantName', 'status', 'transactionId'])
     }
-    const { data } = await apiClient.get<Paginated<PayoutRow>>('/restaurant-payouts', { params })
-    return data
+    const { data } = await apiClient.get<{ data: PageResponse<PayoutRow> }>('/admin/restaurant-payouts', {
+      params: { page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
+    })
+    return toPaginated(data.data)
   },
 
   async get(id: number): Promise<PayoutRow | undefined> {
@@ -139,8 +144,8 @@ export const payoutService = {
       const found = restaurantPayouts.find((p) => p.id === id)
       return found ? { ...found, restaurantName: restaurants.find((r) => r.id === found.restaurantId)?.name ?? 'Unknown' } : undefined
     }
-    const { data } = await apiClient.get<PayoutRow>(`/restaurant-payouts/${id}`)
-    return data
+    const { data } = await apiClient.get<{ data: PayoutRow }>(`/admin/restaurant-payouts/${id}`)
+    return data.data
   },
 
   async updateStatus(id: number, status: RestaurantPayout['status']): Promise<PayoutRow> {
@@ -152,8 +157,8 @@ export const payoutService = {
       const updated = restaurantPayouts[index]
       return { ...updated, restaurantName: restaurants.find((r) => r.id === updated.restaurantId)?.name ?? 'Unknown' }
     }
-    const { data } = await apiClient.patch<PayoutRow>(`/restaurant-payouts/${id}/status`, { status })
-    return data
+    const { data } = await apiClient.patch<{ data: PayoutRow }>(`/admin/restaurant-payouts/${id}/status`, { status })
+    return data.data
   },
 }
 
@@ -194,8 +199,10 @@ export const deliveryCollectionService = {
       }))
       return paginate(rows, params, ['riderName'])
     }
-    const { data } = await apiClient.get<Paginated<DeliveryCollectionRow>>('/delivery-collections', { params })
-    return data
+    const { data } = await apiClient.get<{ data: PageResponse<DeliveryCollectionRow> }>('/admin/delivery-collections', {
+      params: { page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
+    })
+    return toPaginated(data.data)
   },
 
   async logs(collectionId: number): Promise<DeliveryCollectionLog[]> {
@@ -203,7 +210,7 @@ export const deliveryCollectionService = {
       await mockDelay()
       return deliveryCollectionLogs.filter((l) => l.deliveryCollectionId === collectionId)
     }
-    const { data } = await apiClient.get<DeliveryCollectionLog[]>(`/delivery-collections/${collectionId}/logs`)
-    return data
+    const { data } = await apiClient.get<{ data: DeliveryCollectionLog[] }>(`/admin/delivery-collections/${collectionId}/logs`)
+    return data.data
   },
 }
