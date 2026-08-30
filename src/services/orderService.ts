@@ -152,6 +152,8 @@ interface LiveOrderDetail {
   createdAt: string
   legalNextStatuses: string[]
   pricingBreakdown: PricingBreakdown | null
+  deliveryGuyId: number | null
+  deliveryGuyName: string | null
 }
 
 interface LiveOrderSummary {
@@ -256,7 +258,7 @@ function liveDetailToRow(d: LiveOrderDetail): OrderRow {
     riderAcceptAt: null,
     riderPickedAt: null,
     riderDeliverAt: null,
-    deliveryGuyId: null,
+    deliveryGuyId: d.deliveryGuyId,
     items: d.items.map((item, index) => ({
       id: item.id,
       orderId: d.id,
@@ -287,7 +289,7 @@ function liveDetailToRow(d: LiveOrderDetail): OrderRow {
     restaurantName: d.restaurant.name,
     restaurantPhone: d.restaurant.contactNumber,
     statusName: d.status,
-    deliveryGuyName: null,
+    deliveryGuyName: d.deliveryGuyName,
     legalNextStatuses: d.legalNextStatuses,
     coupon: d.coupon
       ? { couponId: d.coupon.couponId, code: d.coupon.code, name: d.coupon.name, discountType: d.coupon.discountType, discountAmount: d.coupon.discountAmount }
@@ -382,5 +384,18 @@ export const orderService = {
     }
     const { data } = await apiClient.get<{ data: OrderTimeline }>(`/admin/orders/${id}/timeline`)
     return data.data
+  },
+
+  /** Admin-only — assigns a specific delivery partner to this order directly, bypassing the rider's own self-service accept flow. */
+  async assignDriver(id: number, riderUserId: number): Promise<OrderRow> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const index = orders.findIndex((o) => o.id === id)
+      if (index === -1) throw { message: 'Order not found' }
+      orders[index] = { ...orders[index], deliveryGuyId: riderUserId, updatedAt: new Date().toISOString() }
+      return toRow(orders[index])
+    }
+    const { data } = await apiClient.post<{ data: LiveOrderDetail }>(`/admin/orders/${id}/assign-driver`, { riderUserId })
+    return liveDetailToRow(data.data)
   },
 }

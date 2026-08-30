@@ -1,11 +1,13 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Bike, Calculator, History, MapPin, MessageSquare, Phone, Printer, Receipt, Store, Tag, User as UserIcon } from 'lucide-react'
+import { ArrowLeft, Bike, Calculator, History, MapPin, MessageSquare, Phone, Printer, Receipt, Store, Tag, User as UserIcon, UserPlus } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
 import { Select } from '@/components/ui/FormControls'
+import { Modal } from '@/components/ui/Modal'
 import { useAsync } from '@/hooks/useAsync'
 import { orderService } from '@/services/orderService'
+import { deliveryGuyService } from '@/services/deliveryGuyService'
 import { users } from '@/mocks/fixtures'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { OrderStatusBadge } from './OrderStatusBadge'
@@ -21,6 +23,11 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
   const { data: journey } = useAsync(() => orderService.journey(orderId), [orderId, order?.statusName])
   const { data: timeline } = useAsync(() => orderService.timeline(orderId, order ?? undefined), [orderId, order?.statusName])
   const isAdmin = basePath.startsWith('/admin')
+  const { data: riders } = useAsync(() => (isAdmin ? deliveryGuyService.list({ perPage: 100 }) : Promise.resolve(null)), [isAdmin])
+  const [assignModalOpen, setAssignModalOpen] = useState(false)
+  const [selectedRiderId, setSelectedRiderId] = useState<number | ''>('')
+  const [assigning, setAssigning] = useState(false)
+  const [assignError, setAssignError] = useState<string | null>(null)
 
   async function handleStatusChange(statusId: number) {
     const status = statuses?.find((s) => s.id === statusId)
@@ -31,6 +38,22 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
       reload()
     } finally {
       setUpdating(false)
+    }
+  }
+
+  async function handleAssignDriver() {
+    if (!selectedRiderId) return
+    setAssigning(true)
+    setAssignError(null)
+    try {
+      await orderService.assignDriver(orderId, Number(selectedRiderId))
+      setAssignModalOpen(false)
+      setSelectedRiderId('')
+      reload()
+    } catch (err) {
+      setAssignError(err instanceof Error ? err.message : 'Could not assign driver')
+    } finally {
+      setAssigning(false)
     }
   }
 
@@ -295,7 +318,7 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
             )}
           </div>
 
-          {order.deliveryGuyName && (
+          {order.deliveryGuyName ? (
             <div className="card p-4">
               <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
                 <Bike size={16} /> Delivery partner
@@ -309,11 +332,52 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
               )}
               <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">Delivery PIN: {order.deliveryPin}</p>
             </div>
+          ) : (
+            isAdmin && (
+              <div className="card p-4 print:hidden">
+                <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
+                  <Bike size={16} /> Delivery partner
+                </h2>
+                <p className="mb-3 text-sm text-slate-400 dark:text-slate-500">No driver assigned yet.</p>
+                <button className="btn-secondary w-full" onClick={() => setAssignModalOpen(true)}>
+                  <UserPlus size={15} /> Assign driver
+                </button>
+              </div>
+            )
           )}
 
         </div>
       </div>
       </div>
+
+      <Modal
+        open={assignModalOpen}
+        onClose={() => {
+          setAssignModalOpen(false)
+          setAssignError(null)
+        }}
+        title="Assign a delivery driver"
+        footer={
+          <>
+            <button className="btn-secondary" onClick={() => setAssignModalOpen(false)} disabled={assigning}>
+              Cancel
+            </button>
+            <button className="btn-primary" onClick={handleAssignDriver} disabled={assigning || !selectedRiderId}>
+              {assigning ? 'Assigning…' : 'Assign driver'}
+            </button>
+          </>
+        }
+      >
+        {assignError && <p className="mb-3 text-sm text-rose-600 dark:text-rose-400">{assignError}</p>}
+        <Select value={selectedRiderId} onChange={(e) => setSelectedRiderId(e.target.value ? Number(e.target.value) : '')}>
+          <option value="">Select a delivery partner…</option>
+          {(riders?.data ?? []).map((r) => (
+            <option key={r.id} value={r.userId}>
+              {r.name} {r.vehicleNumber ? `(${r.vehicleNumber})` : ''}
+            </option>
+          ))}
+        </Select>
+      </Modal>
     </div>
   )
 }

@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Bell, ChevronDown, LogOut, Menu, Moon, ShieldOff, Sun, Wifi, WifiOff } from 'lucide-react'
+import { Bell, BellOff, BellRing, ChevronDown, LogOut, Menu, Moon, ShieldOff, Sun, Volume2, VolumeX, Wifi, WifiOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
+import { useNewOrderAlerts } from '@/hooks/useNewOrderAlerts'
+import { NEW_ORDER_ALERT_INTERVAL_OPTIONS } from '@/lib/newOrderAlertSettings'
 import { initials, timeAgo } from '@/lib/format'
 import { IS_MOCK } from '@/config/env'
 import { useAsync } from '@/hooks/useAsync'
@@ -15,8 +17,11 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [notifOpen, setNotifOpen] = useState(false)
+  const [alertSettingsOpen, setAlertSettingsOpen] = useState(false)
   const { data: alerts, reload: reloadAlerts } = useAsync(() => notificationService.list(), [])
   const unreadCount = (alerts ?? []).filter((a) => !a.isRead).length
+  const canAutoFetchOrders = user?.role === 'admin' || user?.role === 'employee' || user?.role === 'restaurant-owner'
+  const { settings: alertSettings, updateSettings: updateAlertSettings } = useNewOrderAlerts()
 
   async function handleAlertClick(id: number, isRead: boolean) {
     if (!isRead) {
@@ -66,6 +71,67 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
+
+        {canAutoFetchOrders && (
+          <div className="relative">
+            <button
+              onClick={() => setAlertSettingsOpen((v) => !v)}
+              className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+              aria-label="New order alert settings"
+              title={alertSettings.enabled ? 'New order alerts on' : 'New order alerts off'}
+            >
+              {alertSettings.enabled ? <BellRing size={18} className="text-brand-600 dark:text-brand-400" /> : <BellOff size={18} />}
+            </button>
+
+            {alertSettingsOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setAlertSettingsOpen(false)} />
+                <div className="absolute right-0 z-20 mt-2 w-72 overflow-hidden rounded-lg border border-slate-100 bg-white p-3 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                  <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">New order alerts</p>
+
+                  <label className="flex items-center justify-between py-1.5">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">Auto-fetch new orders</span>
+                    <input
+                      type="checkbox"
+                      checked={alertSettings.enabled}
+                      onChange={(e) => updateAlertSettings({ enabled: e.target.checked })}
+                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between py-1.5">
+                    <span className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+                      {alertSettings.soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />} Play sound
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={alertSettings.soundEnabled}
+                      onChange={(e) => updateAlertSettings({ soundEnabled: e.target.checked })}
+                      disabled={!alertSettings.enabled}
+                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600"
+                    />
+                  </label>
+
+                  <div className="flex items-center justify-between py-1.5">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">Check every</span>
+                    <select
+                      value={alertSettings.intervalSeconds}
+                      onChange={(e) => updateAlertSettings({ intervalSeconds: Number(e.target.value) })}
+                      disabled={!alertSettings.enabled}
+                      className="rounded-md border border-slate-200 bg-white px-2 py-1 text-sm text-slate-700 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    >
+                      {NEW_ORDER_ALERT_INTERVAL_OPTIONS.map((s) => (
+                        <option key={s} value={s}>
+                          {s}s
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="relative">
           <button
