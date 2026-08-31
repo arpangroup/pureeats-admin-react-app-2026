@@ -5,7 +5,7 @@ name: Deploy admin app
 # repo for how that server/user was provisioned).
 on:
   push:
-    branches: [feature/26.08.31-integrate-backend-2]
+    branches: [main]
   workflow_dispatch: {}
 
 concurrency:
