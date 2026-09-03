@@ -14,6 +14,8 @@ export const orderStatuses: OrderStatus[] = [
   { id: 7, name: 'Delivered' },
   { id: 8, name: 'Cancelled' },
   { id: 9, name: 'Rejected' },
+  { id: 10, name: 'Returned' },
+  { id: 11, name: 'Auto-Cancelled' },
 ]
 
 const customers = users.filter((u) => u.role === 'customer')
@@ -70,7 +72,12 @@ export const orders: Order[] = Array.from({ length: ORDER_COUNT }, (_, i) => {
   const customer = customers[i % customers.length]
   const statusIndex = i % orderStatuses.length
   const status = orderStatuses[statusIndex]
-  const isTerminal = status.name === 'Delivered' || status.name === 'Cancelled' || status.name === 'Rejected'
+  const isTerminal =
+    status.name === 'Delivered' ||
+    status.name === 'Cancelled' ||
+    status.name === 'Rejected' ||
+    status.name === 'Returned' ||
+    status.name === 'Auto-Cancelled'
   const deliveryGuy = isTerminal || statusIndex >= 4 ? deliveryGuys[i % deliveryGuys.length] : null
   const createdMinutesAgo = 20 + i * 47
   const orderItems = buildOrderItems(id, restaurant.id, i)
