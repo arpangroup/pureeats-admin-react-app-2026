@@ -79,8 +79,8 @@ export const reportService = {
         .sort((a, b) => b.quantity - a.quantity)
         .slice(0, limit)
     }
-    const { data } = await apiClient.get<TopItemRow[]>('/reports/top-items', { params: filters })
-    return data
+    const { data } = await apiClient.get<{ data: TopItemRow[] }>('/reports/top-items', { params: filters })
+    return data.data
   },
 
   async revenueTrend(filters: ReportFilters): Promise<RevenuePoint[]> {
@@ -114,8 +114,12 @@ export const reportService = {
       })
       return Array.from(buckets.values())
     }
-    const { data } = await apiClient.get<RevenuePoint[]>('/reports/revenue-trend', { params: filters })
-    return data
+    const { data } = await apiClient.get<{ data: { date: string; revenue: number; orders: number }[] }>('/reports/revenue-trend', { params: filters })
+    return data.data.map((p) => ({
+      label: new Date(`${p.date}T00:00:00`).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
+      revenue: p.revenue,
+      orders: p.orders,
+    }))
   },
 
   async ordersByStatus(filters: ReportFilters): Promise<StatusSlice[]> {
@@ -127,8 +131,8 @@ export const reportService = {
         value: rows.filter((o) => o.orderstatusId === s.id).length,
       }))
     }
-    const { data } = await apiClient.get<StatusSlice[]>('/reports/orders-by-status', { params: filters })
-    return data
+    const { data } = await apiClient.get<{ data: StatusSlice[] }>('/reports/orders-by-status', { params: filters })
+    return data.data
   },
 
   async topRestaurants(filters: DateRange, limit = 10): Promise<TopRestaurantRow[]> {
@@ -145,8 +149,8 @@ export const reportService = {
         .sort((a, b) => b.revenue - a.revenue)
         .slice(0, limit)
     }
-    const { data } = await apiClient.get<TopRestaurantRow[]>('/reports/top-restaurants', { params: filters })
-    return data
+    const { data } = await apiClient.get<{ data: TopRestaurantRow[] }>('/reports/top-restaurants', { params: filters })
+    return data.data
   },
 
   async topRiders(filters: DateRange, limit = 10): Promise<TopRiderRow[]> {
@@ -168,7 +172,7 @@ export const reportService = {
         .sort((a, b) => b.earnings - a.earnings)
         .slice(0, limit)
     }
-    const { data } = await apiClient.get<TopRiderRow[]>('/reports/top-riders', { params: filters })
-    return data
+    const { data } = await apiClient.get<{ data: TopRiderRow[] }>('/reports/top-riders', { params: filters })
+    return data.data
   },
 }

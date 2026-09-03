@@ -7,7 +7,7 @@ import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
 import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
 import { reportService, type TopItemRow, type TopRestaurantRow, type TopRiderRow } from '@/services/reportService'
-import { restaurants } from '@/mocks/fixtures'
+import { restaurantService } from '@/services/restaurantService'
 import { formatCurrency } from '@/lib/format'
 import { DATE_RANGE_PRESETS, resolveDateRange, type DateRangePreset } from '@/lib/dateRanges'
 
@@ -34,6 +34,8 @@ export default function ReportsPage() {
   const { data: statusSlices, isLoading: loadingStatus } = useAsync(() => reportService.ordersByStatus(filters), [filters])
   const { data: topRestaurants, isLoading: loadingRestaurants } = useAsync(() => reportService.topRestaurants(range), [range])
   const { data: topRiders, isLoading: loadingRiders } = useAsync(() => reportService.topRiders(range), [range])
+  const { data: restaurantPage } = useAsync(() => restaurantService.list({ perPage: 100 }), [])
+  const restaurants = restaurantPage?.data
 
   const itemColumns: Column<TopItemRow>[] = [
     { key: 'name', header: 'Item', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{row.name}</span> },
@@ -63,7 +65,7 @@ export default function ReportsPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Select value={restaurantId} onChange={(e) => setRestaurantId(e.target.value === 'all' ? 'all' : Number(e.target.value))} className="w-48">
               <option value="all">All restaurants</option>
-              {restaurants.map((r) => (
+              {(restaurants ?? []).map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
             </Select>

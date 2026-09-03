@@ -21,6 +21,7 @@ import AddonCategoriesPage from '@/pages/admin/AddonCategoriesPage'
 import AddonsPage from '@/pages/admin/AddonsPage'
 import CouponsPage from '@/pages/admin/CouponsPage'
 import CouponFormPage from '@/pages/admin/CouponFormPage'
+import CartSimulatorPage from '@/pages/admin/CartSimulatorPage'
 import UsersPage from '@/pages/admin/UsersPage'
 import UserDetailPage from '@/pages/admin/UserDetailPage'
 import EmployeesPage from '@/pages/admin/EmployeesPage'
@@ -106,6 +107,7 @@ export function AppRoutes() {
         <Route path="coupons" element={<CouponsPage />} />
         <Route path="coupons/new" element={<CouponFormPage />} />
         <Route path="coupons/:id/edit" element={<CouponFormPage />} />
+        <Route path="cart-simulator" element={<CartSimulatorPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="users/:id" element={<UserDetailPage />} />
         <Route path="employees" element={<EmployeesPage />} />

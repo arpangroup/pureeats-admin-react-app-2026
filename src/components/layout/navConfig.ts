@@ -35,6 +35,7 @@ import {
   ShieldOff,
   Smartphone,
   Cable,
+  ListChecks,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -55,6 +56,7 @@ export const adminNav: NavSection[] = [
     items: [
       { label: 'Orders', to: '/admin/orders', icon: ShoppingBag },
       { label: 'Coupons', to: '/admin/coupons', icon: Tag },
+      { label: 'Cart Simulator', to: '/admin/cart-simulator', icon: ListChecks },
     ],
   },
   {
