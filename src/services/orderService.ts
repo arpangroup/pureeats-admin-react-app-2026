@@ -150,6 +150,7 @@ interface LiveOrderDetail {
   deliveryType: number
   orderFrom: string
   createdAt: string
+  updatedAt: string
   legalNextStatuses: string[]
   pricingBreakdown: PricingBreakdown | null
   deliveryGuyId: number | null
@@ -279,7 +280,7 @@ function liveDetailToRow(d: LiveOrderDetail): OrderRow {
       updatedAt: d.createdAt,
     })),
     createdAt: d.createdAt,
-    updatedAt: d.createdAt,
+    updatedAt: d.updatedAt,
   }
   return {
     ...order,

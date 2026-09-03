@@ -244,6 +244,8 @@ export interface OrderStatus {
     | 'Delivered'
     | 'Cancelled'
     | 'Rejected'
+    | 'Returned'
+    | 'Auto-Cancelled'
 }
 
 export interface OrderItemAddon {

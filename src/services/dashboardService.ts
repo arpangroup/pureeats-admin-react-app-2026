@@ -106,7 +106,7 @@ export const dashboardService = {
       await mockDelay()
       const mine = orders.filter((o) => o.restaurantId === restaurantId)
       const pendingStatusIds = orderStatuses
-        .filter((s) => !['Delivered', 'Cancelled', 'Rejected'].includes(s.name))
+        .filter((s) => !['Delivered', 'Cancelled', 'Rejected', 'Returned', 'Auto-Cancelled'].includes(s.name))
         .map((s) => s.id)
       const recent = await orderService.list({ restaurantId, page: 1, perPage: 6 })
       const myRatings = ratings.filter((r) => r.rateableType === 'restaurant' && r.rateableId === restaurantId)

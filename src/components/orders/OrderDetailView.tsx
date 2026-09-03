@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Bike, Calculator, History, MapPin, MessageSquare, Phone, Printer, Receipt, Store, Tag, User as UserIcon, UserPlus } from 'lucide-react'
+import { ArrowLeft, Bike, Calculator, GitBranch, History, MapPin, MessageSquare, Phone, Printer, Receipt, Store, Tag, User as UserIcon, UserPlus } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
 import { Select } from '@/components/ui/FormControls'
@@ -12,6 +12,7 @@ import { users } from '@/mocks/fixtures'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { OrderInvoice } from './OrderInvoice'
+import { OrderJourneyOverlay } from './OrderJourneyOverlay'
 
 export function OrderDetailView({ basePath }: { basePath: string }) {
   const { id } = useParams()
@@ -28,6 +29,7 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
   const [selectedRiderId, setSelectedRiderId] = useState<number | ''>('')
   const [assigning, setAssigning] = useState(false)
   const [assignError, setAssignError] = useState<string | null>(null)
+  const [journeyOpen, setJourneyOpen] = useState(false)
 
   async function handleStatusChange(statusId: number) {
     const status = statuses?.find((s) => s.id === statusId)
@@ -77,6 +79,9 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
         actions={
           <div className="flex items-center gap-2 print:hidden">
             <OrderStatusBadge status={order.statusName} />
+            <button className="btn-secondary" onClick={() => setJourneyOpen(true)}>
+              <GitBranch size={15} /> Order flow
+            </button>
             <Select
               value={order.orderstatusId}
               disabled={updating}
@@ -378,6 +383,8 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
           ))}
         </Select>
       </Modal>
+
+      <OrderJourneyOverlay open={journeyOpen} onClose={() => setJourneyOpen(false)} order={order} />
     </div>
   )
 }
