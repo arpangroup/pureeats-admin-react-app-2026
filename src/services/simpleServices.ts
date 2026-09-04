@@ -47,9 +47,39 @@ export const addonService = createCrudService<Addon>(addons, '/admin/addons', ['
 export const couponService = createCrudService<Coupon>(coupons, '/admin/coupons', ['name', 'code'])
 /** Store-owner scoped — same shape, but hits /store-owner/coupons (list/update/delete are ownership-checked server-side: only the coupon's creator may edit/delete it). */
 export const ownerCouponService = createCrudService<Coupon>(coupons, '/store-owner/coupons', ['name', 'code'])
-export const locationService = createCrudService<Location>(locations, '/locations', ['name'])
+export const locationService = createCrudService<Location>(locations, '/admin/locations', ['name'])
 export const popularGeoPlaceService = createCrudService<PopularGeoPlace>(popularGeoPlaces, '/popular-geo-places', ['name'])
 export const restaurantCategoryService = createCrudService<RestaurantCategory>(restaurantCategories, '/admin/restaurant-categories', ['name'])
+
+/** Minimal option shape for dropdowns/pickers — id+name is all a restaurant-edit form needs. */
+export interface SelectOption {
+  id: number
+  name: string
+}
+
+/**
+ * Every active serviceable location, for the restaurant form's "Serviceable location" picker.
+ * Hits the public (no-auth) `/locations` list — unlike {@link locationService}, this needs to
+ * work from the restaurant-owner's own edit form too, not just the admin-only Locations page.
+ */
+export async function listActiveLocations(): Promise<SelectOption[]> {
+  if (IS_MOCK) {
+    await mockDelay(100)
+    return locations.filter((l) => l.isActive).map((l) => ({ id: l.id, name: l.name }))
+  }
+  const { data } = await apiClient.get<{ data: SelectOption[] }>('/locations')
+  return data.data
+}
+
+/** Every active cuisine category, for the restaurant form's "Cuisine categories" picker — public (no-auth) `/restaurant-categories` list. */
+export async function listActiveRestaurantCategories(): Promise<SelectOption[]> {
+  if (IS_MOCK) {
+    await mockDelay(100)
+    return restaurantCategories.filter((c) => c.isActive).map((c) => ({ id: c.id, name: c.name }))
+  }
+  const { data } = await apiClient.get<{ data: SelectOption[] }>('/restaurant-categories')
+  return data.data
+}
 export const restaurantCategorySliderService = createCrudService<RestaurantCategorySlider>(restaurantCategorySliders, '/admin/restaurant-category-sliders', ['name'])
 export const translationService = createCrudService<Translation>(translations, '/translations', ['languageName'])
 export const pageService = createCrudService<Page>(pages, '/pages', ['name', 'slug'])

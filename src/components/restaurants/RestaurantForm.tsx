@@ -1,15 +1,18 @@
-import { Bike, Clock, FileBadge, Image as ImageIcon, MapPin, Settings2, ShieldCheck } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Bike, Clock, FileBadge, Image as ImageIcon, MapPin, Plus, Settings2, ShieldCheck } from 'lucide-react'
 import { Field, Select, Switch, TextInput, Textarea } from '@/components/ui/FormControls'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { ImageGalleryUpload } from '@/components/ui/ImageGalleryUpload'
 import { RestaurantImageGallery } from './RestaurantImageGallery'
-import { MapEmbed } from '@/components/ui/MapEmbed'
+import { LocationPickerMap } from '@/components/ui/LocationPickerMap'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { AuditInfo } from '@/components/ui/AuditInfo'
 import { WeeklyScheduleEditor } from './WeeklyScheduleEditor'
-import { locations, restaurantCategories } from '@/mocks/fixtures'
+import { listActiveLocations, listActiveRestaurantCategories } from '@/services/simpleServices'
 import { restaurantService } from '@/services/restaurantService'
+import { useAsync } from '@/hooks/useAsync'
 import { IS_MOCK } from '@/config/env'
+import { classNames } from '@/lib/format'
 import type { Restaurant } from '@/types/entities'
 
 interface RestaurantFormProps {
@@ -20,6 +23,14 @@ interface RestaurantFormProps {
 }
 
 export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false }: RestaurantFormProps) {
+  const { data: locationOptions } = useAsync(listActiveLocations, [])
+  const { data: categoryOptions } = useAsync(listActiveRestaurantCategories, [])
+  const categoryIds = values.categoryIds ?? []
+
+  function toggleCategory(id: number) {
+    onChange('categoryIds', categoryIds.includes(id) ? categoryIds.filter((c) => c !== id) : [...categoryIds, id])
+  }
+
   return (
     <div className="space-y-5">
       <SectionCard title="Basic information" description="Basic details about the restaurant" icon={Settings2}>
@@ -102,10 +113,20 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
 
       <SectionCard title="Location" description="Enter the restaurant's location details" icon={MapPin}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Serviceable location" required>
+          <Field
+            label="Serviceable location"
+            required
+            hint={
+              isAdmin ? (
+                <Link to="/admin/locations" target="_blank" className="inline-flex items-center gap-1 text-brand-600 hover:underline dark:text-brand-400">
+                  <Plus size={11} /> Add a new location
+                </Link>
+              ) : undefined
+            }
+          >
             <Select value={values.locationId ?? ''} onChange={(e) => onChange('locationId', Number(e.target.value))}>
               <option value="" disabled>Select location</option>
-              {locations.map((loc) => (
+              {(locationOptions ?? []).map((loc) => (
                 <option key={loc.id} value={loc.id}>{loc.name}</option>
               ))}
             </Select>
@@ -122,25 +143,49 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
             <TextInput value={values.landmark ?? ''} onChange={(e) => onChange('landmark', e.target.value)} />
           </Field>
           {isAdmin && (
-            <Field label="Cuisine categories" hint="Hold Ctrl/Cmd to select multiple">
-              <select
-                multiple
-                className="input h-24"
-                value={(values.categoryIds ?? []).map(String)}
-                onChange={(e) =>
-                  onChange(
-                    'categoryIds',
-                    Array.from(e.target.selectedOptions).map((opt) => Number(opt.value)),
-                  )
-                }
+            <div className="sm:col-span-2">
+              <Field
+                label="Cuisine categories"
+                hint={categoryIds.length ? `${categoryIds.length} selected — click again to remove` : 'Click every cuisine this store serves'}
               >
-                {restaurantCategories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-            </Field>
+                <div className="flex flex-wrap gap-2">
+                  {(categoryOptions ?? []).map((cat) => {
+                    const selected = categoryIds.includes(cat.id)
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => toggleCategory(cat.id)}
+                        className={classNames(
+                          'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                          selected
+                            ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-400'
+                            : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:bg-slate-800',
+                        )}
+                      >
+                        {cat.name}
+                      </button>
+                    )
+                  })}
+                  {categoryOptions?.length === 0 && (
+                    <p className="text-xs text-slate-400 dark:text-slate-500">No cuisine categories yet — add some under Store Category first.</p>
+                  )}
+                </div>
+              </Field>
+            </div>
           )}
 
+          <div className="sm:col-span-2">
+            <LocationPickerMap
+              lat={values.latitude}
+              lng={values.longitude}
+              onChange={(lat, lng) => {
+                onChange('latitude', lat)
+                onChange('longitude', lng)
+              }}
+            />
+          </div>
           <div className="sm:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Field label="Latitude">
               <TextInput
@@ -158,9 +203,6 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
                 onChange={(e) => onChange('longitude', Number(e.target.value))}
               />
             </Field>
-          </div>
-          <div className="sm:col-span-2">
-            <MapEmbed lat={values.latitude} lng={values.longitude} showCoordinatesNote />
           </div>
         </div>
       </SectionCard>
