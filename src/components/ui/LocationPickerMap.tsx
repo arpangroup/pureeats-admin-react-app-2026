@@ -29,8 +29,13 @@ const DEFAULT_CENTER: [number, number] = [12.9716, 77.5946]
 const MIN_QUERY_LENGTH = 3
 const DEBOUNCE_MS = 450
 
-function isValidCoordinate(lat: number | null | undefined, lng: number | null | undefined): lat is number {
-  return (
+/**
+ * Validates and narrows in one step — a plain `(lat, lng) is number` predicate can only narrow the
+ * first parameter, so TS still treats `lng` as possibly null/undefined at every call site. Returning
+ * the pair (or null) narrows both at once via destructuring instead.
+ */
+function toValidCoordinate(lat: number | null | undefined, lng: number | null | undefined): [number, number] | null {
+  if (
     typeof lat === 'number' &&
     typeof lng === 'number' &&
     Number.isFinite(lat) &&
@@ -40,7 +45,10 @@ function isValidCoordinate(lat: number | null | undefined, lng: number | null | 
     lng >= -180 &&
     lng <= 180 &&
     !(lat === 0 && lng === 0)
-  )
+  ) {
+    return [lat, lng]
+  }
+  return null
 }
 
 interface GeocodeResult {
@@ -183,10 +191,10 @@ export function LocationPickerMap({ lat, lng, onChange, onAddressResolved, heigh
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
-    const hasInitial = isValidCoordinate(lat, lng)
-    const initialCenter: [number, number] = hasInitial ? [lat, lng] : DEFAULT_CENTER
+    const initialValid = toValidCoordinate(lat, lng)
+    const initialCenter: [number, number] = initialValid ?? DEFAULT_CENTER
 
-    const map = L.map(containerRef.current, { zoomControl: false }).setView(initialCenter, hasInitial ? 15 : 12)
+    const map = L.map(containerRef.current, { zoomControl: false }).setView(initialCenter, initialValid ? 15 : 12)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors',
@@ -224,11 +232,13 @@ export function LocationPickerMap({ lat, lng, onChange, onAddressResolved, heigh
   useEffect(() => {
     const map = mapRef.current
     const marker = markerRef.current
-    if (!map || !marker || !isValidCoordinate(lat, lng)) return
+    const valid = toValidCoordinate(lat, lng)
+    if (!map || !marker || !valid) return
+    const [validLat, validLng] = valid
     const current = marker.getLatLng()
-    if (Math.abs(current.lat - lat) > 1e-9 || Math.abs(current.lng - lng) > 1e-9) {
-      marker.setLatLng([lat, lng])
-      map.setView([lat, lng], Math.max(map.getZoom(), 15))
+    if (Math.abs(current.lat - validLat) > 1e-9 || Math.abs(current.lng - validLng) > 1e-9) {
+      marker.setLatLng([validLat, validLng])
+      map.setView([validLat, validLng], Math.max(map.getZoom(), 15))
     }
   }, [lat, lng])
 
