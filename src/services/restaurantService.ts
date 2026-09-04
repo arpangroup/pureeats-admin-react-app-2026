@@ -9,6 +9,19 @@ import type { Restaurant } from '@/types/entities'
 
 const base = createCrudService<Restaurant>(restaurants, '/admin/restaurants', ['name', 'sku', 'contactNumber'])
 
+/**
+ * The backend's pricing engine reads the flat `deliveryCharges` field (required on create —
+ * `RestaurantCreateRequest.deliveryCharges` is `@NotNull`), not `baseDeliveryCharge`/
+ * `extraDeliveryCharge` (see backend README's "Delivery-charge tiering" note). The form only has
+ * an input for `baseDeliveryCharge` ("Delivery charge (₹)" / "Base delivery charge (₹)"), so keep
+ * `deliveryCharges` in sync with it on every save — otherwise it's left unset and create fails
+ * validation with "deliveryCharges: must not be null".
+ */
+function withFlatDeliveryCharge(payload: Partial<Restaurant>): Partial<Restaurant> {
+  if (payload.baseDeliveryCharge === undefined) return payload
+  return { ...payload, deliveryCharges: payload.baseDeliveryCharge }
+}
+
 export interface RestaurantImage {
   id: number
   url: string
@@ -26,6 +39,14 @@ export interface RestaurantAuditLogEntry {
 
 export const restaurantService = {
   ...base,
+
+  async create(payload: Partial<Restaurant>): Promise<Restaurant> {
+    return base.create(withFlatDeliveryCharge(payload))
+  },
+
+  async update(id: number, payload: Partial<Restaurant>): Promise<Restaurant> {
+    return base.update(id, withFlatDeliveryCharge(payload))
+  },
 
   /** Restaurant-owner scoped list — only restaurants owned by this user. */
   async listByOwner(ownerId: number, params: ListParams = {}): Promise<Paginated<Restaurant>> {
