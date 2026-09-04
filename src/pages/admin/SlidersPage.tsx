@@ -26,6 +26,7 @@ export default function SlidersPage() {
   const [editing, setEditing] = useState<PromoSlider | null>(null)
   const [values, setValues] = useState<Partial<PromoSlider>>(emptySlider)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<PromoSlider | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [managing, setManaging] = useState<PromoSlider | null>(null)
@@ -33,17 +34,20 @@ export default function SlidersPage() {
   function openCreate() {
     setEditing(null)
     setValues(emptySlider)
+    setSaveError(null)
     setFormOpen(true)
   }
 
   function openEdit(row: PromoSlider) {
     setEditing(row)
     setValues(row)
+    setSaveError(null)
     setFormOpen(true)
   }
 
   async function handleSave() {
     setSaving(true)
+    setSaveError(null)
     try {
       const now = new Date().toISOString()
       if (editing) {
@@ -53,6 +57,8 @@ export default function SlidersPage() {
       }
       setFormOpen(false)
       reload()
+    } catch (err) {
+      setSaveError((err as { message?: string })?.message ?? 'Unable to save slider')
     } finally {
       setSaving(false)
     }
@@ -143,6 +149,11 @@ export default function SlidersPage() {
         }
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {saveError && (
+            <div className="sm:col-span-2">
+              <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>
+            </div>
+          )}
           <div className="sm:col-span-2">
             <Field label="Slider name" required>
               <TextInput value={values.name ?? ''} onChange={(e) => setValues((p) => ({ ...p, name: e.target.value }))} />

@@ -83,6 +83,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
   const [values, setValues] = useState<Partial<User>>({})
   const [initialized, setInitialized] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [newRole, setNewRole] = useState<UserRole>(role)
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -111,6 +112,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
 
   async function handleSave() {
     setSaving(true)
+    setSaveError(null)
     try {
       const now = new Date().toISOString()
       await userService.update(user!.id, { ...values, updatedBy: 1, updatedAt: now })
@@ -119,6 +121,8 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
         reloadGuy()
       }
       reload()
+    } catch (err) {
+      setSaveError((err as { message?: string })?.message ?? 'Unable to save changes')
     } finally {
       setSaving(false)
     }
@@ -127,10 +131,13 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
   async function handleRoleChange() {
     if (newRole === user!.role) return
     setSaving(true)
+    setSaveError(null)
     try {
       await userService.update(user!.id, { role: newRole, updatedBy: 1, updatedAt: new Date().toISOString() })
       const target = roleBasePaths[newRole] ?? basePath
       navigate(`${target}/${user!.id}`)
+    } catch (err) {
+      setSaveError((err as { message?: string })?.message ?? 'Unable to change role')
     } finally {
       setSaving(false)
     }
@@ -162,6 +169,8 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
           </>
         }
       />
+
+      {saveError && <p className="mb-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <div className="space-y-4 xl:col-span-2">
@@ -385,20 +394,25 @@ function WalletAdjustPanel({
   const [amount, setAmount] = useState('')
   const [message, setMessage] = useState('')
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (action) {
       setAmount('')
       setMessage('')
+      setError(null)
     }
   }, [action])
 
   async function handleSubmit() {
     if (!wallet || !action || !amount || Number(amount) <= 0) return
     setSaving(true)
+    setError(null)
     try {
       await walletService.adjustBalance(wallet.id, action, Number(amount), message || (action === 'credit' ? 'Manual credit by admin' : 'Manual debit by admin'))
       onDone()
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? 'Unable to adjust wallet balance')
     } finally {
       setSaving(false)
     }
@@ -420,6 +434,7 @@ function WalletAdjustPanel({
       }
     >
       <div className="space-y-4">
+        {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{error}</p>}
         <Field label="Amount (₹)" required>
           <TextInput type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" />
         </Field>

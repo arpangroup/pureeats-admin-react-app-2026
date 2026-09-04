@@ -46,6 +46,7 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
   const [editing, setEditing] = useState<Item | null>(null)
   const [values, setValues] = useState<Partial<Item>>(emptyItem(restaurantId))
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Item | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -55,12 +56,14 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
   function openCreate() {
     setEditing(null)
     setValues(emptyItem(restaurantId))
+    setSaveError(null)
     setFormOpen(true)
   }
 
   function openEdit(row: Item) {
     setEditing(row)
     setValues(row)
+    setSaveError(null)
     setFormOpen(true)
   }
 
@@ -70,6 +73,7 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
 
   async function handleSave() {
     setSaving(true)
+    setSaveError(null)
     try {
       if (editing) {
         await itemService.update(editing.id, values)
@@ -78,6 +82,8 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
       }
       setFormOpen(false)
       reload()
+    } catch (err) {
+      setSaveError((err as { message?: string })?.message ?? 'Unable to save item')
     } finally {
       setSaving(false)
     }
@@ -200,16 +206,19 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
 
       <Modal
         open={formOpen}
-        onClose={() => setFormOpen(false)}
+        onClose={() => { setFormOpen(false); setSaveError(null) }}
         title={editing ? 'Edit Item' : 'Add Item'}
         size="lg"
         footer={
           <>
-            <button className="btn-secondary" onClick={() => setFormOpen(false)} disabled={saving}>Cancel</button>
+            <button className="btn-secondary" onClick={() => { setFormOpen(false); setSaveError(null) }} disabled={saving}>Cancel</button>
             <button className="btn-primary" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save item'}</button>
           </>
         }
       >
+        {saveError && (
+          <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>
+        )}
         <ItemForm values={values} onChange={handleChange} showRestaurantPicker={!restaurantId} />
       </Modal>
 

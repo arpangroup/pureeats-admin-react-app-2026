@@ -25,6 +25,7 @@ export default function RestaurantCategorySliderPage() {
   const [editing, setEditing] = useState<RestaurantCategorySlider | null>(null)
   const [values, setValues] = useState<Partial<RestaurantCategorySlider>>(emptySlider)
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<RestaurantCategorySlider | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [managing, setManaging] = useState<RestaurantCategorySlider | null>(null)
@@ -32,17 +33,20 @@ export default function RestaurantCategorySliderPage() {
   function openCreate() {
     setEditing(null)
     setValues(emptySlider)
+    setSaveError(null)
     setFormOpen(true)
   }
 
   function openEdit(row: RestaurantCategorySlider) {
     setEditing(row)
     setValues(row)
+    setSaveError(null)
     setFormOpen(true)
   }
 
   async function handleSave() {
     setSaving(true)
+    setSaveError(null)
     try {
       const now = new Date().toISOString()
       if (editing) {
@@ -52,6 +56,8 @@ export default function RestaurantCategorySliderPage() {
       }
       setFormOpen(false)
       reload()
+    } catch (err) {
+      setSaveError((err as { message?: string })?.message ?? 'Unable to save slider')
     } finally {
       setSaving(false)
     }
@@ -140,6 +146,7 @@ export default function RestaurantCategorySliderPage() {
         }
       >
         <div className="space-y-4">
+          {saveError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>}
           <Field label="Slider name" required>
             <TextInput value={values.name ?? ''} onChange={(e) => setValues((p) => ({ ...p, name: e.target.value }))} />
           </Field>

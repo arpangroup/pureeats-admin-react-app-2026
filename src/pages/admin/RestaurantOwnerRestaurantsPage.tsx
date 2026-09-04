@@ -13,12 +13,14 @@ export default function RestaurantOwnerRestaurantsPage() {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [selected, setSelected] = useState<number[]>([])
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [searchParams, setSearchParams] = useSearchParams()
   const filterRestaurantId = searchParams.get('restaurantId') ? Number(searchParams.get('restaurantId')) : null
   const filterRestaurant = filterRestaurantId ? restaurants.find((r) => r.id === filterRestaurantId) : undefined
 
   function openEdit(ownerId: number) {
     setEditingId(ownerId)
+    setSaveError(null)
     setSelected(userService.restaurantsForOwner(ownerId).map((r) => r.id))
   }
 
@@ -29,10 +31,13 @@ export default function RestaurantOwnerRestaurantsPage() {
   async function handleSave() {
     if (editingId === null) return
     setSaving(true)
+    setSaveError(null)
     try {
       await userService.updateOwnerRestaurants(editingId, selected)
       setEditingId(null)
       reload()
+    } catch (err) {
+      setSaveError((err as { message?: string })?.message ?? 'Unable to save assignments')
     } finally {
       setSaving(false)
     }
@@ -102,6 +107,7 @@ export default function RestaurantOwnerRestaurantsPage() {
           </>
         }
       >
+        {saveError && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>}
         <div className="space-y-2">
           {restaurants.map((r) => (
             <label key={r.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-100 px-3 py-2 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
