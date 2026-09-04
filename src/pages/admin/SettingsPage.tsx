@@ -11,6 +11,7 @@ import {
   MessageSquare,
   Palette,
   Percent,
+  RefreshCw,
   Settings as SettingsIcon,
   Smartphone,
   Sparkles,
@@ -24,6 +25,7 @@ import { LoadingBlock, ActiveBadge, EmptyState } from '@/components/ui/Feedback'
 import { classNames } from '@/lib/format'
 import { useAsync } from '@/hooks/useAsync'
 import { settingsService } from '@/services/settingsService'
+import { IS_MOCK } from '@/config/env'
 
 interface SettingCategory {
   key: string
@@ -46,7 +48,7 @@ const CATEGORIES: SettingCategory[] = [
   { key: 'delivery-app', label: 'Delivery Application', icon: Bike, wired: false },
   { key: 'store-dashboard', label: 'Store Dashboard', icon: Store, wired: false },
   { key: 'custom-css', label: 'Custom CSS', icon: Code2, wired: false },
-  { key: 'cache-settings', label: 'Cache Settings', icon: Database, wired: false },
+  { key: 'cache-settings', label: 'Cache Settings', icon: Database, wired: true },
 ]
 
 const FIELD_LABELS: Record<string, string> = {
@@ -71,12 +73,33 @@ export default function SettingsPage() {
   const { data: settings, isLoading, reload } = useAsync(() => settingsService.getAll(), [])
   const { data: gateways, reload: reloadGateways } = useAsync(() => settingsService.paymentGateways(), [])
   const { data: smsGateways } = useAsync(() => settingsService.smsGateways(), [])
+  const { data: caches, isLoading: cachesLoading, reload: reloadCaches } = useAsync(() => settingsService.listCaches(), [])
 
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const [draft, setDraft] = useState<Record<string, string>>({})
+  const [clearingCache, setClearingCache] = useState(false)
+  const [clearedAt, setClearedAt] = useState<Date | null>(null)
+  const [clearCacheError, setClearCacheError] = useState<string | null>(null)
+
+  async function handleClearCache() {
+    setClearingCache(true)
+    setClearCacheError(null)
+    try {
+      await settingsService.clearAllCaches()
+      setClearedAt(new Date())
+      reloadCaches()
+    } catch (err) {
+      setClearCacheError((err as { message?: string })?.message ?? 'Unable to clear caches')
+    } finally {
+      setClearingCache(false)
+    }
+  }
+
+  const [saveSettingError, setSaveSettingError] = useState<string | null>(null)
 
   async function handleSave(key: string) {
     setSavingKey(key)
+    setSaveSettingError(null)
     try {
       await settingsService.update(key, draft[key])
       reload()
@@ -85,6 +108,8 @@ export default function SettingsPage() {
         delete next[key]
         return next
       })
+    } catch (err) {
+      setSaveSettingError((err as { message?: string })?.message ?? 'Unable to save setting')
     } finally {
       setSavingKey(null)
     }
@@ -121,6 +146,9 @@ export default function SettingsPage() {
               <LoadingBlock />
             ) : (
               <>
+                {saveSettingError && (
+                  <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveSettingError}</p>
+                )}
                 {GENERAL_GROUPS.map((group) => (
                   <SectionCard key={group.title} title={group.title} description={group.description} icon={group.icon}>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -208,6 +236,49 @@ export default function SettingsPage() {
                   </div>
                 ))}
               </div>
+            </SectionCard>
+          )}
+
+          {activeCategory === 'cache-settings' && (
+            <SectionCard
+              title="Cache"
+              icon={Database}
+              description="Restaurant, menu and a few other reads are cached in memory for speed. If a backend change (a direct DB edit, another service, a support script) doesn't show up here yet, it's waiting out the cache's TTL — clear it to force everything fresh immediately."
+            >
+              {IS_MOCK ? (
+                <EmptyState icon={<Database size={22} />} title="Not applicable in mock mode" description="There's no real backend cache to inspect or clear against the demo dataset." />
+              ) : (
+                <>
+                  <div className="mb-4 flex flex-wrap items-center gap-3">
+                    <button className="btn-primary" onClick={handleClearCache} disabled={clearingCache}>
+                      <RefreshCw size={15} className={clearingCache ? 'animate-spin' : ''} />
+                      {clearingCache ? 'Refreshing…' : 'Refresh cache'}
+                    </button>
+                    {clearedAt && !clearCacheError && (
+                      <span className="text-sm text-emerald-600 dark:text-emerald-400">
+                        Cleared at {clearedAt.toLocaleTimeString()} — the next request re-reads from the database.
+                      </span>
+                    )}
+                  </div>
+                  {clearCacheError && <p className="mb-3 text-sm text-rose-600 dark:text-rose-400">{clearCacheError}</p>}
+                  {cachesLoading ? (
+                    <LoadingBlock />
+                  ) : caches && caches.length > 0 ? (
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {caches.map((cache) => (
+                        <div key={cache.name} className="flex items-center justify-between py-2.5 text-sm first:pt-0 last:pb-0">
+                          <span className="font-mono text-slate-700 dark:text-slate-300">{cache.name}</span>
+                          <span className="text-slate-400 dark:text-slate-500">
+                            {cache.estimatedSize ?? '—'} {cache.estimatedSize === 1 ? 'entry' : 'entries'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-400 dark:text-slate-500">No caches have been used yet this session.</p>
+                  )}
+                </>
+              )}
             </SectionCard>
           )}
 
