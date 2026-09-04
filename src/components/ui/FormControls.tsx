@@ -4,7 +4,7 @@ import { classNames } from '@/lib/format'
 interface FieldWrapperProps {
   label?: string
   htmlFor?: string
-  hint?: string
+  hint?: ReactNode
   error?: string
   required?: boolean
   children: ReactNode

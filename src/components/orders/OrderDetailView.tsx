@@ -3,13 +3,15 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Bike, Calculator, GitBranch, History, MapPin, MessageSquare, Phone, Printer, Receipt, Store, Tag, User as UserIcon, UserPlus } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
-import { Select } from '@/components/ui/FormControls'
+import { Select, TextInput } from '@/components/ui/FormControls'
 import { Modal } from '@/components/ui/Modal'
 import { useAsync } from '@/hooks/useAsync'
 import { orderService } from '@/services/orderService'
 import { deliveryGuyService } from '@/services/deliveryGuyService'
 import { users } from '@/mocks/fixtures'
 import { formatCurrency, formatDate } from '@/lib/format'
+import { FEATURE_FLAGS } from '@/config/featureFlags'
+import type { OrderStatus } from '@/types/entities'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { OrderInvoice } from './OrderInvoice'
 import { OrderJourneyOverlay } from './OrderJourneyOverlay'
@@ -30,13 +32,39 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
   const [assigning, setAssigning] = useState(false)
   const [assignError, setAssignError] = useState<string | null>(null)
   const [journeyOpen, setJourneyOpen] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState<OrderStatus | null>(null)
+  const [confirmInput, setConfirmInput] = useState('')
+  const [confirmError, setConfirmError] = useState<string | null>(null)
 
-  async function handleStatusChange(statusId: number) {
+  async function requestStatusChange(statusId: number) {
     const status = statuses?.find((s) => s.id === statusId)
     if (!status) return
+    if (!FEATURE_FLAGS.orderStatusChangeConfirmation) {
+      setUpdating(true)
+      try {
+        await orderService.updateStatus(orderId, status)
+        reload()
+      } finally {
+        setUpdating(false)
+      }
+      return
+    }
+    setPendingStatus(status)
+    setConfirmInput('')
+    setConfirmError(null)
+  }
+
+  async function confirmStatusChange() {
+    if (!pendingStatus || !order) return
+    const last4 = order.uniqueOrderId.slice(-4).toLowerCase()
+    if (confirmInput.trim().toLowerCase() !== last4) {
+      setConfirmError("That doesn't match the last 4 characters of the order ID — check and try again.")
+      return
+    }
     setUpdating(true)
     try {
-      await orderService.updateStatus(orderId, status)
+      await orderService.updateStatus(orderId, pendingStatus)
+      setPendingStatus(null)
       reload()
     } finally {
       setUpdating(false)
@@ -84,8 +112,8 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
             </button>
             <Select
               value={order.orderstatusId}
-              disabled={updating}
-              onChange={(e) => handleStatusChange(Number(e.target.value))}
+              disabled={updating || !!pendingStatus}
+              onChange={(e) => requestStatusChange(Number(e.target.value))}
               className="w-44"
             >
               {(statuses ?? []).map((s) => {
@@ -382,6 +410,41 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
             </option>
           ))}
         </Select>
+      </Modal>
+
+      <Modal
+        open={!!pendingStatus}
+        onClose={() => setPendingStatus(null)}
+        title={`Mark order as ${pendingStatus?.name ?? ''}?`}
+        footer={
+          <>
+            <button className="btn-secondary" onClick={() => setPendingStatus(null)} disabled={updating}>
+              Cancel
+            </button>
+            <button className="btn-primary" onClick={confirmStatusChange} disabled={updating || confirmInput.trim().length < 4}>
+              {updating ? 'Updating…' : 'Confirm'}
+            </button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600 dark:text-slate-300">
+          To confirm changing order <span className="font-mono font-semibold">{order.uniqueOrderId}</span> to{' '}
+          <span className="font-semibold">{pendingStatus?.name}</span>, type the last 4 characters of the order ID.
+        </p>
+        <TextInput
+          className="mt-3 font-mono uppercase tracking-widest"
+          value={confirmInput}
+          onChange={(e) => {
+            setConfirmInput(e.target.value)
+            setConfirmError(null)
+          }}
+          maxLength={4}
+          autoFocus
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && confirmInput.trim().length >= 4) confirmStatusChange()
+          }}
+        />
+        {confirmError && <p className="mt-2 text-sm text-rose-600 dark:text-rose-400">{confirmError}</p>}
       </Modal>
 
       <OrderJourneyOverlay open={journeyOpen} onClose={() => setJourneyOpen(false)} order={order} />
