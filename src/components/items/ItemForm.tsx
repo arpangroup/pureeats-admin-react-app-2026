@@ -1,8 +1,11 @@
 import { Field, Select, Switch, TextInput, Textarea } from '@/components/ui/FormControls'
 import { ImageUpload } from '@/components/ui/ImageUpload'
-import { itemCategories, addonCategories, restaurants } from '@/mocks/fixtures'
+import { itemCategories, restaurants } from '@/mocks/fixtures'
 import { itemService } from '@/services/itemService'
+import { addonCategoryService } from '@/services/simpleServices'
+import { useAsync } from '@/hooks/useAsync'
 import { IS_MOCK } from '@/config/env'
+import { classNames } from '@/lib/format'
 import type { Item } from '@/types/entities'
 
 interface ItemFormProps {
@@ -12,7 +15,13 @@ interface ItemFormProps {
 }
 
 export function ItemForm({ values, onChange, showRestaurantPicker = true }: ItemFormProps) {
-  const addonCategoriesAvailable = addonCategories
+  const { data: addonCategoryPage } = useAsync(() => addonCategoryService.list({ perPage: 100 }), [])
+  const addonCategoriesAvailable = addonCategoryPage?.data ?? []
+  const addonCategoryIds = values.addonCategoryIds ?? []
+
+  function toggleAddonCategory(id: number) {
+    onChange('addonCategoryIds', addonCategoryIds.includes(id) ? addonCategoryIds.filter((c) => c !== id) : [...addonCategoryIds, id])
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -72,20 +81,37 @@ export function ItemForm({ values, onChange, showRestaurantPicker = true }: Item
           onChange={(e) => onChange('oldPrice', e.target.value === '' ? null : Number(e.target.value))}
         />
       </Field>
-      <Field label="Addon categories" hint="Hold Ctrl/Cmd to select multiple">
-        <select
-          multiple
-          className="input h-24"
-          value={(values.addonCategoryIds ?? []).map(String)}
-          onChange={(e) =>
-            onChange('addonCategoryIds', Array.from(e.target.selectedOptions).map((o) => Number(o.value)))
-          }
+      <div className="sm:col-span-2">
+        <Field
+          label="Addon categories"
+          hint={addonCategoryIds.length ? `${addonCategoryIds.length} selected — click again to remove` : 'Click every addon group this item offers, e.g. Toppings, Spice level'}
         >
-          {addonCategoriesAvailable.map((ac) => (
-            <option key={ac.id} value={ac.id}>{ac.name}</option>
-          ))}
-        </select>
-      </Field>
+          <div className="flex flex-wrap gap-2">
+            {addonCategoriesAvailable.map((ac) => {
+              const selected = addonCategoryIds.includes(ac.id)
+              return (
+                <button
+                  key={ac.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => toggleAddonCategory(ac.id)}
+                  className={classNames(
+                    'rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                    selected
+                      ? 'border-brand-500 bg-brand-50 text-brand-700 dark:border-brand-500 dark:bg-brand-500/10 dark:text-brand-400'
+                      : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:bg-slate-800',
+                  )}
+                >
+                  {ac.name}
+                </button>
+              )
+            })}
+            {addonCategoriesAvailable.length === 0 && (
+              <p className="text-xs text-slate-400 dark:text-slate-500">No addon categories yet — add some under Addon Categories first.</p>
+            )}
+          </div>
+        </Field>
+      </div>
       <div className="grid grid-cols-2 gap-3 sm:col-span-2 sm:grid-cols-4">
         <Field label="Active">
           <Switch checked={!!values.isActive} onChange={(v) => onChange('isActive', v)} />
