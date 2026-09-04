@@ -60,9 +60,19 @@ function refreshAccessToken(): Promise<string | null> {
   return refreshInFlight
 }
 
+/** True for the `Map<String, String>` shape GlobalExceptionHandler.handleValidation puts in `data`. */
+function isFieldErrorMap(value: unknown): value is Record<string, string> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.values(value).every((v) => typeof v === 'string')
+  )
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError<{ message?: string; errors?: Record<string, string> }>) => {
+  async (error: AxiosError<{ message?: string; data?: unknown }>) => {
     const config = error.config as RetriableConfig | undefined
     const isRefreshCall = config?.url === '/auth/refresh'
 
@@ -78,10 +88,22 @@ apiClient.interceptors.response.use(
       removeStorage(AUTH_USER_STORAGE_KEY)
     }
 
+    // Field-level validation errors come back as { message: "Validation failed", data: { field: reason } }
+    // (see GlobalExceptionHandler#handleValidation on the backend) — surface the per-field reasons instead
+    // of the generic top-level message, so e.g. "address: must not be blank" replaces "Validation failed".
+    const responseBody = error.response?.data
+    const fieldErrors = isFieldErrorMap(responseBody?.data) ? responseBody.data : undefined
+    const baseMessage = responseBody?.message ?? error.message ?? 'Something went wrong'
+    const message = fieldErrors
+      ? Object.entries(fieldErrors)
+          .map(([field, reason]) => `${field}: ${reason}`)
+          .join('; ')
+      : baseMessage
+
     const apiError: ApiError = {
-      message: error.response?.data?.message ?? error.message ?? 'Something went wrong',
+      message,
       status: error.response?.status,
-      fieldErrors: error.response?.data?.errors,
+      fieldErrors,
     }
     return Promise.reject(apiError)
   },
