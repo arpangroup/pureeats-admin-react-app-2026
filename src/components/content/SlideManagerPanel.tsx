@@ -56,6 +56,7 @@ export function SlideManagerPanel({
   const [editing, setEditing] = useState<Slide | null>(null)
   const [values, setValues] = useState<Partial<Slide>>({})
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Slide | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -63,12 +64,14 @@ export function SlideManagerPanel({
     if (!sliderId) return
     setEditing(null)
     setValues(emptySlide(sliderType, sliderId, (slidesList?.length ?? 0) + 1))
+    setSaveError(null)
     setFormOpen(true)
   }
 
   function openEdit(slide: Slide) {
     setEditing(slide)
     setValues(slide)
+    setSaveError(null)
     setFormOpen(true)
   }
 
@@ -78,6 +81,7 @@ export function SlideManagerPanel({
 
   async function handleSave() {
     setSaving(true)
+    setSaveError(null)
     try {
       if (editing) {
         await slideService.update(editing.id, values)
@@ -93,6 +97,8 @@ export function SlideManagerPanel({
       setFormOpen(false)
       reload()
       onSlidesChanged?.()
+    } catch (err) {
+      setSaveError((err as { message?: string })?.message ?? 'Unable to save slide')
     } finally {
       setSaving(false)
     }
@@ -187,6 +193,9 @@ export function SlideManagerPanel({
           </>
         }
       >
+        {saveError && (
+          <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>
+        )}
         <SlideForm values={values} onChange={handleChange} />
       </Modal>
 

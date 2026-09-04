@@ -182,10 +182,12 @@ function EditRatingPanel({ rating, onClose, onSaved }: { rating: RatingRow | nul
   const [comment, setComment] = useState(rating?.comment ?? '')
   const [tagsInput, setTagsInput] = useState(rating?.tags.join(', ') ?? '')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   async function handleSave() {
     if (!rating) return
     setSaving(true)
+    setSaveError(null)
     try {
       await ratingService.update(rating.id, {
         rating: score,
@@ -193,6 +195,8 @@ function EditRatingPanel({ rating, onClose, onSaved }: { rating: RatingRow | nul
         tags: tagsInput.split(',').map((t) => t.trim()).filter(Boolean),
       })
       onSaved()
+    } catch (err) {
+      setSaveError((err as { message?: string })?.message ?? 'Unable to save review')
     } finally {
       setSaving(false)
     }
@@ -214,6 +218,7 @@ function EditRatingPanel({ rating, onClose, onSaved }: { rating: RatingRow | nul
     >
       {rating && (
         <div className="space-y-4">
+          {saveError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>}
           <Field label="Rating (1–5)" required>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((n) => (

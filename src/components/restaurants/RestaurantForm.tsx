@@ -113,6 +113,36 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
 
       <SectionCard title="Location" description="Enter the restaurant's location details" icon={MapPin}>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <LocationPickerMap
+              lat={values.latitude}
+              lng={values.longitude}
+              onChange={(lat, lng) => {
+                onChange('latitude', lat)
+                onChange('longitude', lng)
+              }}
+              onAddressResolved={(address) => onChange('address', address)}
+            />
+          </div>
+          <div className="sm:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Latitude">
+              <TextInput
+                type="number"
+                step="any"
+                value={values.latitude ?? 0}
+                onChange={(e) => onChange('latitude', Number(e.target.value))}
+              />
+            </Field>
+            <Field label="Longitude">
+              <TextInput
+                type="number"
+                step="any"
+                value={values.longitude ?? 0}
+                onChange={(e) => onChange('longitude', Number(e.target.value))}
+              />
+            </Field>
+          </div>
+
           <Field
             label="Serviceable location"
             required
@@ -134,14 +164,7 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
           <Field label="Pincode">
             <TextInput value={values.pincode ?? ''} onChange={(e) => onChange('pincode', e.target.value)} />
           </Field>
-          <div className="sm:col-span-2">
-            <Field label="Address" required>
-              <Textarea value={values.address ?? ''} onChange={(e) => onChange('address', e.target.value)} />
-            </Field>
-          </div>
-          <Field label="Landmark">
-            <TextInput value={values.landmark ?? ''} onChange={(e) => onChange('landmark', e.target.value)} />
-          </Field>
+
           {isAdmin && (
             <div className="sm:col-span-2">
               <Field
@@ -177,31 +200,13 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
           )}
 
           <div className="sm:col-span-2">
-            <LocationPickerMap
-              lat={values.latitude}
-              lng={values.longitude}
-              onChange={(lat, lng) => {
-                onChange('latitude', lat)
-                onChange('longitude', lng)
-              }}
-            />
-          </div>
-          <div className="sm:col-span-2 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Latitude">
-              <TextInput
-                type="number"
-                step="any"
-                value={values.latitude ?? 0}
-                onChange={(e) => onChange('latitude', Number(e.target.value))}
-              />
+            <Field label="Address" required hint="Filled in automatically when you search, click, or drag the pin above — edit freely if it needs a correction.">
+              <Textarea value={values.address ?? ''} onChange={(e) => onChange('address', e.target.value)} />
             </Field>
-            <Field label="Longitude">
-              <TextInput
-                type="number"
-                step="any"
-                value={values.longitude ?? 0}
-                onChange={(e) => onChange('longitude', Number(e.target.value))}
-              />
+          </div>
+          <div className="sm:col-span-2">
+            <Field label="Landmark">
+              <TextInput value={values.landmark ?? ''} onChange={(e) => onChange('landmark', e.target.value)} />
             </Field>
           </div>
         </div>

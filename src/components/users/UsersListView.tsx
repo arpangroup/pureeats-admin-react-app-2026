@@ -42,6 +42,7 @@ export function UsersListView({
   const [formOpen, setFormOpen] = useState(false)
   const [values, setValues] = useState<Partial<User>>({ role, isActive: true })
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<User | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -50,16 +51,20 @@ export function UsersListView({
 
   function openCreate() {
     setValues({ role, isActive: true, name: '', email: '', phone: '' })
+    setSaveError(null)
     setFormOpen(true)
   }
 
   async function handleSave() {
     setSaving(true)
+    setSaveError(null)
     try {
       const created = await userService.create({ ...values, createdBy: 1, updatedBy: 1 })
       setFormOpen(false)
       reload()
       navigate(`${basePath}/${created.id}`)
+    } catch (err) {
+      setSaveError((err as { message?: string })?.message ?? 'Unable to save')
     } finally {
       setSaving(false)
     }
@@ -141,16 +146,17 @@ export function UsersListView({
 
       <Modal
         open={formOpen}
-        onClose={() => setFormOpen(false)}
+        onClose={() => { setFormOpen(false); setSaveError(null) }}
         title={createLabel}
         footer={
           <>
-            <button className="btn-secondary" onClick={() => setFormOpen(false)} disabled={saving}>Cancel</button>
+            <button className="btn-secondary" onClick={() => { setFormOpen(false); setSaveError(null) }} disabled={saving}>Cancel</button>
             <button className="btn-primary" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
           </>
         }
       >
         <div className="space-y-4">
+          {saveError && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>}
           <Field label="Full name" required>
             <TextInput value={values.name ?? ''} onChange={(e) => setValues((p) => ({ ...p, name: e.target.value }))} />
           </Field>
