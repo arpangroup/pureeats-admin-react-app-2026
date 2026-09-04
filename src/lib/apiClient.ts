@@ -1,4 +1,4 @@
-import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios'
 import { API_BASE_URL, AUTH_REFRESH_TOKEN_STORAGE_KEY, AUTH_TOKEN_STORAGE_KEY, AUTH_USER_STORAGE_KEY, IS_MOCK } from '@/config/env'
 import { getDeviceId } from '@/lib/deviceId'
 import { readStorage, removeStorage, writeStorage } from '@/lib/storage'
@@ -38,18 +38,23 @@ apiClient.interceptors.request.use((config) => {
 // twice) calling useAsync(() => service.get(id)) at the same instant would otherwise fire the
 // same request twice; this makes the second caller just await the first's in-flight promise.
 // Harmless (and rare) outside that case too: any two callers racing the same GET share one round trip.
+// Untyped on purpose: axios's own `.get` overload signature is generic enough (and has shifted
+// enough across versions) that trying to mirror it exactly here is brittle. The double cast through
+// `unknown` at the end is what actually matters — every real caller still sees the normal, fully
+// typed `apiClient.get<T>(...)` signature; only this file's internals are loosely typed.
 const inFlightGets = new Map<string, Promise<unknown>>()
-const rawGet = apiClient.get.bind(apiClient)
-apiClient.get = (<T = unknown, R = AxiosResponse<T>, D = unknown>(url: string, config?: AxiosRequestConfig<D>): Promise<R> => {
+const rawGet = apiClient.get.bind(apiClient) as (url: string, config?: AxiosRequestConfig) => Promise<unknown>
+const dedupedGet = (url: string, config?: AxiosRequestConfig): Promise<unknown> => {
   const key = `${url}?${JSON.stringify(config?.params ?? {})}`
-  const existing = inFlightGets.get(key) as Promise<R> | undefined
+  const existing = inFlightGets.get(key)
   if (existing) return existing
-  const promise = rawGet<T, R, D>(url, config).finally(() => {
+  const promise = rawGet(url, config).finally(() => {
     inFlightGets.delete(key)
   })
   inFlightGets.set(key, promise)
   return promise
-}) as typeof apiClient.get
+}
+apiClient.get = dedupedGet as unknown as typeof apiClient.get
 
 interface RetriableConfig extends InternalAxiosRequestConfig {
   _retry?: boolean
