@@ -1,8 +1,8 @@
 import { Field, Select, Switch, TextInput, Textarea } from '@/components/ui/FormControls'
 import { ImageUpload } from '@/components/ui/ImageUpload'
-import { itemCategories, restaurants } from '@/mocks/fixtures'
 import { itemService } from '@/services/itemService'
-import { addonCategoryService } from '@/services/simpleServices'
+import { restaurantService } from '@/services/restaurantService'
+import { addonCategoryService, itemCategoryService } from '@/services/simpleServices'
 import { useAsync } from '@/hooks/useAsync'
 import { IS_MOCK } from '@/config/env'
 import { classNames } from '@/lib/format'
@@ -15,6 +15,10 @@ interface ItemFormProps {
 }
 
 export function ItemForm({ values, onChange, showRestaurantPicker = true }: ItemFormProps) {
+  const { data: restaurantPage } = useAsync(() => restaurantService.list({ perPage: 100 }), [])
+  const restaurants = restaurantPage?.data ?? []
+  const { data: itemCategoryPage } = useAsync(() => itemCategoryService.list({ perPage: 100 }), [])
+  const itemCategories = itemCategoryPage?.data ?? []
   const { data: addonCategoryPage } = useAsync(() => addonCategoryService.list({ perPage: 100 }), [])
   const addonCategoriesAvailable = addonCategoryPage?.data ?? []
   const addonCategoryIds = values.addonCategoryIds ?? []

@@ -8,7 +8,8 @@ import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
 import { useDebounce } from '@/hooks/useDebounce'
 import { itemService } from '@/services/itemService'
-import { itemCategories, restaurants } from '@/mocks/fixtures'
+import { restaurantService } from '@/services/restaurantService'
+import { itemCategoryService } from '@/services/simpleServices'
 import { formatCurrency } from '@/lib/format'
 import type { Item } from '@/types/entities'
 import { ItemForm } from './ItemForm'
@@ -36,6 +37,10 @@ const emptyItem = (restaurantId?: number): Partial<Item> => ({
 export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { data: restaurantPage } = useAsync(() => restaurantService.list({ perPage: 100 }), [])
+  const restaurants = restaurantPage?.data ?? []
+  const { data: itemCategoryPage } = useAsync(() => itemCategoryService.list({ perPage: 100 }), [])
+  const itemCategories = itemCategoryPage?.data ?? []
   const scopedRestaurant = restaurantId ? restaurants.find((r) => r.id === restaurantId) : undefined
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
