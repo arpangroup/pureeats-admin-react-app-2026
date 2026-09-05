@@ -80,6 +80,45 @@ export function Switch({
   )
 }
 
+export function RadioGroup({
+  name,
+  options,
+  value,
+  onChange,
+  disabled,
+}: {
+  name: string
+  options: { label: string; value: string }[]
+  value: string
+  onChange: (value: string) => void
+  disabled?: boolean
+}) {
+  return (
+    <div className="flex flex-wrap gap-x-5 gap-y-2 py-1.5">
+      {options.map((opt) => (
+        <label
+          key={opt.value}
+          className={classNames(
+            'inline-flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300',
+            disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
+          )}
+        >
+          <input
+            type="radio"
+            name={name}
+            value={opt.value}
+            checked={value === opt.value}
+            disabled={disabled}
+            onChange={() => onChange(opt.value)}
+            className="h-4 w-4 border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600"
+          />
+          {opt.label}
+        </label>
+      ))}
+    </div>
+  )
+}
+
 export function SearchInput({
   value,
   onChange,
