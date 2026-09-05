@@ -1,11 +1,13 @@
 import { useState, type ReactNode } from 'react'
 import {
+  BarChart3,
   Bell,
   Bike,
   Check,
   Code2,
   CreditCard,
   Database,
+  Info,
   Mail,
   MapPin,
   MessageSquare,
@@ -16,16 +18,32 @@ import {
   Smartphone,
   Sparkles,
   Store,
+  UserCheck,
   type LucideIcon,
 } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { Field, TextInput, Switch } from '@/components/ui/FormControls'
 import { LoadingBlock, ActiveBadge, EmptyState } from '@/components/ui/Feedback'
+import { DynamicSettingsForm } from '@/components/settings/DynamicSettingsForm'
 import { classNames } from '@/lib/format'
 import { useAsync } from '@/hooks/useAsync'
 import { settingsService } from '@/services/settingsService'
 import { IS_MOCK } from '@/config/env'
+import {
+  buildDefaultDynamicSettingValues,
+  CUSTOMER_APP_GROUPS,
+  DELIVERY_APP_GROUPS,
+  EMAIL_SETTINGS_GROUPS,
+  GENERAL_TIMING_GROUP,
+  GOOGLE_ANALYTICS_GROUPS,
+  GOOGLE_MAP_GROUPS,
+  PAYMENT_GATEWAY_CONFIG_GROUPS,
+  PUSH_NOTIFICATIONS_GROUPS,
+  SMS_CONFIG_GROUPS,
+  SOCIAL_LOGIN_GROUPS,
+  STORE_DASHBOARD_GROUPS,
+} from '@/config/settingsFieldsConfig'
 
 interface SettingCategory {
   key: string
@@ -40,13 +58,15 @@ const CATEGORIES: SettingCategory[] = [
   { key: 'design', label: 'Design', icon: Palette, wired: false },
   { key: 'payments', label: 'Payment Gateways', icon: CreditCard, wired: true },
   { key: 'sms-gateways', label: 'SMS Gateways', icon: MessageSquare, wired: true },
-  { key: 'email-settings', label: 'Email Settings', icon: Mail, wired: false },
-  { key: 'push-notifications', label: 'Push Notifications', icon: Bell, wired: false },
-  { key: 'google-map', label: 'Google Map', icon: MapPin, wired: false },
+  { key: 'email-settings', label: 'Email Settings', icon: Mail, wired: true },
+  { key: 'push-notifications', label: 'Push Notifications', icon: Bell, wired: true },
+  { key: 'social-login', label: 'Social Login', icon: UserCheck, wired: true },
+  { key: 'google-map', label: 'Google Map', icon: MapPin, wired: true },
+  { key: 'google-analytics', label: 'Google Analytics', icon: BarChart3, wired: true },
   { key: 'tax-settings', label: 'Tax Settings', icon: Percent, wired: false },
-  { key: 'customer-app', label: 'Customer Application', icon: Smartphone, wired: false },
-  { key: 'delivery-app', label: 'Delivery Application', icon: Bike, wired: false },
-  { key: 'store-dashboard', label: 'Store Dashboard', icon: Store, wired: false },
+  { key: 'customer-app', label: 'Customer Application', icon: Smartphone, wired: true },
+  { key: 'delivery-app', label: 'Delivery Application', icon: Bike, wired: true },
+  { key: 'store-dashboard', label: 'Store Dashboard', icon: Store, wired: true },
   { key: 'custom-css', label: 'Custom CSS', icon: Code2, wired: false },
   { key: 'cache-settings', label: 'Cache Settings', icon: Database, wired: true },
 ]
@@ -54,12 +74,25 @@ const CATEGORIES: SettingCategory[] = [
 const FIELD_LABELS: Record<string, string> = {
   app_name: 'App name',
   currency_symbol: 'Currency symbol',
-  currency_code: 'Currency code',
+  currency_code: 'Store currency',
   support_email: 'Support email',
   support_phone: 'Support phone',
   default_tax_percent: 'Default tax (%)',
   default_commission_rate: 'Default commission (%)',
   min_withdrawal_amount: 'Minimum withdrawal (₹)',
+}
+
+/**
+ * Shown atop categories that render real, interactive fields but have no backend endpoint behind
+ * them yet — values just live in this page's local state for the session.
+ */
+function PreviewOnlyNote() {
+  return (
+    <p className="mb-4 flex items-start gap-2 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-700 dark:bg-sky-500/10 dark:text-sky-400">
+      <Info size={14} className="mt-0.5 shrink-0" />
+      <span>This section isn&apos;t connected to a backend yet — changes here are kept only for this browser session.</span>
+    </p>
+  )
 }
 
 const GENERAL_GROUPS: { title: string; description?: string; icon: LucideIcon; keys: string[] }[] = [
@@ -77,6 +110,8 @@ export default function SettingsPage() {
 
   const [savingKey, setSavingKey] = useState<string | null>(null)
   const [draft, setDraft] = useState<Record<string, string>>({})
+  const [dynamicValues, setDynamicValues] = useState<Record<string, string>>(buildDefaultDynamicSettingValues)
+  const handleDynamicChange = (key: string, value: string) => setDynamicValues((prev) => ({ ...prev, [key]: value }))
   const [clearingCache, setClearingCache] = useState(false)
   const [clearedAt, setClearedAt] = useState<Date | null>(null)
   const [clearCacheError, setClearCacheError] = useState<string | null>(null)
@@ -200,43 +235,111 @@ export default function SettingsPage() {
                     </Field>
                   </SectionCard>
                 )}
+
+                <DynamicSettingsForm groups={[GENERAL_TIMING_GROUP]} values={dynamicValues} onChange={handleDynamicChange} />
               </>
             )
           )}
 
           {activeCategory === 'payments' && (
-            <SectionCard title="Payment gateways" icon={CreditCard} description="Enable the ways customers can pay for orders.">
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {(gateways ?? []).map((gateway) => (
-                  <div key={gateway.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                    <div>
-                      <p className="font-medium text-slate-800 dark:text-slate-100">{gateway.name}</p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">{gateway.description}</p>
+            <>
+              <SectionCard title="Payment gateways" icon={CreditCard} description="Enable the ways customers can pay for orders.">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {(gateways ?? []).map((gateway) => (
+                    <div key={gateway.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                      <div>
+                        <p className="font-medium text-slate-800 dark:text-slate-100">{gateway.name}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{gateway.description}</p>
+                      </div>
+                      <Switch
+                        checked={gateway.isActive}
+                        onChange={async (v) => {
+                          await settingsService.togglePaymentGateway(gateway.id, v)
+                          reloadGateways()
+                        }}
+                      />
                     </div>
-                    <Switch
-                      checked={gateway.isActive}
-                      onChange={async (v) => {
-                        await settingsService.togglePaymentGateway(gateway.id, v)
-                        reloadGateways()
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
+                  ))}
+                </div>
+              </SectionCard>
+
+              <PreviewOnlyNote />
+              <DynamicSettingsForm groups={PAYMENT_GATEWAY_CONFIG_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
+            </>
           )}
 
           {activeCategory === 'sms-gateways' && (
-            <SectionCard title="SMS gateways" icon={MessageSquare} description="Providers used to send OTPs and order alerts.">
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {(smsGateways ?? []).map((gateway) => (
-                  <div key={gateway.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                    <p className="font-medium text-slate-800 dark:text-slate-100">{gateway.gatewayName}</p>
-                    <ActiveBadge active={gateway.isActive} />
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
+            <>
+              <SectionCard title="SMS gateways" icon={MessageSquare} description="Providers used to send OTPs and order alerts.">
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {(smsGateways ?? []).map((gateway) => (
+                    <div key={gateway.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                      <p className="font-medium text-slate-800 dark:text-slate-100">{gateway.gatewayName}</p>
+                      <ActiveBadge active={gateway.isActive} />
+                    </div>
+                  ))}
+                </div>
+              </SectionCard>
+
+              <PreviewOnlyNote />
+              <DynamicSettingsForm groups={SMS_CONFIG_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
+            </>
+          )}
+
+          {activeCategory === 'customer-app' && (
+            <>
+              <PreviewOnlyNote />
+              <DynamicSettingsForm groups={CUSTOMER_APP_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
+            </>
+          )}
+
+          {activeCategory === 'delivery-app' && (
+            <>
+              <PreviewOnlyNote />
+              <DynamicSettingsForm groups={DELIVERY_APP_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
+            </>
+          )}
+
+          {activeCategory === 'store-dashboard' && (
+            <>
+              <PreviewOnlyNote />
+              <DynamicSettingsForm groups={STORE_DASHBOARD_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
+            </>
+          )}
+
+          {activeCategory === 'push-notifications' && (
+            <>
+              <PreviewOnlyNote />
+              <DynamicSettingsForm groups={PUSH_NOTIFICATIONS_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
+            </>
+          )}
+
+          {activeCategory === 'social-login' && (
+            <>
+              <PreviewOnlyNote />
+              <DynamicSettingsForm groups={SOCIAL_LOGIN_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
+            </>
+          )}
+
+          {activeCategory === 'google-map' && (
+            <>
+              <PreviewOnlyNote />
+              <DynamicSettingsForm groups={GOOGLE_MAP_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
+            </>
+          )}
+
+          {activeCategory === 'google-analytics' && (
+            <>
+              <PreviewOnlyNote />
+              <DynamicSettingsForm groups={GOOGLE_ANALYTICS_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
+            </>
+          )}
+
+          {activeCategory === 'email-settings' && (
+            <>
+              <PreviewOnlyNote />
+              <DynamicSettingsForm groups={EMAIL_SETTINGS_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
+            </>
           )}
 
           {activeCategory === 'cache-settings' && (
