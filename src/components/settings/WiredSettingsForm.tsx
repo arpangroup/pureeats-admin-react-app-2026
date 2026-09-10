@@ -4,11 +4,10 @@ import { SectionCard } from '@/components/ui/SectionCard'
 import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
 import { useAsync } from '@/hooks/useAsync'
 import { useSettingsConfirmation } from '@/hooks/useSettingsConfirmation'
-import { settingsService } from '@/services/settingsService'
+import { settingsService, type SettingKeyValue } from '@/services/settingsService'
 import { ConfirmPasswordDialog } from './ConfirmPasswordDialog'
 import { DynamicField } from './DynamicSettingsForm'
 import type { SettingGroupDef } from '@/config/settingsFieldsConfig'
-import type { Setting } from '@/types/entities'
 
 /**
  * The real, backend-wired renderer for SettingGroupDef[] — same field types/labels/help copy as
@@ -52,7 +51,7 @@ export function WiredSettingsForm({ groups }: { groups: SettingGroupDef[] }) {
   )
 }
 
-function WiredSettingsGroupCard({ group, settings, reload }: { group: SettingGroupDef; settings: Setting[]; reload: () => void }) {
+function WiredSettingsGroupCard({ group, settings, reload }: { group: SettingGroupDef; settings: SettingKeyValue[]; reload: () => void }) {
   const savedByKey: Record<string, string> = {}
   for (const field of group.fields) savedByKey[field.key] = settings.find((s) => s.key === field.key)?.value ?? field.defaultValue
 
