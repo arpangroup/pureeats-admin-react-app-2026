@@ -26,6 +26,7 @@ import { SectionCard } from '@/components/ui/SectionCard'
 import { Field, TextInput, Switch } from '@/components/ui/FormControls'
 import { LoadingBlock, ActiveBadge, EmptyState } from '@/components/ui/Feedback'
 import { DynamicSettingsForm } from '@/components/settings/DynamicSettingsForm'
+import { CustomerAppConfigPanel } from '@/components/settings/CustomerAppConfigPanel'
 import { classNames } from '@/lib/format'
 import { useAsync } from '@/hooks/useAsync'
 import { settingsService } from '@/services/settingsService'
@@ -288,6 +289,7 @@ export default function SettingsPage() {
 
           {activeCategory === 'customer-app' && (
             <>
+              <CustomerAppConfigPanel />
               <PreviewOnlyNote />
               <DynamicSettingsForm groups={CUSTOMER_APP_GROUPS} values={dynamicValues} onChange={handleDynamicChange} />
             </>

@@ -246,7 +246,8 @@ export const PUSH_NOTIFICATIONS_GROUPS: SettingGroupDef[] = [
   },
   {
     title: 'Firebase Cloud Messaging',
-    description: 'Credentials from the Firebase console deliver push notifications to the customer, store and delivery apps.',
+    description:
+      'Credentials from the Firebase console deliver push notifications to the customer, store and delivery apps. The customer app\'s own web config (API key, project ID, etc.) now saves for real under Settings → Customer Application → Firebase Cloud Messaging — these fields stay preview-only pending a backend endpoint for this tab.',
     icon: KeyRound,
     fields: [
       { key: 'firebase_sender_id', label: 'Firebase sender ID', fieldType: 'text', defaultValue: '', placeholder: 'e.g. 1234567890' },
@@ -320,6 +321,7 @@ export const SOCIAL_LOGIN_GROUPS: SettingGroupDef[] = [
 export const GOOGLE_MAP_GROUPS: SettingGroupDef[] = [
   {
     title: 'Google Maps',
+    description: 'The customer app\'s map key now saves for real under Settings → Customer Application → Google Maps — this tab stays preview-only pending a backend endpoint for these other fields.',
     icon: MapPin,
     fields: [
       { key: 'show_map_order_tracking', label: 'Show map on order tracking page', fieldType: 'boolean', defaultValue: 'true' },
@@ -444,7 +446,7 @@ export const PAYMENT_GATEWAY_CONFIG_GROUPS: SettingGroupDef[] = [
   },
   {
     title: 'Razorpay',
-    description: 'Razorpay payment gateway.',
+    description: 'Razorpay payment gateway. Now saves for real under Settings → Customer Application → Razorpay — these fields stay preview-only.',
     icon: CreditCard,
     fields: [
       { key: 'razorpay_key_id', label: 'Razorpay key ID', fieldType: 'text', defaultValue: '' },
