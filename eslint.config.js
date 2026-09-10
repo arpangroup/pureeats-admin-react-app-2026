@@ -8,6 +8,19 @@ export default [
   { ignores: ['dist'] },
   js.configs.recommended,
   {
+    // A service worker runs in its own global scope (self, importScripts), separate from the
+    // browser `window` scope every other file lints against below — and `firebase` here is a
+    // global the Firebase compat scripts attach via importScripts, not an ES module import.
+    files: ['public/firebase-messaging-sw.js'],
+    languageOptions: {
+      globals: {
+        self: 'readonly',
+        importScripts: 'readonly',
+        firebase: 'readonly',
+      },
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       parser: tsParser,
@@ -29,6 +42,8 @@ export default [
         atob: 'readonly',
         btoa: 'readonly',
         crypto: 'readonly',
+        navigator: 'readonly',
+        Notification: 'readonly',
         HTMLInputElement: 'readonly',
         HTMLSelectElement: 'readonly',
         HTMLTextAreaElement: 'readonly',

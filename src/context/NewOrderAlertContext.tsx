@@ -3,6 +3,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { orderService } from '@/services/orderService'
 import { restaurantService } from '@/services/restaurantService'
 import { storeOwnerOrderService } from '@/services/storeOwnerOrderService'
+import { appConfigService, type FirebaseWebConfig } from '@/services/appConfigService'
+import { onForegroundMessage } from '@/lib/firebaseMessaging'
 import { playNewOrderChime } from '@/lib/notificationSound'
 import {
   readNewOrderAlertSettings,
@@ -31,19 +33,31 @@ interface NewOrderAlertContextValue {
 /** How often the chime repeats while unacknowledged alerts are still on screen. */
 const REPEAT_CHIME_INTERVAL_SECONDS = 8
 
+function hasFirebaseConfig(config: FirebaseWebConfig): boolean {
+  return !!(config.apiKey && config.projectId && config.appId && config.vapidKey)
+}
+
 // eslint-disable-next-line react-refresh/only-export-components
 export const NewOrderAlertContext = createContext<NewOrderAlertContextValue | undefined>(undefined)
 
 /**
- * Polls for newly placed orders on an interval and surfaces a global toast + optional chime,
- * regardless of which page is currently open — mounted once above the router so it keeps running
- * across every admin/restaurant-owner route. Entirely inert (no polling, no UI) until the user
- * opts in via settings — see readNewOrderAlertSettings.
+ * Surfaces a global toast + optional chime for newly-placed orders, regardless of which page is
+ * currently open — mounted once above the router so it keeps running across every admin/
+ * restaurant-owner route. Entirely inert (no listening, no UI) until the user opts in via
+ * settings — see readNewOrderAlertSettings.
+ *
+ * Two mechanisms, picked by `settings.usePush` (default true): a real-time push (see
+ * OrderNotificationService#notifyAdminsOfNewOrder / #notifyNewOrder on the backend — a NEW_ORDER
+ * push is always sent, unconditionally, regardless of this per-browser choice; this only decides
+ * whether THIS browser listens for it) or polling the backend on an interval. Push automatically
+ * falls back to polling if Firebase isn't configured (or a token can't be obtained) — see the
+ * `pushAvailable` effect below - so "usePush: true" is a preference, not a hard requirement.
  */
 export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth()
   const [settings, setSettings] = useState<NewOrderAlertSettings>(() => readNewOrderAlertSettings())
   const [alerts, setAlerts] = useState<NewOrderAlertItem[]>([])
+  const [pushAvailable, setPushAvailable] = useState(false)
   const seenIds = useRef<Set<number> | null>(null)
 
   const isAdminLike = user?.role === 'admin' || user?.role === 'employee'
@@ -66,6 +80,69 @@ export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
     setAlerts([])
   }, [])
 
+  const addAlert = useCallback(
+    (order: { id: number; uniqueOrderId: string; restaurantName?: string; payable: number; createdAt: string }) => {
+      setAlerts((prev) => [
+        { key: `${order.id}-${Date.now()}`, orderId: order.id, uniqueOrderId: order.uniqueOrderId, restaurantName: order.restaurantName, payable: order.payable, createdAt: order.createdAt },
+        ...prev,
+      ])
+      if (settings.soundEnabled) playNewOrderChime()
+    },
+    [settings.soundEnabled],
+  )
+
+  // Whether push is actually usable right now — checked once per enable, independent of the
+  // usePush preference itself, so switching usePush on/off doesn't need a fresh Firebase config
+  // fetch each time.
+  useEffect(() => {
+    if (!isAuthenticated || !settings.enabled || (!isAdminLike && !isStoreOwner)) {
+      setPushAvailable(false)
+      return
+    }
+    let cancelled = false
+    appConfigService.getPublicFirebaseConfig().then((config) => {
+      if (!cancelled) setPushAvailable(hasFirebaseConfig(config))
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated, settings.enabled, isAdminLike, isStoreOwner])
+
+  const usingPush = settings.enabled && settings.usePush && pushAvailable
+
+  // Push path: one onForegroundMessage subscription, filtered to NEW_ORDER-category messages (see
+  // usePushNotifications in Topbar, which skips showing its own generic toast for the same reason
+  // this one exists — this is the richer, order-specific UI for that event).
+  useEffect(() => {
+    if (!usingPush) return
+    let cancelled = false
+    let cleanup: (() => void) | null = null
+
+    appConfigService.getPublicFirebaseConfig().then((firebaseConfig) => {
+      if (cancelled) return
+      cleanup = onForegroundMessage(firebaseConfig, (payload) => {
+        if (payload.data?.type !== 'NEW_ORDER') return
+        const data = payload.data
+        const orderId = Number(data.orderId)
+        if (!Number.isFinite(orderId)) return
+        addAlert({
+          id: orderId,
+          uniqueOrderId: data.uniqueOrderId ?? '',
+          restaurantName: data.restaurantName,
+          payable: Number(data.payable) || 0,
+          createdAt: new Date().toISOString(),
+        })
+      })
+    })
+
+    return () => {
+      cancelled = true
+      cleanup?.()
+    }
+  }, [usingPush, addAlert])
+
+  // Polling path: primary mechanism when usePush is off, and the automatic fallback while push
+  // availability hasn't resolved yet or Firebase isn't configured at all.
   useEffect(() => {
     // Reset the "already seen" baseline whenever polling (re)starts, so the very first poll never
     // dumps every currently-placed order as a flurry of "new" alerts.
@@ -73,7 +150,7 @@ export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
   }, [settings.enabled, user?.id])
 
   useEffect(() => {
-    if (!isAuthenticated || !user || !settings.enabled || (!isAdminLike && !isStoreOwner)) {
+    if (!isAuthenticated || !user || !settings.enabled || (!isAdminLike && !isStoreOwner) || usingPush) {
       return
     }
 
@@ -116,23 +193,7 @@ export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
 
         const freshlyNew = fetched.filter((o) => !seenIds.current!.has(o.id))
         freshlyNew.forEach((o) => seenIds.current!.add(o.id))
-
-        if (freshlyNew.length > 0) {
-          setAlerts((prev) => [
-            ...freshlyNew.map((o) => ({
-              key: `${o.id}-${Date.now()}`,
-              orderId: o.id,
-              uniqueOrderId: o.uniqueOrderId,
-              restaurantName: o.restaurantName,
-              payable: o.payable,
-              createdAt: o.createdAt,
-            })),
-            ...prev,
-          ])
-          if (settings.soundEnabled) {
-            playNewOrderChime()
-          }
-        }
+        freshlyNew.forEach(addAlert)
       } catch {
         // A transient poll failure (network blip, token refresh in flight) just gets retried next tick.
       }
@@ -145,7 +206,7 @@ export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
       window.clearInterval(intervalId)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user?.id, settings.enabled, settings.intervalSeconds, settings.soundEnabled, isAdminLike, isStoreOwner])
+  }, [isAuthenticated, user?.id, settings.enabled, settings.intervalSeconds, usingPush, isAdminLike, isStoreOwner, addAlert])
 
   useEffect(() => {
     // Keep ringing every few seconds while unacknowledged alerts are on screen, not just once when

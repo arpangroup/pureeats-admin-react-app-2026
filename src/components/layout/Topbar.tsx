@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Bell, BellOff, BellRing, ChevronDown, LogOut, Menu, Moon, ShieldOff, Sun, Volume2, VolumeX, Wifi, WifiOff } from 'lucide-react'
+import { Bell, BellOff, BellRing, ChevronDown, LogOut, Menu, Moon, ShieldOff, Sun, Volume2, VolumeX, Wifi, WifiOff, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import { useTheme } from '@/hooks/useTheme'
 import { useNewOrderAlerts } from '@/hooks/useNewOrderAlerts'
+import { usePushNotifications } from '@/hooks/usePushNotifications'
 import { NEW_ORDER_ALERT_INTERVAL_OPTIONS } from '@/lib/newOrderAlertSettings'
 import { initials, timeAgo } from '@/lib/format'
 import { IS_MOCK } from '@/config/env'
@@ -22,6 +23,7 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   const unreadCount = (alerts ?? []).filter((a) => !a.isRead).length
   const canAutoFetchOrders = user?.role === 'admin' || user?.role === 'employee' || user?.role === 'restaurant-owner'
   const { settings: alertSettings, updateSettings: updateAlertSettings } = useNewOrderAlerts()
+  const { toast: pushToast, dismiss: dismissPushToast } = usePushNotifications(reloadAlerts)
 
   async function handleAlertClick(id: number, isRead: boolean) {
     if (!isRead) {
@@ -98,6 +100,20 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
                       className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600"
                     />
                   </label>
+
+                  <label className="flex items-center justify-between py-1.5">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">Use push notifications</span>
+                    <input
+                      type="checkbox"
+                      checked={alertSettings.usePush}
+                      onChange={(e) => updateAlertSettings({ usePush: e.target.checked })}
+                      disabled={!alertSettings.enabled}
+                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600"
+                    />
+                  </label>
+                  <p className="mb-1 text-xs text-slate-400 dark:text-slate-500">
+                    {alertSettings.usePush ? 'Instant, via Firebase — falls back to checking below automatically if push isn\'t available.' : 'Checking the server on the interval below.'}
+                  </p>
 
                   <label className="flex items-center justify-between py-1.5">
                     <span className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
@@ -225,6 +241,39 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
           )}
         </div>
       </div>
+
+      {pushToast && (
+        <div
+          onClick={
+            pushToast.clickAction
+              ? () => {
+                  const url = pushToast.clickAction!
+                  dismissPushToast()
+                  if (/^https?:\/\//.test(url)) window.location.href = url
+                  else navigate(url)
+                }
+              : undefined
+          }
+          className={`fixed right-4 top-16 z-50 flex w-80 items-start gap-3 rounded-xl border border-slate-100 bg-white px-4 py-3 shadow-lg dark:border-slate-800 dark:bg-slate-900 ${pushToast.clickAction ? 'cursor-pointer' : ''}`}
+        >
+          <Bell size={16} className="mt-0.5 shrink-0 text-brand-600 dark:text-brand-400" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{pushToast.title}</p>
+            {pushToast.body && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{pushToast.body}</p>}
+            {pushToast.image && <img src={pushToast.image} alt="" className="mt-2 max-h-32 w-full rounded-lg object-cover" />}
+          </div>
+          <button
+            className="shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+            onClick={(e) => {
+              e.stopPropagation()
+              dismissPushToast()
+            }}
+            aria-label="Dismiss"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </header>
   )
 }

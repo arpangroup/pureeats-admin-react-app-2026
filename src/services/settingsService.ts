@@ -2,6 +2,7 @@ import { apiClient } from '@/lib/apiClient'
 import { mockDelay } from '@/lib/mockUtils'
 import { IS_MOCK } from '@/config/env'
 import { settings, paymentGateways, smsGateways } from '@/mocks/fixtures'
+import { mockVerifyConfirmationPassword } from '@/services/appConfigService'
 import type { PaymentGateway, Setting, SmsGateway } from '@/types/entities'
 
 export interface CacheInfo {
@@ -10,12 +11,10 @@ export interface CacheInfo {
 }
 
 /**
- * The live backend's actual shape for these three ('/settings' returns a flat key→value map, not a
- * `Setting[]`; '/payment-gateways' and '/sms-gateways' come back as the standard `{ data: T }`
- * envelope like everywhere else, not unwrapped) doesn't match what this file originally assumed —
- * this page was built ahead of a backend contract that never quite landed. `unwrapArray` is a
- * defensive normalizer so a shape mismatch degrades to "show nothing" instead of crashing the whole
- * Settings page (every tab, not just the mismatched one — there's no error boundary here).
+ * '/payment-gateways' and '/sms-gateways' come back as the standard `{ data: T[] }` envelope like
+ * everywhere else, not unwrapped — `unwrapArray` is a defensive normalizer so a shape mismatch
+ * degrades to "show nothing" instead of crashing the whole Settings page (every tab, not just the
+ * mismatched one — there's no error boundary here).
  */
 function unwrapArray<T>(body: unknown): T[] {
   if (Array.isArray(body)) return body as T[]
@@ -25,26 +24,40 @@ function unwrapArray<T>(body: unknown): T[] {
   return []
 }
 
+/** '/settings' (unlike everything array-shaped above) comes back as `{ data: Record<string, string> }` — a flat key→value map, not a list of rows — converted here into the Setting[] shape every caller on this side expects. */
+function mapToSettings(map: Record<string, string> | undefined | null): Setting[] {
+  return Object.entries(map ?? {}).map(([key, value]) => ({ key, value }))
+}
+
 export const settingsService = {
   async getAll(): Promise<Setting[]> {
     if (IS_MOCK) {
       await mockDelay()
       return [...settings]
     }
-    const { data } = await apiClient.get('/settings')
-    return unwrapArray<Setting>(data)
+    const { data } = await apiClient.get<{ data: Record<string, string> }>('/settings')
+    return mapToSettings(data.data)
   },
 
-  async update(key: string, value: string): Promise<Setting> {
+  /** Upserts several keys in one request — prefer this over calling update() in a loop when saving a whole form/tab at once. `confirmPassword` is only checked when the AppConfig-level settingsConfirmationEnabled flag is on — see ConfirmPasswordDialog / useSettingsConfirmation. */
+  async updateMany(updates: Record<string, string>, confirmPassword?: string): Promise<Setting[]> {
     if (IS_MOCK) {
       await mockDelay()
-      const index = settings.findIndex((s) => s.key === key)
-      if (index === -1) throw { message: `Unknown setting: ${key}` }
-      settings[index] = { ...settings[index], value }
-      return settings[index]
+      mockVerifyConfirmationPassword(confirmPassword)
+      Object.entries(updates).forEach(([key, value]) => {
+        const index = settings.findIndex((s) => s.key === key)
+        if (index === -1) settings.push({ key, value })
+        else settings[index] = { ...settings[index], value }
+      })
+      return [...settings]
     }
-    const { data } = await apiClient.put<{ data: Setting }>(`/settings/${key}`, { value })
-    return data.data
+    const { data } = await apiClient.put<{ data: Record<string, string> }>('/admin/settings', { updates, confirmationPassword: confirmPassword })
+    return mapToSettings(data.data)
+  },
+
+  async update(key: string, value: string, confirmPassword?: string): Promise<Setting> {
+    await this.updateMany({ [key]: value }, confirmPassword)
+    return { key, value }
   },
 
   async paymentGateways(): Promise<PaymentGateway[]> {

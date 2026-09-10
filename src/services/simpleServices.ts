@@ -162,6 +162,12 @@ export const notificationService = {
     }
     await apiClient.delete(`/notifications/${id}`)
   },
+
+  /** Registers/refreshes this device's FCM token so a push targeted at this admin's user id (e.g. via AdminNotificationTestController) reaches this browser tab — no-op in mock mode, same as the customer app's equivalent. `audience: 'STAFF'` auto-subscribes it to the standing "all_staff" broadcast topic (see PushAudience on the backend). */
+  async registerPushToken(token: string): Promise<void> {
+    if (IS_MOCK) return
+    await apiClient.post('/notifications/push-token', { token, audience: 'STAFF' })
+  },
 }
 
 export interface CouponUsageRow {

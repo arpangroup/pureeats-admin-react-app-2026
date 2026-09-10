@@ -4,12 +4,15 @@ export interface NewOrderAlertSettings {
   enabled: boolean
   soundEnabled: boolean
   intervalSeconds: number
+  /** How new orders are noticed: a real-time push (falls back to polling automatically if Firebase isn't configured or a token can't be obtained) vs. polling only. Defaults to push. */
+  usePush: boolean
 }
 
 export const DEFAULT_NEW_ORDER_ALERT_SETTINGS: NewOrderAlertSettings = {
   enabled: false,
   soundEnabled: true,
   intervalSeconds: 20,
+  usePush: true,
 }
 
 export const NEW_ORDER_ALERT_INTERVAL_OPTIONS = [15, 20, 30, 60] as const
