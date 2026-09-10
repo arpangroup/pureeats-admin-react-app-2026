@@ -3,11 +3,22 @@ import { mockDelay } from '@/lib/mockUtils'
 import { IS_MOCK } from '@/config/env'
 import { settings, paymentGateways, smsGateways } from '@/mocks/fixtures'
 import { mockVerifyConfirmationPassword } from '@/services/appConfigService'
-import type { PaymentGateway, Setting, SmsGateway } from '@/types/entities'
+import type { PaymentGateway, SmsGateway } from '@/types/entities'
 
 export interface CacheInfo {
   name: string
   estimatedSize: number | null
+}
+
+/**
+ * The generic key/value settings store's own shape — deliberately not the `Setting` type from
+ * types/entities.ts, which models a real DB row with an `id` (used elsewhere for an actual CRUD
+ * resource). `/settings` and `/admin/settings` are keyed by `key` alone (a flat
+ * `Record<string, string>` on the wire — see mapToSettings below); there's no per-entry id to have.
+ */
+export interface SettingKeyValue {
+  key: string
+  value: string
 }
 
 /**
@@ -24,13 +35,13 @@ function unwrapArray<T>(body: unknown): T[] {
   return []
 }
 
-/** '/settings' (unlike everything array-shaped above) comes back as `{ data: Record<string, string> }` — a flat key→value map, not a list of rows — converted here into the Setting[] shape every caller on this side expects. */
-function mapToSettings(map: Record<string, string> | undefined | null): Setting[] {
+/** '/settings' (unlike everything array-shaped above) comes back as `{ data: Record<string, string> }` — a flat key→value map, not a list of rows — converted here into the SettingKeyValue[] shape every caller on this side expects. */
+function mapToSettings(map: Record<string, string> | undefined | null): SettingKeyValue[] {
   return Object.entries(map ?? {}).map(([key, value]) => ({ key, value }))
 }
 
 export const settingsService = {
-  async getAll(): Promise<Setting[]> {
+  async getAll(): Promise<SettingKeyValue[]> {
     if (IS_MOCK) {
       await mockDelay()
       return [...settings]
@@ -40,13 +51,13 @@ export const settingsService = {
   },
 
   /** Upserts several keys in one request — prefer this over calling update() in a loop when saving a whole form/tab at once. `confirmPassword` is only checked when the AppConfig-level settingsConfirmationEnabled flag is on — see ConfirmPasswordDialog / useSettingsConfirmation. */
-  async updateMany(updates: Record<string, string>, confirmPassword?: string): Promise<Setting[]> {
+  async updateMany(updates: Record<string, string>, confirmPassword?: string): Promise<SettingKeyValue[]> {
     if (IS_MOCK) {
       await mockDelay()
       mockVerifyConfirmationPassword(confirmPassword)
       Object.entries(updates).forEach(([key, value]) => {
         const index = settings.findIndex((s) => s.key === key)
-        if (index === -1) settings.push({ key, value })
+        if (index === -1) settings.push({ id: settings.length ? Math.max(...settings.map((s) => s.id)) + 1 : 1, key, value })
         else settings[index] = { ...settings[index], value }
       })
       return [...settings]
@@ -55,7 +66,7 @@ export const settingsService = {
     return mapToSettings(data.data)
   },
 
-  async update(key: string, value: string, confirmPassword?: string): Promise<Setting> {
+  async update(key: string, value: string, confirmPassword?: string): Promise<SettingKeyValue> {
     await this.updateMany({ [key]: value }, confirmPassword)
     return { key, value }
   },
