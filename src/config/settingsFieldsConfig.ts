@@ -9,6 +9,8 @@ import {
   MapPin,
   MessageSquare,
   Monitor,
+  Percent,
+  Settings as SettingsIcon,
   Sparkles,
   Timer,
   UserCheck,
@@ -17,10 +19,12 @@ import {
 } from 'lucide-react'
 
 /**
- * Declarative definitions for the settings tabs that don't have a real backend endpoint yet
- * (see SettingsPage). Each field only knows its own shape (label/type/options/help copy) —
- * DynamicSettingsForm turns that into UI, and SettingsPage owns the actual values in local
- * state since there's nothing to persist them to.
+ * Mock-mode fallback for the settings sections/fields — mirrors the backend's
+ * SettingSchemaService.schema() (GET /admin/settings/schema) field-for-field. In live mode the
+ * admin panel renders entirely off that backend schema (see settingsSchemaService.ts); this file
+ * only matters when VITE_DATA_SOURCE=mock, where there's no backend to fetch a schema from. Keep
+ * the two in sync — a field added on one side without the other means it shows up in exactly one
+ * of the two modes.
  */
 export type SettingFieldType = 'text' | 'password' | 'number' | 'email' | 'url' | 'textarea' | 'boolean' | 'dropdown' | 'radio'
 
@@ -50,6 +54,51 @@ export interface SettingGroupDef {
   icon?: LucideIcon
   fields: SettingFieldDef[]
 }
+
+/** Mirrors SettingSchemaService#generalSection() on the backend, minus "Order timing" (kept separate below since it was already its own constant). */
+export const GENERAL_INFO_GROUPS: SettingGroupDef[] = [
+  {
+    title: 'App info',
+    icon: Sparkles,
+    fields: [
+      { key: 'app_name', label: 'App name', fieldType: 'text', defaultValue: 'PureEats' },
+      { key: 'currency_symbol', label: 'Currency symbol', fieldType: 'text', defaultValue: '₹' },
+      { key: 'currency_code', label: 'Store currency', fieldType: 'text', defaultValue: 'INR' },
+    ],
+  },
+  {
+    title: 'Contact & support',
+    icon: Mail,
+    fields: [
+      { key: 'support_email', label: 'Support email', fieldType: 'email', defaultValue: '' },
+      { key: 'support_phone', label: 'Support phone', fieldType: 'text', defaultValue: '' },
+    ],
+  },
+  {
+    title: 'Commerce',
+    description: 'Defaults applied to new restaurants and payouts.',
+    icon: Percent,
+    fields: [
+      { key: 'default_tax_percent', label: 'Default tax (%)', fieldType: 'number', defaultValue: '5' },
+      { key: 'default_commission_rate', label: 'Default commission (%)', fieldType: 'number', defaultValue: '15' },
+      { key: 'min_withdrawal_amount', label: 'Minimum withdrawal (₹)', fieldType: 'number', defaultValue: '500' },
+    ],
+  },
+  {
+    title: 'Platform',
+    description: 'Take the customer app offline for maintenance.',
+    icon: SettingsIcon,
+    fields: [
+      {
+        key: 'maintenance_mode',
+        label: 'Maintenance mode',
+        fieldType: 'boolean',
+        defaultValue: 'false',
+        info: 'When on, customers see a maintenance page instead of the app.',
+      },
+    ],
+  },
+]
 
 export const GENERAL_TIMING_GROUP: SettingGroupDef = {
   title: 'Order timing',
@@ -245,9 +294,9 @@ export const PUSH_NOTIFICATIONS_GROUPS: SettingGroupDef[] = [
     ],
   },
   {
-    title: 'Firebase Cloud Messaging',
+    title: 'Firebase Cloud Messaging (legacy)',
     description:
-      'Credentials from the Firebase console deliver push notifications to the customer, store and delivery apps. The customer app\'s own web config (API key, project ID, etc.) now saves for real under Settings → Customer Application → Firebase Cloud Messaging — these fields stay preview-only pending a backend endpoint for this tab.',
+      'The web app config the customer app actually needs (API key, project ID, VAPID key, etc.) is the "Firebase Cloud Messaging" card above — this saves for real. These three are a separate, legacy server-side credential set with no backend endpoint behind them yet.',
     icon: KeyRound,
     fields: [
       { key: 'firebase_sender_id', label: 'Firebase sender ID', fieldType: 'text', defaultValue: '', placeholder: 'e.g. 1234567890' },
@@ -318,10 +367,13 @@ export const SOCIAL_LOGIN_GROUPS: SettingGroupDef[] = [
   },
 ]
 
+// The "Google Maps" API key itself lives in GoogleMapsConfigPanel (the SectionCard right above
+// this one on the Google Map tab), backed by AppConfig — the two google_map_api_key_* fields below
+// are filtered out before this group ever reaches the mock schema (see settingsSchemaService.ts)
+// so they're only kept here for whoever eventually gives them a real backend endpoint.
 export const GOOGLE_MAP_GROUPS: SettingGroupDef[] = [
   {
-    title: 'Google Maps',
-    description: 'The customer app\'s map key now saves for real under Settings → Customer Application → Google Maps — this tab stays preview-only pending a backend endpoint for these other fields.',
+    title: 'Map display',
     icon: MapPin,
     fields: [
       { key: 'show_map_order_tracking', label: 'Show map on order tracking page', fieldType: 'boolean', defaultValue: 'true' },
@@ -343,6 +395,25 @@ export const GOOGLE_MAP_GROUPS: SettingGroupDef[] = [
         warning: 'Never reuse the same unrestricted key for both server and client calls.',
         link: { label: 'Manage API keys', href: 'https://console.cloud.google.com/google/maps-apis/credentials' },
       },
+    ],
+  },
+]
+
+/** Mirrors SettingSchemaService#taxSettingSection() on the backend. */
+export const TAX_SETTINGS_GROUPS: SettingGroupDef[] = [
+  {
+    title: 'Tax display',
+    icon: Percent,
+    fields: [
+      { key: 'tax_label', label: 'Tax label shown to customers', fieldType: 'text', defaultValue: 'GST', placeholder: 'GST' },
+      {
+        key: 'tax_inclusive_pricing',
+        label: 'Menu prices already include tax',
+        fieldType: 'boolean',
+        defaultValue: 'false',
+        info: 'When on, the tax line is shown as already included in the item price rather than added at checkout.',
+      },
+      { key: 'tax_registration_number', label: 'Tax registration number', fieldType: 'text', defaultValue: '', placeholder: 'e.g. GSTIN' },
     ],
   },
 ]
@@ -445,8 +516,12 @@ export const PAYMENT_GATEWAY_CONFIG_GROUPS: SettingGroupDef[] = [
     ],
   },
   {
+    // Filtered out before this array ever reaches the mock schema (see settingsSchemaService.ts) —
+    // RazorpayConfigPanel (rendered directly on this same Payment Gateways tab, backed by
+    // AppConfig) is the real Key ID/Secret form now. Title match keeps the filter working; kept
+    // here only so the shape stays documented for whoever revisits this file.
     title: 'Razorpay',
-    description: 'Razorpay payment gateway. Now saves for real under Settings → Customer Application → Razorpay — these fields stay preview-only.',
+    description: 'Razorpay payment gateway.',
     icon: CreditCard,
     fields: [
       { key: 'razorpay_key_id', label: 'Razorpay key ID', fieldType: 'text', defaultValue: '' },

@@ -1,0 +1,49 @@
+// Firebase Cloud Messaging background handler for the admin panel — receives push notifications
+// (e.g. AdminNotificationTestController's test-push, or any PUSH-channel send targeted at this
+// admin's user id) while this tab isn't in the foreground.
+//
+// A service worker is a plain static file, not part of Vite's build, so it can't read the
+// backend-configured Firebase values (Settings → Push Notifications) the rest of this app uses at
+// runtime — these are mirrored here by hand from that same project (identical to the customer
+// app's public/firebase-messaging-sw.js). If you rotate the Firebase project/config, update both.
+importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js')
+importScripts('https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js')
+
+firebase.initializeApp({
+  apiKey: 'AIzaSyDJo1GviFj-lZtA7ig9yn918vdIMJnqBKI',
+  authDomain: 'pureeatsnotification.firebaseapp.com',
+  projectId: 'pureeatsnotification',
+  storageBucket: 'pureeatsnotification.firebasestorage.app',
+  messagingSenderId: '97657025376',
+  appId: '1:97657025376:web:6fefe3c9b3facd9f55a405',
+})
+
+const messaging = firebase.messaging()
+
+// A custom onBackgroundMessage handler bypasses the browser's own default push rendering, so
+// nothing here is auto-populated from the server's webpush notification config (image/actions/
+// click link) — FcmSender mirrors those into the plain `data` payload specifically so this handler
+// can reconstruct them (see FcmSender#buildDataPayload on the backend). `actions` arrives as a
+// JSON string since FCM data values must be strings.
+messaging.onBackgroundMessage((payload) => {
+  const title = payload.notification?.title || payload.data?.title || 'PureEats Admin'
+  const body = payload.notification?.body || payload.data?.body || ''
+  const image = payload.notification?.image || payload.data?.image
+  const clickAction = payload.fcmOptions?.link || payload.data?.click_action
+  let actions
+  try {
+    actions = payload.data?.actions ? JSON.parse(payload.data.actions) : undefined
+  } catch {
+    actions = undefined
+  }
+  self.registration.showNotification(title, { body, image, actions, data: { clickAction } })
+})
+
+// Chrome/Edge-only actions (see FcmAction on the backend) land here as `event.action` (the button's
+// own `action` id); clicking the notification body itself (no button) is an empty string.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.clickAction
+  if (!url) return
+  event.waitUntil(self.clients.openWindow(url))
+})

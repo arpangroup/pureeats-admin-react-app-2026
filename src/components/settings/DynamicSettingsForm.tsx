@@ -35,7 +35,7 @@ function FieldNotes({ field }: { field: SettingFieldDef }) {
   )
 }
 
-function DynamicField({
+export function DynamicField({
   field,
   value,
   onChange,
