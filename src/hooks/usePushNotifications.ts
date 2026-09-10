@@ -41,12 +41,20 @@ export function usePushNotifications(onNotification?: () => void) {
           .catch((err) => console.error('[push] POST /notifications/push-token failed', err))
       })
       cleanup = onForegroundMessage(firebaseConfig, (payload) => {
-        const title = payload.notification?.title || String(payload.data?.title ?? 'PureEats')
-        const body = payload.notification?.body || String(payload.data?.body ?? '')
-        const image = payload.notification?.image || payload.data?.image
+        onNotification?.()
+        // A SILENT push (see PushDisplayMode on the backend) never has a `notification` block, on
+        // purpose — that's the signal that nothing should pop up here. onNotification() above still
+        // fires either way, in case something silent should still refresh this admin's own data.
+        if (!payload.notification) return
+        // NEW_ORDER pushes get their own richer toast (order id/restaurant/amount, click-to-view,
+        // repeating chime) from NewOrderAlertContext's own onMessage subscription — showing this
+        // generic one too would double up.
+        if (payload.data?.type === 'NEW_ORDER') return
+        const title = payload.notification.title || 'PureEats'
+        const body = payload.notification.body || ''
+        const image = payload.notification.image
         const clickAction = payload.fcmOptions?.link || payload.data?.click_action
         setToast({ title, body, image, clickAction })
-        onNotification?.()
       })
     })
 

@@ -10,6 +10,7 @@ import { RazorpayConfigPanel } from '@/components/settings/RazorpayConfigPanel'
 import { FirebaseConfigPanel } from '@/components/settings/FirebaseConfigPanel'
 import { PushNotificationTestPanel } from '@/components/settings/PushNotificationTestPanel'
 import { EmailTestPanel } from '@/components/settings/EmailTestPanel'
+import { SectionVisibilityPanel } from '@/components/settings/SectionVisibilityPanel'
 import { SettingsConfirmationProvider } from '@/context/SettingsConfirmationContext'
 import { classNames } from '@/lib/format'
 import { useAsync } from '@/hooks/useAsync'
@@ -133,6 +134,8 @@ export default function SettingsPage() {
           {activeCategory === 'google-map' && <GoogleMapsConfigPanel />}
 
           {activeCategory === 'push-notifications' && <FirebaseConfigPanel />}
+
+          {activeCategory === 'customer-app' && <SectionVisibilityPanel />}
 
           {activeSection && <WiredSettingsForm key={activeSection.key} groups={activeSection.groups} />}
 

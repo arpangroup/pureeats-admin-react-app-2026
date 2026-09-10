@@ -21,6 +21,7 @@ export interface AppConfigAdmin {
   promoSliderEnabled: boolean
   topPicksEnabled: boolean
   recommendedItemsEnabled: boolean
+  cuisineCategorySectionEnabled: boolean
   restaurantListLayout: string
   recommendedItemsLayout: string
   restaurantItemsLayout: string
@@ -80,13 +81,14 @@ const MOCK_CONFIG: AppConfigAdmin = {
   promoSliderEnabled: true,
   topPicksEnabled: true,
   recommendedItemsEnabled: true,
+  cuisineCategorySectionEnabled: true,
   restaurantListLayout: 'TWO_COLUMN',
   recommendedItemsLayout: 'TWO_COLUMN',
   restaurantItemsLayout: 'TWO_COLUMN',
   deliveryInstructionMode: 'QUICK_OPTIONS',
   deliveryInstructionOptions: [],
   mapProvider: 'OSM',
-  orderStatusUpdateMode: 'POLL',
+  orderStatusUpdateMode: 'PUSH',
   orderStatusPollIntervalMs: 8000,
   locationResolutionAuthenticatedPriority: ['saved', 'gps', 'ip'],
   locationResolutionGuestPriority: ['gps', 'ip'],

@@ -163,14 +163,9 @@ export const CUSTOMER_APP_GROUPS: SettingGroupDef[] = [
     title: 'Browsing & merchandising',
     icon: Sparkles,
     fields: [
-      {
-        key: 'promo_slider',
-        label: 'Promo slider',
-        fieldType: 'boolean',
-        defaultValue: 'true',
-        info: 'Shows the rotating promotional banner carousel on the home screen.',
-      },
-      { key: 'recommended_item_slider', label: 'Recommended item slider', fieldType: 'boolean', defaultValue: 'true' },
+      // Promo slider / Top picks / Recommended / Cuisine category visibility live on the real
+      // AppConfig fields instead (see SectionVisibilityPanel), not this generic mock schema — they
+      // used to be duplicated here as fields that silently did nothing.
       { key: 'veg_nonveg_badge', label: 'Veg/Non-veg badge', fieldType: 'boolean', defaultValue: 'true' },
       { key: 'show_discount_percentage', label: 'Show product discount percentage', fieldType: 'boolean', defaultValue: 'true' },
       {

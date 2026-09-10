@@ -102,6 +102,20 @@ export function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
                   </label>
 
                   <label className="flex items-center justify-between py-1.5">
+                    <span className="text-sm text-slate-600 dark:text-slate-300">Use push notifications</span>
+                    <input
+                      type="checkbox"
+                      checked={alertSettings.usePush}
+                      onChange={(e) => updateAlertSettings({ usePush: e.target.checked })}
+                      disabled={!alertSettings.enabled}
+                      className="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 dark:border-slate-600"
+                    />
+                  </label>
+                  <p className="mb-1 text-xs text-slate-400 dark:text-slate-500">
+                    {alertSettings.usePush ? 'Instant, via Firebase — falls back to checking below automatically if push isn\'t available.' : 'Checking the server on the interval below.'}
+                  </p>
+
+                  <label className="flex items-center justify-between py-1.5">
                     <span className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300">
                       {alertSettings.soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />} Play sound
                     </span>
