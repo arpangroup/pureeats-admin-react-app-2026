@@ -1,6 +1,6 @@
 import { Check, LayoutGrid } from 'lucide-react'
 import { SectionCard } from '@/components/ui/SectionCard'
-import { Switch } from '@/components/ui/FormControls'
+import { Field, Switch, TextInput } from '@/components/ui/FormControls'
 import { LoadingBlock } from '@/components/ui/Feedback'
 import { useAppConfigAdminForm } from '@/hooks/useAppConfigAdminForm'
 import { useSettingsConfirmation } from '@/hooks/useSettingsConfirmation'
@@ -87,6 +87,19 @@ export function SectionVisibilityPanel() {
           checked={draft.orderStatusUpdateMode !== 'POLL'}
           onChange={(v) => set('orderStatusUpdateMode', v ? 'PUSH' : 'POLL')}
         />
+      </div>
+
+      <div className="mt-6 border-t border-slate-100 pt-4 dark:border-slate-800">
+        <Field label="Platform fee (₹)" hint="Flat fee added to every order's total, alongside tax/restaurant/delivery charges. 0 = no fee charged.">
+          <TextInput
+            type="number"
+            min={0}
+            step="0.01"
+            className="max-w-[160px]"
+            value={draft.platformFee}
+            onChange={(e) => set('platformFee', Number(e.target.value))}
+          />
+        </Field>
       </div>
     </SectionCard>
   )

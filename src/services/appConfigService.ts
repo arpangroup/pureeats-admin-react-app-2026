@@ -44,6 +44,8 @@ export interface AppConfigAdmin {
   firebaseMessagingSenderId: string | null
   firebaseAppId: string | null
   firebaseVapidKey: string | null
+  /** Flat fee added to every order's payable total (same place tax/restaurantCharge/deliveryCharge are) — 0 by default. */
+  platformFee: number
   /** Whether every settings/app-config save (here and the generic schema-driven form) must be accompanied by a correct confirmationPassword or the backend rejects it — computed server-side from whether pureeats.settings.confirmation-password is set. There's no admin-panel UI to change this, only that env var; see ConfirmPasswordDialog / useSettingsConfirmation. */
   settingsConfirmationEnabled: boolean
 }
@@ -103,6 +105,7 @@ const MOCK_CONFIG: AppConfigAdmin = {
   firebaseMessagingSenderId: null,
   firebaseAppId: null,
   firebaseVapidKey: null,
+  platformFee: 0,
   settingsConfirmationEnabled: MOCK_SETTINGS_CONFIRMATION_PASSWORD.length > 0,
 }
 
