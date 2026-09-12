@@ -12,11 +12,14 @@ import { PushNotificationTestPanel } from '@/components/settings/PushNotificatio
 import { EmailTestPanel } from '@/components/settings/EmailTestPanel'
 import { SectionVisibilityPanel } from '@/components/settings/SectionVisibilityPanel'
 import { SettingsConfirmationProvider } from '@/context/SettingsConfirmationContext'
+import { ConfirmPasswordDialog } from '@/components/settings/ConfirmPasswordDialog'
+import { useSettingsConfirmation } from '@/hooks/useSettingsConfirmation'
 import { classNames } from '@/lib/format'
 import { useAsync } from '@/hooks/useAsync'
 import { settingsService } from '@/services/settingsService'
 import { settingsSchemaService } from '@/services/settingsSchemaService'
 import { IS_MOCK } from '@/config/env'
+import type { PaymentGateway } from '@/types/entities'
 
 /**
  * Every tab here (except Cache Settings, a real-time operational action rather than a "setting")
@@ -34,11 +37,28 @@ export default function SettingsPage() {
   const { data: gateways, reload: reloadGateways } = useAsync(() => settingsService.paymentGateways(), [])
   const { data: smsGateways } = useAsync(() => settingsService.smsGateways(), [])
   const { data: caches, isLoading: cachesLoading, reload: reloadCaches } = useAsync(() => settingsService.listCaches(), [])
+  const gatewayConfirmation = useSettingsConfirmation()
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [clearingCache, setClearingCache] = useState(false)
   const [clearedAt, setClearedAt] = useState<Date | null>(null)
   const [clearCacheError, setClearCacheError] = useState<string | null>(null)
+  const [gatewayToggleError, setGatewayToggleError] = useState<string | null>(null)
+
+  /** Confirms (when settingsConfirmationEnabled is on) before actually toggling — so a stray click
+   * can't silently flip which gateways customers see at checkout, same protection every other
+   * settings save already has. */
+  async function handleToggleGateway(gateway: PaymentGateway, nextActive: boolean) {
+    setGatewayToggleError(null)
+    const confirmPassword = await gatewayConfirmation.requestConfirmation()
+    if (confirmPassword === null) return // admin cancelled
+    try {
+      await settingsService.togglePaymentGateway(gateway.id, nextActive, confirmPassword)
+      reloadGateways()
+    } catch (err) {
+      setGatewayToggleError((err as { message?: string })?.message ?? `Could not update ${gateway.name}`)
+    }
+  }
 
   const categories = schema
     ? [...schema.map((s) => ({ key: s.key, label: s.title, icon: s.icon })), { key: 'cache-settings', label: 'Cache Settings', icon: Database }]
@@ -96,6 +116,8 @@ export default function SettingsPage() {
         <div className="min-w-0 space-y-4">
           {activeCategory === 'payments' && (
             <SectionCard title="Payment gateways" icon={CreditCard} description="Enable the ways customers can pay for orders.">
+              {gatewayConfirmation.open && <ConfirmPasswordDialog onConfirm={gatewayConfirmation.handleConfirm} onCancel={gatewayConfirmation.handleCancel} />}
+              {gatewayToggleError && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{gatewayToggleError}</p>}
               <div className="divide-y divide-slate-100 dark:divide-slate-800">
                 {(gateways ?? []).map((gateway) => (
                   <div key={gateway.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
@@ -103,13 +125,7 @@ export default function SettingsPage() {
                       <p className="font-medium text-slate-800 dark:text-slate-100">{gateway.name}</p>
                       <p className="text-sm text-slate-500 dark:text-slate-400">{gateway.description}</p>
                     </div>
-                    <Switch
-                      checked={gateway.isActive}
-                      onChange={async (v) => {
-                        await settingsService.togglePaymentGateway(gateway.id, v)
-                        reloadGateways()
-                      }}
-                    />
+                    <Switch checked={gateway.isActive} onChange={(v) => handleToggleGateway(gateway, v)} />
                   </div>
                 ))}
               </div>

@@ -81,15 +81,17 @@ export const settingsService = {
     return unwrapArray<PaymentGateway>(data)
   },
 
-  async togglePaymentGateway(id: number, isActive: boolean): Promise<PaymentGateway> {
+  /** `confirmPassword` is only checked server-side when AppConfig's settingsConfirmationEnabled is on — same gate every other settings save goes through (see useSettingsConfirmation). */
+  async togglePaymentGateway(id: number, isActive: boolean, confirmPassword?: string): Promise<PaymentGateway> {
     if (IS_MOCK) {
       await mockDelay()
+      mockVerifyConfirmationPassword(confirmPassword)
       const index = paymentGateways.findIndex((g) => g.id === id)
       if (index === -1) throw { message: 'Gateway not found' }
       paymentGateways[index] = { ...paymentGateways[index], isActive }
       return paymentGateways[index]
     }
-    const { data } = await apiClient.patch<{ data: PaymentGateway }>(`/admin/payment-gateways/${id}`, { isActive })
+    const { data } = await apiClient.patch<{ data: PaymentGateway }>(`/admin/payment-gateways/${id}`, { isActive, confirmationPassword: confirmPassword })
     return data.data
   },
 
