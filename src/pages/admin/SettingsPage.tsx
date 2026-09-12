@@ -1,25 +1,23 @@
 import { useEffect, useState } from 'react'
-import { CreditCard, Database, MessageSquare } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { Database, MessageSquare } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SectionCard } from '@/components/ui/SectionCard'
-import { Switch } from '@/components/ui/FormControls'
 import { LoadingBlock, ActiveBadge, EmptyState } from '@/components/ui/Feedback'
 import { WiredSettingsForm } from '@/components/settings/WiredSettingsForm'
 import { GoogleMapsConfigPanel } from '@/components/settings/GoogleMapsConfigPanel'
 import { RazorpayConfigPanel } from '@/components/settings/RazorpayConfigPanel'
+import { PaymentGatewaysPanel } from '@/components/settings/PaymentGatewaysPanel'
 import { FirebaseConfigPanel } from '@/components/settings/FirebaseConfigPanel'
 import { PushNotificationTestPanel } from '@/components/settings/PushNotificationTestPanel'
 import { EmailTestPanel } from '@/components/settings/EmailTestPanel'
 import { SectionVisibilityPanel } from '@/components/settings/SectionVisibilityPanel'
 import { SettingsConfirmationProvider } from '@/context/SettingsConfirmationContext'
-import { ConfirmPasswordDialog } from '@/components/settings/ConfirmPasswordDialog'
-import { useSettingsConfirmation } from '@/hooks/useSettingsConfirmation'
 import { classNames } from '@/lib/format'
 import { useAsync } from '@/hooks/useAsync'
 import { settingsService } from '@/services/settingsService'
 import { settingsSchemaService } from '@/services/settingsSchemaService'
 import { IS_MOCK } from '@/config/env'
-import type { PaymentGateway } from '@/types/entities'
 
 /**
  * Every tab here (except Cache Settings, a real-time operational action rather than a "setting")
@@ -34,40 +32,27 @@ import type { PaymentGateway } from '@/types/entities'
  */
 export default function SettingsPage() {
   const { data: schema, isLoading: schemaLoading } = useAsync(() => settingsSchemaService.getSchema(), [])
-  const { data: gateways, reload: reloadGateways } = useAsync(() => settingsService.paymentGateways(), [])
   const { data: smsGateways } = useAsync(() => settingsService.smsGateways(), [])
   const { data: caches, isLoading: cachesLoading, reload: reloadCaches } = useAsync(() => settingsService.listCaches(), [])
-  const gatewayConfirmation = useSettingsConfirmation()
 
-  const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [clearingCache, setClearingCache] = useState(false)
   const [clearedAt, setClearedAt] = useState<Date | null>(null)
   const [clearCacheError, setClearCacheError] = useState<string | null>(null)
-  const [gatewayToggleError, setGatewayToggleError] = useState<string | null>(null)
-
-  /** Confirms (when settingsConfirmationEnabled is on) before actually toggling — so a stray click
-   * can't silently flip which gateways customers see at checkout, same protection every other
-   * settings save already has. */
-  async function handleToggleGateway(gateway: PaymentGateway, nextActive: boolean) {
-    setGatewayToggleError(null)
-    const confirmPassword = await gatewayConfirmation.requestConfirmation()
-    if (confirmPassword === null) return // admin cancelled
-    try {
-      await settingsService.togglePaymentGateway(gateway.id, nextActive, confirmPassword)
-      reloadGateways()
-    } catch (err) {
-      setGatewayToggleError((err as { message?: string })?.message ?? `Could not update ${gateway.name}`)
-    }
-  }
 
   const categories = schema
     ? [...schema.map((s) => ({ key: s.key, label: s.title, icon: s.icon })), { key: 'cache-settings', label: 'Cache Settings', icon: Database }]
     : []
 
+  // The active tab lives in the URL (/admin/settings/:category) rather than plain component state,
+  // so refreshing or sharing a link (e.g. straight to Payment Gateways) lands on the same tab
+  // instead of always resetting to the first one.
+  const { category: activeCategory } = useParams<{ category?: string }>()
+  const navigate = useNavigate()
+
   useEffect(() => {
-    if (!activeCategory && categories.length > 0) setActiveCategory(categories[0].key)
+    if (!activeCategory && categories.length > 0) navigate(`/admin/settings/${categories[0].key}`, { replace: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categories.length])
+  }, [activeCategory, categories.length])
 
   async function handleClearCache() {
     setClearingCache(true)
@@ -98,7 +83,7 @@ export default function SettingsPage() {
             categories.map((cat) => (
               <button
                 key={cat.key}
-                onClick={() => setActiveCategory(cat.key)}
+                onClick={() => navigate(`/admin/settings/${cat.key}`)}
                 className={classNames(
                   'flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors',
                   activeCategory === cat.key
@@ -114,23 +99,7 @@ export default function SettingsPage() {
         </nav>
 
         <div className="min-w-0 space-y-4">
-          {activeCategory === 'payments' && (
-            <SectionCard title="Payment gateways" icon={CreditCard} description="Enable the ways customers can pay for orders.">
-              {gatewayConfirmation.open && <ConfirmPasswordDialog onConfirm={gatewayConfirmation.handleConfirm} onCancel={gatewayConfirmation.handleCancel} />}
-              {gatewayToggleError && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{gatewayToggleError}</p>}
-              <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                {(gateways ?? []).map((gateway) => (
-                  <div key={gateway.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                    <div>
-                      <p className="font-medium text-slate-800 dark:text-slate-100">{gateway.name}</p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">{gateway.description}</p>
-                    </div>
-                    <Switch checked={gateway.isActive} onChange={(v) => handleToggleGateway(gateway, v)} />
-                  </div>
-                ))}
-              </div>
-            </SectionCard>
-          )}
+          {activeCategory === 'payments' && <PaymentGatewaysPanel />}
 
           {activeCategory === 'payments' && <RazorpayConfigPanel />}
 

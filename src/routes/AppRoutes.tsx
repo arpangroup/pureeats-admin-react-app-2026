@@ -132,6 +132,7 @@ export function AppRoutes() {
         <Route path="reports" element={<ReportsPage />} />
         <Route path="modules" element={<ModulesPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="settings/:category" element={<SettingsPage />} />
         <Route path="audit/audit-logs" element={<AuditLogsPage />} />
         <Route path="audit/login-history" element={<LoginHistoryPage />} />
         <Route path="audit/otp-challenges" element={<OtpChallengesPage />} />
