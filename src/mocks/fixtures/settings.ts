@@ -12,15 +12,15 @@ export const settings: Setting[] = [
   { id: 9, key: 'maintenance_mode', value: 'false' },
 ]
 
-// code matches the customer app's PaymentMode exactly ('COD' | 'WALLET' | 'UPI') — those three are
-// real, selectable checkout options. Everything else (Razorpay included — its real on/off switch is
-// the key in the Razorpay panel above, not this list) has no code and shows on the customer app's
-// Checkout only as a non-interactive "we also support" strip. Mirrors the backend's DemoContentSeeder.
+// code matches the customer app's PaymentMode exactly ('COD' | 'WALLET' | 'UPI' | 'RAZORPAY') —
+// those four are real, selectable checkout options (Razorpay is genuinely implemented, just still
+// greyed out on Checkout until the key in the Razorpay panel above is set). Everything else has no
+// code and always shows disabled there. Mirrors the backend's DemoContentSeeder.
 export const paymentGateways: PaymentGateway[] = [
   { id: 1, name: 'Cash on Delivery', code: 'COD', description: 'Pay with cash when your order arrives', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
   { id: 2, name: 'PureEats Wallet', code: 'WALLET', description: 'Pay using your wallet balance', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
   { id: 3, name: 'UPI', code: 'UPI', description: 'Pay via GPay, PhonePe, Paytm & more', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
-  { id: 4, name: 'Razorpay', code: null, description: 'Cards, UPI, netbanking and wallets — powers the UPI option above once configured', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 4, name: 'Razorpay', code: 'RAZORPAY', description: 'Cards, UPI, netbanking and wallets', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
   { id: 5, name: 'Stripe', code: null, description: 'International cards — not yet integrated', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
   { id: 6, name: 'PayPal', code: null, description: 'Not yet integrated', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
   { id: 7, name: 'PayStack', code: null, description: 'Not yet integrated', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
