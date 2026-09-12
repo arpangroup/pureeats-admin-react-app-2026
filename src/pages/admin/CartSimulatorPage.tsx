@@ -32,9 +32,14 @@ const DEFAULT_LAT = 12.9716
 const DEFAULT_LNG = 77.5946
 
 export default function CartSimulatorPage() {
-  const { data: restaurants, isLoading: restaurantsLoading } = useAsync(() => restaurantService.listAll(), [])
-  const { data: addonCategories } = useAsync(() => addonCategoryService.listAll(), [])
-  const { data: allAddons } = useAsync(() => addonService.listAll(), [])
+  // No backend "/all" endpoint exists for any of these entities - only the paginated admin list
+  // routes are real, so pull a large page instead of a true listAll().
+  const { data: restaurantsPage, isLoading: restaurantsLoading } = useAsync(() => restaurantService.list({ perPage: 500 }), [])
+  const { data: addonCategoriesPage } = useAsync(() => addonCategoryService.list({ perPage: 500 }), [])
+  const { data: addonsPage } = useAsync(() => addonService.list({ perPage: 500 }), [])
+  const restaurants = restaurantsPage?.data
+  const addonCategories = addonCategoriesPage?.data
+  const allAddons = addonsPage?.data
 
   const [restaurantId, setRestaurantId] = useState<number | null>(null)
   const [lines, setLines] = useState<Record<number, LineState>>({})
@@ -49,7 +54,14 @@ export default function CartSimulatorPage() {
     if (restaurantId === null && restaurants && restaurants.length > 0) setRestaurantId(restaurants[0].id)
   }, [restaurants, restaurantId])
 
-  const restaurant = restaurants?.find((r) => r.id === restaurantId) ?? null
+  // The picker list is built from the paginated summary endpoint, which omits detail-only fields
+  // (deliveryType, deliveryRadius, restaurantCharges, isAcceptCod, ...) this page needs once a
+  // restaurant is picked — so fetch the full detail record separately, same as the admin restaurant
+  // edit page does.
+  const { data: restaurant } = useAsync(
+    () => (restaurantId ? restaurantService.get(restaurantId) : Promise.resolve(null)),
+    [restaurantId],
+  )
 
   const { data: menu, isLoading: menuLoading } = useAsync(
     () => (restaurantId ? itemService.listByRestaurant(restaurantId, { perPage: 500 }) : Promise.resolve(null)),
