@@ -71,12 +71,13 @@ export const settingsService = {
     return { key, value }
   },
 
+  /** Admin-only listing (every row, active and inactive) — distinct from the public GET /payment-gateways the customer app reads, which only ever returns active ones and so can't be used to find a disabled gateway to re-enable. */
   async paymentGateways(): Promise<PaymentGateway[]> {
     if (IS_MOCK) {
       await mockDelay()
       return [...paymentGateways]
     }
-    const { data } = await apiClient.get('/payment-gateways')
+    const { data } = await apiClient.get('/admin/payment-gateways')
     return unwrapArray<PaymentGateway>(data)
   },
 
@@ -88,7 +89,7 @@ export const settingsService = {
       paymentGateways[index] = { ...paymentGateways[index], isActive }
       return paymentGateways[index]
     }
-    const { data } = await apiClient.patch<{ data: PaymentGateway }>(`/payment-gateways/${id}`, { isActive })
+    const { data } = await apiClient.patch<{ data: PaymentGateway }>(`/admin/payment-gateways/${id}`, { isActive })
     return data.data
   },
 

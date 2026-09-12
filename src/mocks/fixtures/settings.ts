@@ -12,10 +12,12 @@ export const settings: Setting[] = [
   { id: 9, key: 'maintenance_mode', value: 'false' },
 ]
 
+// code matches the customer app's PaymentMode exactly ('COD' | 'WALLET' | 'UPI') — a gateway with no
+// code (none of these three) would show in this list but never actually appear at checkout.
 export const paymentGateways: PaymentGateway[] = [
-  { id: 1, name: 'Razorpay', description: 'Cards, UPI, netbanking and wallets', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
-  { id: 2, name: 'Stripe', description: 'International cards', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
-  { id: 3, name: 'Cash on Delivery', description: 'Pay with cash at the door', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 1, name: 'Cash on Delivery', code: 'COD', description: 'Pay with cash when your order arrives', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 2, name: 'PureEats Wallet', code: 'WALLET', description: 'Pay using your wallet balance', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 3, name: 'UPI / Razorpay', code: 'UPI', description: 'Pay via GPay, PhonePe, Paytm, cards & more, through Razorpay once configured', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
 ]
 
 export const smsGateways: SmsGateway[] = [

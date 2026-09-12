@@ -533,6 +533,8 @@ export interface Slide {
 export interface PaymentGateway {
   id: Id
   name: string
+  /** "COD" | "WALLET" | "UPI" — maps this row to what the customer app's checkout actually does. Null on a legacy/decorative row (display-only, never selectable there). */
+  code: string | null
   description: string
   logo: string
   isActive: boolean
