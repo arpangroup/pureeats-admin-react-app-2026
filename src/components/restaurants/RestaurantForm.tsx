@@ -220,8 +220,8 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
           <Field label="Min order value (₹)">
             <TextInput type="number" value={values.minOrderPrice ?? 0} onChange={(e) => onChange('minOrderPrice', Number(e.target.value))} />
           </Field>
-          <Field label="Delivery radius (km)">
-            <TextInput type="number" value={values.deliveryRadius ?? 0} onChange={(e) => onChange('deliveryRadius', Number(e.target.value))} />
+          <Field label="Delivery radius (km)" hint={'Capped at 50km — a much larger value is almost always a typo, and silently lets far-away orders through as "in range".'}>
+            <TextInput type="number" min={0} max={50} value={values.deliveryRadius ?? 0} onChange={(e) => onChange('deliveryRadius', Number(e.target.value))} />
           </Field>
           <Field label="Prep + delivery time (min)">
             <TextInput type="number" value={values.deliveryTime ?? 0} onChange={(e) => onChange('deliveryTime', Number(e.target.value))} />

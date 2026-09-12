@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, ListChecks, MapPin, ServerOff, User as UserIcon } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SectionCard } from '@/components/ui/SectionCard'
-import { Field, Select, TextInput } from '@/components/ui/FormControls'
+import { Field, Select } from '@/components/ui/FormControls'
 import { Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
 import { LocationPickerMap } from '@/components/ui/LocationPickerMap'
 import { SearchableSelect } from '@/components/ui/SearchableSelect'
@@ -10,12 +10,12 @@ import { useAsync } from '@/hooks/useAsync'
 import { useDebounce } from '@/hooks/useDebounce'
 import { restaurantService } from '@/services/restaurantService'
 import { itemService } from '@/services/itemService'
-import { addonCategoryService, addonService } from '@/services/simpleServices'
+import { addonCategoryService, addonService, couponService } from '@/services/simpleServices'
 import { userService } from '@/services/userService'
 import { cartSimulateService, type CartSimulateRequest, type CartSimulateResult } from '@/services/cartSimulateService'
 import { formatCurrency } from '@/lib/format'
 import { IS_MOCK } from '@/config/env'
-import type { Address, User } from '@/types/entities'
+import type { Address, Coupon, User } from '@/types/entities'
 
 interface LineState {
   included: boolean
@@ -40,9 +40,11 @@ export default function CartSimulatorPage() {
   const { data: restaurantsPage, isLoading: restaurantsLoading } = useAsync(() => restaurantService.list({ perPage: 500 }), [])
   const { data: addonCategoriesPage } = useAsync(() => addonCategoryService.list({ perPage: 500 }), [])
   const { data: addonsPage } = useAsync(() => addonService.list({ perPage: 500 }), [])
+  const { data: couponsPage } = useAsync(() => couponService.list({ perPage: 500 }), [])
   const restaurants = restaurantsPage?.data
   const addonCategories = addonCategoriesPage?.data
   const allAddons = addonsPage?.data
+  const allCoupons = couponsPage?.data
 
   const [restaurantId, setRestaurantId] = useState<number | null>(null)
   const [lines, setLines] = useState<Record<number, LineState>>({})
@@ -88,6 +90,11 @@ export default function CartSimulatorPage() {
     [selectedCustomer?.id],
   )
 
+  // Only one location source is ever "live" at a time - picking a saved address stamps its id here;
+  // any manual map interaction (drag, search, "use my location") clears it, since the pin has now
+  // moved off that address and the two would otherwise silently disagree about where "here" is.
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null)
+
   function pickCustomerAddress(addr: Address) {
     const lat = addr.latitude ? Number(addr.latitude) : NaN
     const lng = addr.longitude ? Number(addr.longitude) : NaN
@@ -95,6 +102,7 @@ export default function CartSimulatorPage() {
     setCustomerLat(lat)
     setCustomerLng(lng)
     setCustomerAddress([addr.house, addr.address, addr.landmark].filter(Boolean).join(', '))
+    setSelectedAddressId(addr.id)
   }
 
   useEffect(() => {
@@ -115,6 +123,20 @@ export default function CartSimulatorPage() {
     [restaurantId],
   )
   const items = useMemo(() => menu?.data ?? [], [menu])
+
+  // Restaurant-specific coupons (restaurantId matches) plus platform-wide ones (restaurantId null),
+  // active and not yet expired - the same real coupon rows checkout itself would consider valid.
+  const applicableCoupons = useMemo(() => {
+    const now = Date.now()
+    return (allCoupons ?? [])
+      .filter((c: Coupon) => c.isActive && new Date(c.expiryDate).getTime() > now)
+      .filter((c: Coupon) => c.restaurantId === null || c.restaurantId === restaurantId)
+  }, [allCoupons, restaurantId])
+
+  useEffect(() => {
+    if (couponCode && !applicableCoupons.some((c) => c.code === couponCode)) setCouponCode('')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [restaurantId, applicableCoupons])
 
   const canDeliver = restaurant?.deliveryType === 'delivery' || restaurant?.deliveryType === 'both'
   const canSelfPickup = restaurant?.deliveryType === 'self-pickup' || restaurant?.deliveryType === 'both'
@@ -364,19 +386,26 @@ export default function CartSimulatorPage() {
                         <LoadingBlock />
                       ) : customerAddresses && customerAddresses.length > 0 ? (
                         <div className="flex flex-wrap gap-1.5">
-                          {customerAddresses.map((addr) => (
-                            <button
-                              key={addr.id}
-                              type="button"
-                              onClick={() => pickCustomerAddress(addr)}
-                              title={[addr.house, addr.address, addr.landmark].filter(Boolean).join(', ') || 'No details'}
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-brand-500/10"
-                            >
-                              <MapPin size={11} />
-                              {addr.tag || 'Address'}
-                              {addr.isDefault && <span className="text-emerald-500">•</span>}
-                            </button>
-                          ))}
+                          {customerAddresses.map((addr) => {
+                            const active = selectedAddressId === addr.id
+                            return (
+                              <button
+                                key={addr.id}
+                                type="button"
+                                onClick={() => pickCustomerAddress(addr)}
+                                title={[addr.house, addr.address, addr.landmark].filter(Boolean).join(', ') || 'No details'}
+                                className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                                  active
+                                    ? 'border-brand-400 bg-brand-50 text-brand-700 dark:border-brand-500/50 dark:bg-brand-500/10 dark:text-brand-300'
+                                    : 'border-slate-200 bg-white text-slate-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-brand-500/10'
+                                }`}
+                              >
+                                <MapPin size={11} />
+                                {addr.tag || 'Address'}
+                                {addr.isDefault && <span className="text-emerald-500">•</span>}
+                              </button>
+                            )
+                          })}
                         </div>
                       ) : (
                         <p className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
@@ -391,20 +420,34 @@ export default function CartSimulatorPage() {
                     onChange={(lat, lng) => {
                       setCustomerLat(lat)
                       setCustomerLng(lng)
+                      setSelectedAddressId(null)
                     }}
                     onAddressResolved={setCustomerAddress}
                     height={200}
                   />
                   {customerAddress && (
                     <p className="mt-1.5 flex items-start gap-1 text-xs text-slate-500 dark:text-slate-400">
-                      <MapPin size={12} className="mt-0.5 shrink-0" /> {customerAddress}
+                      <MapPin size={12} className="mt-0.5 shrink-0" />
+                      {customerAddress}
+                      {selectedAddressId !== null ? (
+                        <span className="ml-1 shrink-0 font-medium text-brand-600 dark:text-brand-400">(saved address)</span>
+                      ) : (
+                        <span className="ml-1 shrink-0 text-slate-400">(custom point)</span>
+                      )}
                     </p>
                   )}
                 </Field>
               )}
 
-              <Field label="Coupon code" hint="Checked against real, live coupons — leave blank to skip.">
-                <TextInput value={couponCode} onChange={(e) => setCouponCode(e.target.value)} placeholder="e.g. WELCOME50" />
+              <Field label="Coupon" hint="Active coupons that apply to this restaurant (restaurant-specific or platform-wide) — checked against the real, live coupon rules.">
+                <Select value={couponCode} onChange={(e) => setCouponCode(e.target.value)}>
+                  <option value="">No coupon</option>
+                  {applicableCoupons.map((c) => (
+                    <option key={c.id} value={c.code}>
+                      {c.code} — {c.name}
+                    </option>
+                  ))}
+                </Select>
               </Field>
             </div>
           </SectionCard>

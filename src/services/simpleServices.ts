@@ -80,6 +80,16 @@ export async function listActiveRestaurantCategories(): Promise<SelectOption[]> 
   const { data } = await apiClient.get<{ data: SelectOption[] }>('/restaurant-categories')
   return data.data
 }
+
+/** Every active, accepted restaurant, for pickers like the Promo Slider's "Links to a restaurant" — public (no-auth) `/restaurants` list, same one the customer app's Home page uses. */
+export async function listActiveRestaurants(): Promise<SelectOption[]> {
+  if (IS_MOCK) {
+    await mockDelay(100)
+    return restaurants.filter((r) => r.isActive && r.isAccepted).map((r) => ({ id: r.id, name: r.name }))
+  }
+  const { data } = await apiClient.get<{ data: { id: number; name: string }[] }>('/restaurants')
+  return data.data.map((r) => ({ id: r.id, name: r.name }))
+}
 export const restaurantCategorySliderService = createCrudService<RestaurantCategorySlider>(restaurantCategorySliders, '/admin/restaurant-category-sliders', ['name'])
 export const translationService = createCrudService<Translation>(translations, '/translations', ['languageName'])
 export const pageService = createCrudService<Page>(pages, '/pages', ['name', 'slug'])
