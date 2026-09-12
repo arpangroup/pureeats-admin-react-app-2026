@@ -29,15 +29,13 @@ export interface User {
 
 export interface Address {
   id: Id
-  userId: Id
-  address: string
-  house: string
-  landmark: string
-  tag: string
-  latitude: number
-  longitude: number
-  createdAt: string
-  updatedAt: string
+  house: string | null
+  address: string | null
+  landmark: string | null
+  tag: string | null
+  latitude: string | null
+  longitude: string | null
+  isDefault: boolean
 }
 
 export interface Location {
