@@ -279,6 +279,32 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
         </div>
       </SectionCard>
 
+      <SectionCard
+        title="Promo badge"
+        description="Shown on the restaurant's card in the customer app (e.g. '50% OFF · UPTO ₹100') — independent of any coupon code. Leave both blank to show no badge."
+        icon={Bike}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Discount %" hint="e.g. 50 for '50% OFF'">
+            <TextInput
+              type="number"
+              min={0}
+              max={100}
+              value={values.offerDiscountPercent ?? ''}
+              onChange={(e) => onChange('offerDiscountPercent', e.target.value === '' ? null : Number(e.target.value))}
+            />
+          </Field>
+          <Field label="Max discount (₹)" hint="e.g. 100 for 'UPTO ₹100'">
+            <TextInput
+              type="number"
+              min={0}
+              value={values.offerMaxDiscount ?? ''}
+              onChange={(e) => onChange('offerMaxDiscount', e.target.value === '' ? null : Number(e.target.value))}
+            />
+          </Field>
+        </div>
+      </SectionCard>
+
       {isAdmin && (
         <SectionCard title="Admin controls" icon={ShieldCheck}>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

@@ -118,6 +118,9 @@ export interface Restaurant {
   isAccepted: boolean
   isFeatured: boolean
   commissionRate: number
+  /** Promo badge shown on the customer app's restaurant card — independent of any Coupon. Both unset/null means no badge renders at all. */
+  offerDiscountPercent?: number | null
+  offerMaxDiscount?: number | null
   deliveryType: 'self-pickup' | 'delivery' | 'both'
   deliveryRadius: number
   deliveryChargeType: 'fixed' | 'dynamic'
