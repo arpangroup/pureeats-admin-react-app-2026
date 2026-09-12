@@ -226,12 +226,15 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
           <Field label="Prep + delivery time (min)">
             <TextInput type="number" value={values.deliveryTime ?? 0} onChange={(e) => onChange('deliveryTime', Number(e.target.value))} />
           </Field>
-          <Field label="Delivery type">
+          <Field label="Delivery type" hint="Governs actual in-app order fulfillment — what a customer can choose at checkout.">
             <Select value={values.deliveryType ?? 'delivery'} onChange={(e) => onChange('deliveryType', e.target.value as Restaurant['deliveryType'])}>
               <option value="self-pickup">Self Pickup</option>
               <option value="delivery">Delivery</option>
               <option value="both">Both</option>
             </Select>
+          </Field>
+          <Field label="Dine-in available" hint="Informational only — shown as a badge, doesn't go through checkout.">
+            <Switch checked={values.isDineInAvailable ?? false} onChange={(v) => onChange('isDineInAvailable', v)} />
           </Field>
           <Field label="Delivery charge type">
             <Select value={values.deliveryChargeType ?? 'fixed'} onChange={(e) => onChange('deliveryChargeType', e.target.value as Restaurant['deliveryChargeType'])}>

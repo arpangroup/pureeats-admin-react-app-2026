@@ -39,7 +39,7 @@ export const restaurants: Restaurant[] = [
     isActive: true, isAccepted: true, isFeatured: true, commissionRate: 18, deliveryType: 'delivery',
     deliveryRadius: 8, deliveryChargeType: 'dynamic', baseDeliveryCharge: 20, baseDeliveryDistance: 2,
     extraDeliveryCharge: 5, extraDeliveryDistance: 1, minOrderPrice: 99, isNotifiable: true, autoAcceptable: false,
-    isSchedulable: true, isAcceptCod: true, categoryIds: [1, 5], createdBy: 1, updatedBy: 1,
+    isSchedulable: true, isAcceptCod: true, isDineInAvailable: true, categoryIds: [1, 5], createdBy: 1, updatedBy: 1,
     createdAt: '2025-11-02T09:00:00Z', updatedAt: '2026-08-20T09:00:00Z',
   },
   {
@@ -52,7 +52,7 @@ export const restaurants: Restaurant[] = [
     isActive: true, isAccepted: true, isFeatured: true, commissionRate: 15, deliveryType: 'both',
     deliveryRadius: 6, deliveryChargeType: 'fixed', baseDeliveryCharge: 20, baseDeliveryDistance: 5,
     extraDeliveryCharge: 0, extraDeliveryDistance: 0, minOrderPrice: 79, isNotifiable: true, autoAcceptable: true,
-    isSchedulable: false, isAcceptCod: true, categoryIds: [2], createdBy: 1, updatedBy: 2,
+    isSchedulable: false, isAcceptCod: true, isDineInAvailable: true, categoryIds: [2], createdBy: 1, updatedBy: 2,
     createdAt: '2025-11-03T09:00:00Z', updatedAt: '2026-08-18T09:00:00Z',
   },
   {
@@ -65,7 +65,7 @@ export const restaurants: Restaurant[] = [
     isActive: true, isAccepted: true, isFeatured: false, commissionRate: 20, deliveryType: 'both',
     deliveryRadius: 10, deliveryChargeType: 'dynamic', baseDeliveryCharge: 25, baseDeliveryDistance: 2,
     extraDeliveryCharge: 6, extraDeliveryDistance: 1, minOrderPrice: 149, isNotifiable: false, autoAcceptable: false,
-    isSchedulable: true, isAcceptCod: false, categoryIds: [3], createdBy: 1, updatedBy: 1,
+    isSchedulable: true, isAcceptCod: false, isDineInAvailable: false, categoryIds: [3], createdBy: 1, updatedBy: 1,
     createdAt: '2025-11-04T09:00:00Z', updatedAt: '2026-08-15T09:00:00Z',
   },
   {
@@ -78,7 +78,7 @@ export const restaurants: Restaurant[] = [
     isActive: true, isAccepted: true, isFeatured: true, commissionRate: 16, deliveryType: 'delivery',
     deliveryRadius: 7, deliveryChargeType: 'dynamic', baseDeliveryCharge: 22, baseDeliveryDistance: 2,
     extraDeliveryCharge: 4, extraDeliveryDistance: 1, minOrderPrice: 99, isNotifiable: true, autoAcceptable: true,
-    isSchedulable: false, isAcceptCod: true, categoryIds: [4], createdBy: 2, updatedBy: 2,
+    isSchedulable: false, isAcceptCod: true, isDineInAvailable: false, categoryIds: [4], createdBy: 2, updatedBy: 2,
     createdAt: '2025-11-07T09:00:00Z', updatedAt: '2026-08-22T09:00:00Z',
   },
   {
@@ -91,7 +91,7 @@ export const restaurants: Restaurant[] = [
     isActive: false, isAccepted: true, isFeatured: false, commissionRate: 18, deliveryType: 'self-pickup',
     deliveryRadius: 9, deliveryChargeType: 'fixed', baseDeliveryCharge: 35, baseDeliveryDistance: 5,
     extraDeliveryCharge: 0, extraDeliveryDistance: 0, minOrderPrice: 199, isNotifiable: true, autoAcceptable: false,
-    isSchedulable: true, isAcceptCod: true, categoryIds: [5], createdBy: 1, updatedBy: 3,
+    isSchedulable: true, isAcceptCod: true, isDineInAvailable: true, categoryIds: [5], createdBy: 1, updatedBy: 3,
     createdAt: '2025-11-09T09:00:00Z', updatedAt: '2026-08-10T09:00:00Z',
   },
   {
@@ -104,7 +104,7 @@ export const restaurants: Restaurant[] = [
     isActive: true, isAccepted: false, isFeatured: false, commissionRate: 15, deliveryType: 'delivery',
     deliveryRadius: 8, deliveryChargeType: 'dynamic', baseDeliveryCharge: 25, baseDeliveryDistance: 2,
     extraDeliveryCharge: 5, extraDeliveryDistance: 1, minOrderPrice: 129, isNotifiable: true, autoAcceptable: false,
-    isSchedulable: false, isAcceptCod: true, categoryIds: [6], createdBy: 2, updatedBy: 2,
+    isSchedulable: false, isAcceptCod: true, isDineInAvailable: false, categoryIds: [6], createdBy: 2, updatedBy: 2,
     createdAt: '2025-12-01T09:00:00Z', updatedAt: '2026-08-05T09:00:00Z',
   },
 ]

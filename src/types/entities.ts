@@ -131,6 +131,8 @@ export interface Restaurant {
   autoAcceptable: boolean
   isSchedulable: boolean
   isAcceptCod: boolean
+  /** Purely informational capability badge — whether this restaurant also seats walk-in/dine-in customers. Independent of `deliveryType` (which governs actual in-app order fulfillment); dine-in never goes through the cart/checkout pipeline. */
+  isDineInAvailable: boolean
   categoryIds: Id[]
   createdBy: Id | null
   updatedBy: Id | null

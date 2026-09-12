@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, ListChecks, MapPin, ServerOff } from 'lucide-react'
+import { AlertTriangle, ListChecks, MapPin, ServerOff, User as UserIcon } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { Field, Select, TextInput } from '@/components/ui/FormControls'
 import { Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
 import { LocationPickerMap } from '@/components/ui/LocationPickerMap'
+import { SearchableSelect } from '@/components/ui/SearchableSelect'
 import { useAsync } from '@/hooks/useAsync'
 import { useDebounce } from '@/hooks/useDebounce'
 import { restaurantService } from '@/services/restaurantService'
 import { itemService } from '@/services/itemService'
 import { addonCategoryService, addonService } from '@/services/simpleServices'
+import { userService } from '@/services/userService'
 import { cartSimulateService, type CartSimulateRequest, type CartSimulateResult } from '@/services/cartSimulateService'
 import { formatCurrency } from '@/lib/format'
 import { IS_MOCK } from '@/config/env'
+import type { Address, User } from '@/types/entities'
 
 interface LineState {
   included: boolean
@@ -49,6 +52,50 @@ export default function CartSimulatorPage() {
   const [customerAddress, setCustomerAddress] = useState('')
   const [paymentMode, setPaymentMode] = useState('')
   const [couponCode, setCouponCode] = useState('')
+
+  // Picking a real customer and one of their saved addresses mimics the actual customer app —
+  // the same address-resolution flow Checkout goes through — instead of an arbitrary map pin.
+  const [selectedCustomer, setSelectedCustomer] = useState<User | null>(null)
+  const [customerQuery, setCustomerQuery] = useState('')
+  const [customerResults, setCustomerResults] = useState<User[]>([])
+  const [customerSearching, setCustomerSearching] = useState(false)
+  const debouncedCustomerQuery = useDebounce(customerQuery, 350)
+
+  useEffect(() => {
+    const q = debouncedCustomerQuery.trim()
+    if (q.length < 2) {
+      setCustomerResults([])
+      setCustomerSearching(false)
+      return
+    }
+    let cancelled = false
+    setCustomerSearching(true)
+    userService
+      .listByRole('customer', { search: q, perPage: 20 })
+      .then((page) => {
+        if (!cancelled) setCustomerResults(page.data)
+      })
+      .finally(() => {
+        if (!cancelled) setCustomerSearching(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedCustomerQuery])
+
+  const { data: customerAddresses, isLoading: addressesLoading } = useAsync(
+    () => (selectedCustomer ? userService.addresses(selectedCustomer.id) : Promise.resolve([])),
+    [selectedCustomer?.id],
+  )
+
+  function pickCustomerAddress(addr: Address) {
+    const lat = addr.latitude ? Number(addr.latitude) : NaN
+    const lng = addr.longitude ? Number(addr.longitude) : NaN
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return
+    setCustomerLat(lat)
+    setCustomerLng(lng)
+    setCustomerAddress([addr.house, addr.address, addr.landmark].filter(Boolean).join(', '))
+  }
 
   useEffect(() => {
     if (restaurantId === null && restaurants && restaurants.length > 0) setRestaurantId(restaurants[0].id)
@@ -173,13 +220,15 @@ export default function CartSimulatorPage() {
                 {restaurantsLoading ? (
                   <LoadingBlock />
                 ) : (
-                  <Select value={restaurantId ?? ''} onChange={(e) => setRestaurantId(Number(e.target.value))}>
-                    {(restaurants ?? []).map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </Select>
+                  <SearchableSelect
+                    items={restaurants ?? []}
+                    value={restaurants?.find((r) => r.id === restaurantId) ?? null}
+                    onChange={(r) => setRestaurantId(r.id)}
+                    getId={(r) => r.id}
+                    getLabel={(r) => r.name}
+                    placeholder="Search restaurants…"
+                    emptyMessage="No restaurants match"
+                  />
                 )}
               </Field>
 
@@ -192,8 +241,24 @@ export default function CartSimulatorPage() {
                   <Badge tone="slate">{restaurant.deliveryRadius} km radius</Badge>
                   <Badge tone="purple">{restaurant.deliveryChargeType} delivery charge</Badge>
                   <Badge tone="slate">Offers: {restaurant.deliveryType}</Badge>
+                  {restaurant.isDineInAvailable && <Badge tone="blue">Dine-in available</Badge>}
                 </div>
               )}
+
+              <Field label="Customer (optional)" hint="Pick a real customer to test their saved-address flow, same as they'd see it in the app.">
+                <SearchableSelect
+                  items={customerResults}
+                  value={selectedCustomer}
+                  onChange={setSelectedCustomer}
+                  onQueryChange={setCustomerQuery}
+                  loading={customerSearching}
+                  getId={(u) => u.id}
+                  getLabel={(u) => u.name}
+                  getDescription={(u) => u.phone || u.email}
+                  placeholder="Search customers by name, email or phone…"
+                  emptyMessage={customerQuery.trim().length < 2 ? 'Type at least 2 characters…' : 'No customers match'}
+                />
+              </Field>
 
               <div>
                 <p className="label mb-1.5">Items in cart</p>
@@ -292,7 +357,34 @@ export default function CartSimulatorPage() {
               </div>
 
               {deliveryType === 'DELIVERY' && (
-                <Field label="Customer location" hint="Drag the pin or search an address — this is the real point the backend's distance/delivery-radius/pricing calculation runs against.">
+                <Field label="Customer location" hint="Drag the pin, search an address, or pick one of the selected customer's saved addresses below — this is the real point the backend's distance/delivery-radius/pricing calculation runs against.">
+                  {selectedCustomer && (
+                    <div className="mb-2">
+                      {addressesLoading ? (
+                        <LoadingBlock />
+                      ) : customerAddresses && customerAddresses.length > 0 ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {customerAddresses.map((addr) => (
+                            <button
+                              key={addr.id}
+                              type="button"
+                              onClick={() => pickCustomerAddress(addr)}
+                              title={[addr.house, addr.address, addr.landmark].filter(Boolean).join(', ') || 'No details'}
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-brand-300 hover:bg-brand-50 hover:text-brand-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-brand-500/10"
+                            >
+                              <MapPin size={11} />
+                              {addr.tag || 'Address'}
+                              {addr.isDefault && <span className="text-emerald-500">•</span>}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
+                          <UserIcon size={12} /> {selectedCustomer.name} has no saved addresses — pick a point on the map instead.
+                        </p>
+                      )}
+                    </div>
+                  )}
                   <LocationPickerMap
                     lat={customerLat}
                     lng={customerLng}
