@@ -12,6 +12,7 @@ import { FirebaseConfigPanel } from '@/components/settings/FirebaseConfigPanel'
 import { PushNotificationTestPanel } from '@/components/settings/PushNotificationTestPanel'
 import { EmailTestPanel } from '@/components/settings/EmailTestPanel'
 import { SectionVisibilityPanel } from '@/components/settings/SectionVisibilityPanel'
+import { LocationPriorityPanel } from '@/components/settings/LocationPriorityPanel'
 import { SettingsConfirmationProvider } from '@/context/SettingsConfirmationContext'
 import { classNames } from '@/lib/format'
 import { useAsync } from '@/hooks/useAsync'
@@ -121,6 +122,8 @@ export default function SettingsPage() {
           {activeCategory === 'push-notifications' && <FirebaseConfigPanel />}
 
           {activeCategory === 'customer-app' && <SectionVisibilityPanel />}
+
+          {activeCategory === 'customer-app' && <LocationPriorityPanel />}
 
           {activeSection && <WiredSettingsForm key={activeSection.key} groups={activeSection.groups} />}
 
