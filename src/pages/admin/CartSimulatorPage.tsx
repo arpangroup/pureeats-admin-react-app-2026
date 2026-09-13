@@ -153,7 +153,17 @@ export default function CartSimulatorPage() {
   }, [restaurantId, restaurant?.deliveryType])
 
   function updateLine(itemId: number, patch: Partial<LineState>) {
-    setLines((prev) => ({ ...prev, [itemId]: { included: false, quantity: 1, addonIds: [], ...prev[itemId], ...patch } }))
+    setLines((prev) => {
+      const existing = prev[itemId]
+      return {
+        ...prev,
+        [itemId]: {
+          included: patch.included ?? existing?.included ?? false,
+          quantity: patch.quantity ?? existing?.quantity ?? 1,
+          addonIds: patch.addonIds ?? existing?.addonIds ?? [],
+        },
+      }
+    })
   }
 
   const cartLines = useMemo(
