@@ -220,18 +220,21 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
           <Field label="Min order value (₹)">
             <TextInput type="number" value={values.minOrderPrice ?? 0} onChange={(e) => onChange('minOrderPrice', Number(e.target.value))} />
           </Field>
-          <Field label="Delivery radius (km)">
-            <TextInput type="number" value={values.deliveryRadius ?? 0} onChange={(e) => onChange('deliveryRadius', Number(e.target.value))} />
+          <Field label="Delivery radius (km)" hint={'Capped at 50km — a much larger value is almost always a typo, and silently lets far-away orders through as "in range".'}>
+            <TextInput type="number" min={0} max={50} value={values.deliveryRadius ?? 0} onChange={(e) => onChange('deliveryRadius', Number(e.target.value))} />
           </Field>
           <Field label="Prep + delivery time (min)">
             <TextInput type="number" value={values.deliveryTime ?? 0} onChange={(e) => onChange('deliveryTime', Number(e.target.value))} />
           </Field>
-          <Field label="Delivery type">
+          <Field label="Delivery type" hint="Governs actual in-app order fulfillment — what a customer can choose at checkout.">
             <Select value={values.deliveryType ?? 'delivery'} onChange={(e) => onChange('deliveryType', e.target.value as Restaurant['deliveryType'])}>
               <option value="self-pickup">Self Pickup</option>
               <option value="delivery">Delivery</option>
               <option value="both">Both</option>
             </Select>
+          </Field>
+          <Field label="Dine-in available" hint="Informational only — shown as a badge, doesn't go through checkout.">
+            <Switch checked={values.isDineInAvailable ?? false} onChange={(v) => onChange('isDineInAvailable', v)} />
           </Field>
           <Field label="Delivery charge type">
             <Select value={values.deliveryChargeType ?? 'fixed'} onChange={(e) => onChange('deliveryChargeType', e.target.value as Restaurant['deliveryChargeType'])}>
@@ -275,6 +278,32 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
           </Field>
           <Field label="SMS Notification for New Orders">
             <Switch checked={!!values.isNotifiable} onChange={(v) => onChange('isNotifiable', v)} />
+          </Field>
+        </div>
+      </SectionCard>
+
+      <SectionCard
+        title="Promo badge"
+        description="Shown on the restaurant's card in the customer app (e.g. '50% OFF · UPTO ₹100') — independent of any coupon code. Leave both blank to show no badge."
+        icon={Bike}
+      >
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Discount %" hint="e.g. 50 for '50% OFF'">
+            <TextInput
+              type="number"
+              min={0}
+              max={100}
+              value={values.offerDiscountPercent ?? ''}
+              onChange={(e) => onChange('offerDiscountPercent', e.target.value === '' ? null : Number(e.target.value))}
+            />
+          </Field>
+          <Field label="Max discount (₹)" hint="e.g. 100 for 'UPTO ₹100'">
+            <TextInput
+              type="number"
+              min={0}
+              value={values.offerMaxDiscount ?? ''}
+              onChange={(e) => onChange('offerMaxDiscount', e.target.value === '' ? null : Number(e.target.value))}
+            />
           </Field>
         </div>
       </SectionCard>

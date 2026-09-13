@@ -30,7 +30,7 @@ import { deliveryGuyService } from '@/services/deliveryGuyService'
 import { walletService } from '@/services/financeServices'
 import { formatCurrency, formatDate, timeAgo } from '@/lib/format'
 import { IS_MOCK } from '@/config/env'
-import type { User, DeliveryGuyDetail, Transaction, TripDetail, Wallet } from '@/types/entities'
+import type { User, DeliveryGuyDetail, Transaction, TripDetail, Wallet, Address } from '@/types/entities'
 import type { UserRole } from '@/types/common'
 
 const roleLabels: Record<UserRole, string> = {
@@ -69,6 +69,11 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
   )
 
   const { data: sessions } = useAsync(() => (user ? userService.recentLoginSessions(user.id, 5) : Promise.resolve([])), [user?.id])
+
+  const { data: addresses } = useAsync(
+    () => (role === 'customer' && user ? userService.addresses(user.id) : Promise.resolve([])),
+    [role, user?.id],
+  )
 
   const { data: earnings } = useAsync(
     () => (isDeliveryGuy && guyDetail ? deliveryGuyService.earningsForRider(guyDetail.userId) : Promise.resolve([])),
@@ -319,6 +324,12 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
             </SectionCard>
           )}
 
+          {role === 'customer' && (
+            <SectionCard title="Addresses" description="Saved addresses — select one to preview its location." icon={MapPin}>
+              <AddressesPanel addresses={addresses ?? []} />
+            </SectionCard>
+          )}
+
           {isDeliveryGuy && guyDetail && (
             <SectionCard title="Vehicle" description="View and manage vehicle information." icon={Bike}>
               <div className="space-y-2 text-sm">
@@ -350,6 +361,56 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
           reloadTxns()
         }}
       />
+    </div>
+  )
+}
+
+function AddressesPanel({ addresses }: { addresses: Address[] }) {
+  const [selectedId, setSelectedId] = useState<Address['id'] | null>(
+    () => addresses.find((a) => a.isDefault)?.id ?? addresses[0]?.id ?? null,
+  )
+
+  useEffect(() => {
+    if (selectedId === null || !addresses.some((a) => a.id === selectedId)) {
+      setSelectedId(addresses.find((a) => a.isDefault)?.id ?? addresses[0]?.id ?? null)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addresses])
+
+  if (addresses.length === 0) {
+    return <p className="text-sm text-slate-400 dark:text-slate-500">No saved addresses.</p>
+  }
+
+  const selected = addresses.find((a) => a.id === selectedId) ?? null
+
+  return (
+    <div className="space-y-3">
+      <ul className="space-y-1.5">
+        {addresses.map((a) => (
+          <li key={a.id}>
+            <button
+              type="button"
+              onClick={() => setSelectedId(a.id)}
+              className={`flex w-full items-start justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                a.id === selectedId
+                  ? 'border-brand-400 bg-brand-50 dark:border-brand-500/60 dark:bg-brand-500/10'
+                  : 'border-transparent bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-800'
+              }`}
+            >
+              <span className="min-w-0">
+                <span className="block truncate font-medium text-slate-700 dark:text-slate-200">
+                  {a.tag || 'Address'}{a.house ? ` — ${a.house}` : ''}
+                </span>
+                <span className="block truncate text-xs text-slate-500 dark:text-slate-400">
+                  {[a.address, a.landmark].filter(Boolean).join(', ') || 'No details'}
+                </span>
+              </span>
+              {a.isDefault && <Badge tone="green">Active</Badge>}
+            </button>
+          </li>
+        ))}
+      </ul>
+      {selected && <MapEmbed lat={selected.latitude ? Number(selected.latitude) : null} lng={selected.longitude ? Number(selected.longitude) : null} />}
     </div>
   )
 }

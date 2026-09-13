@@ -7,7 +7,7 @@ import { users, restaurantUsers, restaurants, loginSessions } from '@/mocks/fixt
 import { mockDelay as delay, nextMockId } from '@/lib/mockUtils'
 import { mapFrontendRole } from '@/types/auth'
 import type { ListParams, Paginated, UserRole } from '@/types/common'
-import type { User, RestaurantUser, LoginSession } from '@/types/entities'
+import type { User, RestaurantUser, LoginSession, Address } from '@/types/entities'
 
 const base = createCrudService<User>(users, '/admin/users', ['name', 'email', 'phone'])
 
@@ -104,5 +104,17 @@ export const userService = {
       createdAt: entry.occurredAt,
       updatedAt: entry.occurredAt,
     }))
+  },
+
+  /** A user's saved addresses (admin-scoped — works for any user, not just the caller), with
+   * `isDefault` marking their active address. No mock fixtures exist for addresses (same as the
+   * Cart Simulator, this is real-backend-only) — mock mode returns an empty list. */
+  async addresses(userId: number): Promise<Address[]> {
+    if (IS_MOCK) {
+      await delay(150)
+      return []
+    }
+    const { data } = await apiClient.get<{ data: Address[] }>(`/admin/users/${userId}/addresses`)
+    return data.data
   },
 }

@@ -29,15 +29,13 @@ export interface User {
 
 export interface Address {
   id: Id
-  userId: Id
-  address: string
-  house: string
-  landmark: string
-  tag: string
-  latitude: number
-  longitude: number
-  createdAt: string
-  updatedAt: string
+  house: string | null
+  address: string | null
+  landmark: string | null
+  tag: string | null
+  latitude: string | null
+  longitude: string | null
+  isDefault: boolean
 }
 
 export interface Location {
@@ -118,6 +116,9 @@ export interface Restaurant {
   isAccepted: boolean
   isFeatured: boolean
   commissionRate: number
+  /** Promo badge shown on the customer app's restaurant card — independent of any Coupon. Both unset/null means no badge renders at all. */
+  offerDiscountPercent?: number | null
+  offerMaxDiscount?: number | null
   deliveryType: 'self-pickup' | 'delivery' | 'both'
   deliveryRadius: number
   deliveryChargeType: 'fixed' | 'dynamic'
@@ -130,6 +131,8 @@ export interface Restaurant {
   autoAcceptable: boolean
   isSchedulable: boolean
   isAcceptCod: boolean
+  /** Purely informational capability badge — whether this restaurant also seats walk-in/dine-in customers. Independent of `deliveryType` (which governs actual in-app order fulfillment); dine-in never goes through the cart/checkout pipeline. */
+  isDineInAvailable: boolean
   categoryIds: Id[]
   createdBy: Id | null
   updatedBy: Id | null
@@ -530,6 +533,8 @@ export interface Slide {
 export interface PaymentGateway {
   id: Id
   name: string
+  /** "COD" | "WALLET" | "UPI" — maps this row to what the customer app's checkout actually does. Null on a legacy/decorative row (display-only, never selectable there). */
+  code: string | null
   description: string
   logo: string
   isActive: boolean

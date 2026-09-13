@@ -37,6 +37,7 @@ const emptyRestaurant: Partial<Restaurant> = {
   deliveryTime: 30,
   deliveryType: 'delivery',
   isAcceptCod: true,
+  isDineInAvailable: false,
   isSchedulable: false,
   autoAcceptable: false,
   commissionRate: 15,

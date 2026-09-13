@@ -1,8 +1,8 @@
 import { Field, Select, Switch, TextInput, Textarea } from '@/components/ui/FormControls'
 import { ImageUpload } from '@/components/ui/ImageUpload'
-import { slideService } from '@/services/simpleServices'
+import { slideService, listActiveRestaurantCategories, listActiveRestaurants } from '@/services/simpleServices'
+import { useAsync } from '@/hooks/useAsync'
 import { IS_MOCK } from '@/config/env'
-import { restaurantCategories, restaurants } from '@/mocks/fixtures'
 import type { Slide } from '@/types/entities'
 
 interface SlideFormProps {
@@ -11,6 +11,12 @@ interface SlideFormProps {
 }
 
 export function SlideForm({ values, onChange }: SlideFormProps) {
+  // The picker options must be the real live restaurant/category list, not mock fixtures - a slide
+  // saved with a mock-fixture id would silently link to nothing (or the wrong restaurant/category)
+  // once the customer app resolves it against the real backend.
+  const { data: categoryOptions } = useAsync(listActiveRestaurantCategories, [])
+  const { data: restaurantOptions } = useAsync(listActiveRestaurants, [])
+
   return (
     <div className="space-y-4">
       {!IS_MOCK && !values.id ? (
@@ -55,7 +61,7 @@ export function SlideForm({ values, onChange }: SlideFormProps) {
         <Field label="Store category" required>
           <Select value={values.categoryId ?? ''} onChange={(e) => onChange('categoryId', Number(e.target.value))}>
             <option value="" disabled>Select category</option>
-            {restaurantCategories.map((c) => (
+            {(categoryOptions ?? []).map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </Select>
@@ -66,7 +72,7 @@ export function SlideForm({ values, onChange }: SlideFormProps) {
         <Field label="Restaurant" required>
           <Select value={values.restaurantId ?? ''} onChange={(e) => onChange('restaurantId', Number(e.target.value))}>
             <option value="" disabled>Select restaurant</option>
-            {restaurants.map((r) => (
+            {(restaurantOptions ?? []).map((r) => (
               <option key={r.id} value={r.id}>{r.name}</option>
             ))}
           </Select>

@@ -12,10 +12,21 @@ export const settings: Setting[] = [
   { id: 9, key: 'maintenance_mode', value: 'false' },
 ]
 
+// code matches the customer app's PaymentMode exactly ('COD' | 'WALLET' | 'UPI' | 'RAZORPAY') —
+// those four are real, selectable checkout options (Razorpay is genuinely implemented, just still
+// greyed out on Checkout until the key in the Razorpay panel above is set). Everything else has no
+// code and always shows disabled there. Mirrors the backend's DemoContentSeeder.
 export const paymentGateways: PaymentGateway[] = [
-  { id: 1, name: 'Razorpay', description: 'Cards, UPI, netbanking and wallets', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
-  { id: 2, name: 'Stripe', description: 'International cards', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
-  { id: 3, name: 'Cash on Delivery', description: 'Pay with cash at the door', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 1, name: 'Cash on Delivery', code: 'COD', description: 'Pay with cash when your order arrives', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 2, name: 'PureEats Wallet', code: 'WALLET', description: 'Pay using your wallet balance', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 3, name: 'UPI', code: 'UPI', description: 'Pay via GPay, PhonePe, Paytm & more', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 4, name: 'Razorpay', code: 'RAZORPAY', description: 'Cards, UPI, netbanking and wallets', logo: '', isActive: true, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 5, name: 'Stripe', code: null, description: 'International cards — not yet integrated', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 6, name: 'PayPal', code: null, description: 'Not yet integrated', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 7, name: 'PayStack', code: null, description: 'Not yet integrated', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 8, name: 'PayTm', code: null, description: 'Not yet integrated', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 9, name: 'PayUmoney', code: null, description: 'Not yet integrated', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
+  { id: 10, name: 'CCAvenue', code: null, description: 'Not yet integrated', logo: '', isActive: false, createdAt: '2025-10-01T09:00:00Z', updatedAt: '2025-10-01T09:00:00Z' },
 ]
 
 export const smsGateways: SmsGateway[] = [

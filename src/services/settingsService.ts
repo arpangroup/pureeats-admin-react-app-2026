@@ -71,24 +71,27 @@ export const settingsService = {
     return { key, value }
   },
 
+  /** Admin-only listing (every row, active and inactive) — distinct from the public GET /payment-gateways the customer app reads, which only ever returns active ones and so can't be used to find a disabled gateway to re-enable. */
   async paymentGateways(): Promise<PaymentGateway[]> {
     if (IS_MOCK) {
       await mockDelay()
       return [...paymentGateways]
     }
-    const { data } = await apiClient.get('/payment-gateways')
+    const { data } = await apiClient.get('/admin/payment-gateways')
     return unwrapArray<PaymentGateway>(data)
   },
 
-  async togglePaymentGateway(id: number, isActive: boolean): Promise<PaymentGateway> {
+  /** `confirmPassword` is only checked server-side when AppConfig's settingsConfirmationEnabled is on — same gate every other settings save goes through (see useSettingsConfirmation). */
+  async togglePaymentGateway(id: number, isActive: boolean, confirmPassword?: string): Promise<PaymentGateway> {
     if (IS_MOCK) {
       await mockDelay()
+      mockVerifyConfirmationPassword(confirmPassword)
       const index = paymentGateways.findIndex((g) => g.id === id)
       if (index === -1) throw { message: 'Gateway not found' }
       paymentGateways[index] = { ...paymentGateways[index], isActive }
       return paymentGateways[index]
     }
-    const { data } = await apiClient.patch<{ data: PaymentGateway }>(`/payment-gateways/${id}`, { isActive })
+    const { data } = await apiClient.patch<{ data: PaymentGateway }>(`/admin/payment-gateways/${id}`, { isActive, confirmationPassword: confirmPassword })
     return data.data
   },
 
