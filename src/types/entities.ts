@@ -10,6 +10,8 @@ export type DeliveryType = 'delivery' | 'pickup'
 export type DiscountType = 'flat' | 'percentage' | 'free_delivery'
 export type OrderFrom = 'app' | 'web' | 'pos'
 
+export type AccountStatus = 'ACTIVE' | 'TEMPORARILY_LOCKED' | 'BLOCKED' | 'DISABLED' | 'DELETED'
+
 export interface User {
   id: Id
   name: string
@@ -17,6 +19,8 @@ export interface User {
   phone: string
   photo: string | null
   isActive: boolean
+  /** Mirrors the backend's AccountStatus enum - absent in mock fixtures (treated as ACTIVE) since none of the demo users are blocked/deleted. */
+  accountStatus?: AccountStatus
   role: 'admin' | 'employee' | 'restaurant-owner' | 'delivery-guy' | 'customer'
   deliveryPin?: string | null
   defaultAddressId?: Id | null

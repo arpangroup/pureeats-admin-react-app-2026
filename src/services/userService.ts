@@ -11,15 +11,24 @@ import type { User, RestaurantUser, LoginSession, Address } from '@/types/entiti
 
 const base = createCrudService<User>(users, '/admin/users', ['name', 'email', 'phone'])
 
-/** Users list scoped to one role — powers Users, Employees and Restaurant Owners screens. */
-async function listByRole(role: UserRole, params: ListParams = {}): Promise<Paginated<User>> {
+/** Users list scoped to one role — powers Users, Employees, Restaurant Owners and Delivery
+ * Partners screens. `accountStatus` mirrors the backend's own filter semantics exactly: omitted
+ * defaults to ACTIVE-only (deleted/blocked/disabled/locked accounts filtered out), pass 'ALL' to
+ * see everyone, or a specific status to see only that bucket. */
+async function listByRole(role: UserRole, params: ListParams = {}, accountStatus?: string): Promise<Paginated<User>> {
   if (IS_MOCK) {
     await mockDelay()
-    const rows = users.filter((u) => u.role === role)
+    const rows = users.filter((u) => {
+      if (u.role !== role) return false
+      const status = u.accountStatus ?? 'ACTIVE'
+      if (!accountStatus || accountStatus === 'ACTIVE') return status === 'ACTIVE'
+      if (accountStatus === 'ALL') return true
+      return status === accountStatus
+    })
     return paginate(rows, params, ['name', 'email', 'phone'])
   }
   const { data } = await apiClient.get<{ data: PageResponse<User> }>('/admin/users', {
-    params: { userType: mapFrontendRole(role), search: params.search, page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
+    params: { userType: mapFrontendRole(role), search: params.search, accountStatus, page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
   })
   return toPaginated(data.data)
 }

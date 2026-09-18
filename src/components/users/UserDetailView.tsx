@@ -24,6 +24,7 @@ import { AuditInfo } from '@/components/ui/AuditInfo'
 import { MapEmbed } from '@/components/ui/MapEmbed'
 import { SlideOver } from '@/components/ui/SlideOver'
 import { DataTable, type Column } from '@/components/DataTable'
+import { AccountStatusBadge } from '@/components/users/UsersListView'
 import { useAsync } from '@/hooks/useAsync'
 import { userService } from '@/services/userService'
 import { deliveryGuyService } from '@/services/deliveryGuyService'
@@ -171,7 +172,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
         description={user.email}
         actions={
           <>
-            <Badge tone={user.isActive ? 'green' : 'red'}>{user.isActive ? 'Active' : 'Blocked'}</Badge>
+            <AccountStatusBadge status={user.accountStatus} />
             <button className="btn-primary" onClick={handleSave} disabled={saving}>
               {saving ? 'Saving…' : 'Save changes'}
             </button>
