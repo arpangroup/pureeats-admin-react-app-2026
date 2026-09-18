@@ -314,6 +314,9 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
             <Field label="Commission rate (%)">
               <TextInput type="number" value={values.commissionRate ?? 0} onChange={(e) => onChange('commissionRate', Number(e.target.value))} />
             </Field>
+            <Field label="Rating" hint="Static, shown to customers as-is — not derived from real reviews.">
+              <TextInput type="number" min={0} max={5} step="0.1" value={values.rating ?? 0} onChange={(e) => onChange('rating', Number(e.target.value))} />
+            </Field>
             <Field label="Active on platform">
               <Switch checked={!!values.isActive} onChange={(v) => onChange('isActive', v)} />
             </Field>

@@ -5,8 +5,11 @@ import 'leaflet/dist/leaflet.css'
 import markerIconUrl from 'leaflet/dist/images/marker-icon.png'
 import markerIcon2xUrl from 'leaflet/dist/images/marker-icon-2x.png'
 import markerShadowUrl from 'leaflet/dist/images/marker-shadow.png'
+import { GoogleMap, MarkerF } from '@react-google-maps/api'
 import { useDebounce } from '@/hooks/useDebounce'
 import { classNames } from '@/lib/format'
+import { useGoogleMaps } from '@/context/GoogleMapsContext'
+import { useTheme } from '@/context/ThemeContext'
 
 // Leaflet's default marker icon references image paths that don't survive bundling — point it at
 // the actual bundled asset URLs Vite produces for these instead.
@@ -82,8 +85,22 @@ interface LocationPickerMapProps {
   height?: number
 }
 
+/**
+ * Google Maps whenever a key is actually configured and loads successfully (see GoogleMapsContext),
+ * OpenStreetMap/Leaflet otherwise — the free option that needs no key, so this always renders a
+ * working picker. Same fallback rule the customer app already uses for its own map pickers.
+ */
+export function LocationPickerMap(props: LocationPickerMapProps) {
+  const { wantsGoogle, isLoaded } = useGoogleMaps()
+  if (wantsGoogle) {
+    if (!isLoaded) return <div className="flex items-center justify-center rounded-xl border border-slate-200 text-xs text-slate-400 dark:border-slate-700" style={{ height: props.height ?? 260 }}>Loading map…</div>
+    return <GoogleLocationPicker {...props} />
+  }
+  return <OsmLocationPicker {...props} />
+}
+
 /** Interactive OpenStreetMap picker — search an address (live autocomplete), click anywhere, or drag the pin to set lat/lng; typing in the coordinate fields moves the pin back. */
-export function LocationPickerMap({ lat, lng, onChange, onAddressResolved, height = 260 }: LocationPickerMapProps) {
+function OsmLocationPicker({ lat, lng, onChange, onAddressResolved, height = 260 }: LocationPickerMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
@@ -323,4 +340,163 @@ export function LocationPickerMap({ lat, lng, onChange, onAddressResolved, heigh
       </p>
     </div>
   )
+}
+
+/** Same picker experience as OsmLocationPicker, backed by the real Google Maps JS API instead. */
+function GoogleLocationPicker({ lat, lng, onChange, onAddressResolved, height = 260 }: LocationPickerMapProps) {
+  const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null)
+  const [locating, setLocating] = useState(false)
+  const [locateError, setLocateError] = useState<string | null>(null)
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
+  const onAddressResolvedRef = useRef(onAddressResolved)
+  onAddressResolvedRef.current = onAddressResolved
+
+  const initialValid = toValidCoordinate(lat, lng)
+  const center = initialValid ? { lat: initialValid[0], lng: initialValid[1] } : { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1] }
+
+  function resolveAddress(latitude: number, longitude: number) {
+    new google.maps.Geocoder().geocode({ location: { lat: latitude, lng: longitude } }, (results, status) => {
+      if (status === 'OK' && results?.[0]?.formatted_address) onAddressResolvedRef.current?.(results[0].formatted_address)
+    })
+  }
+
+  function moveTo(newLat: number, newLng: number, pan: boolean) {
+    onChangeRef.current(newLat, newLng)
+    if (pan) {
+      mapInstance?.panTo({ lat: newLat, lng: newLng })
+      mapInstance?.setZoom(16)
+    }
+    resolveAddress(newLat, newLng)
+  }
+
+  /** Shared handler for both dragging the pin and clicking anywhere on the map — same MapMouseEvent shape either way. */
+  function handleMapMouseEvent(e: google.maps.MapMouseEvent) {
+    const eventLat = e.latLng?.lat()
+    const eventLng = e.latLng?.lng()
+    if (eventLat === undefined || eventLng === undefined) return
+    moveTo(Number(eventLat.toFixed(6)), Number(eventLng.toFixed(6)), false)
+  }
+
+  function handlePlaceSelected(place: google.maps.places.Place) {
+    const location = place.location
+    if (!location) return
+    onChangeRef.current(Number(location.lat().toFixed(6)), Number(location.lng().toFixed(6)))
+    mapInstance?.panTo(location)
+    mapInstance?.setZoom(16)
+    onAddressResolvedRef.current?.(place.formattedAddress ?? place.displayName ?? '')
+  }
+
+  function locateMe() {
+    if (!navigator.geolocation) {
+      setLocateError('Geolocation is not supported by this browser.')
+      return
+    }
+    setLocating(true)
+    setLocateError(null)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        moveTo(Number(position.coords.latitude.toFixed(6)), Number(position.coords.longitude.toFixed(6)), true)
+        setLocating(false)
+      },
+      () => {
+        setLocateError('Could not get your current location — check browser/site permissions.')
+        setLocating(false)
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    )
+  }
+
+  return (
+    <div>
+      <div className="mb-2">
+        <GooglePlaceSearchBox onPlaceSelected={handlePlaceSelected} />
+      </div>
+      <div className="relative">
+        <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+          <GoogleMap
+            mapContainerStyle={{ width: '100%', height }}
+            center={center}
+            zoom={initialValid ? 15 : 12}
+            onLoad={setMapInstance}
+            onClick={handleMapMouseEvent}
+            // 'greedy' — plain one-finger drag to pan and a bare scroll-wheel to zoom, matching the
+            // customer app's own map pickers rather than Google's default 'cooperative' (which traps
+            // page-scroll unless Ctrl/two fingers are held) — this map is the point of this section.
+            options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false, zoomControl: false, gestureHandling: 'greedy' }}
+          >
+            <MarkerF position={center} draggable onDragEnd={handleMapMouseEvent} />
+          </GoogleMap>
+        </div>
+        <button
+          type="button"
+          onClick={locateMe}
+          disabled={locating}
+          title="Use my current location"
+          aria-label="Use my current location"
+          className="absolute right-2.5 top-2.5 z-[1000] flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+        >
+          {locating ? <Loader2 size={16} className="animate-spin" /> : <LocateFixed size={16} />}
+        </button>
+      </div>
+      {locateError && <p className="mt-1.5 text-xs text-rose-500">{locateError}</p>}
+      <p className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+        Search for an address above, use your current location, click anywhere on the map, or drag the pin, to set the restaurant's exact location — the latitude/longitude fields below update automatically.
+      </p>
+    </div>
+  )
+}
+
+/**
+ * google.maps.places.Autocomplete is deprecated for new customers as of March 2025 in favor of
+ * google.maps.places.PlaceAutocompleteElement — a plain custom element with no React binding in
+ * @react-google-maps/api, so it's created and attached imperatively here, mirroring the customer
+ * app's own AddressMapPicker.tsx (see that file for the fuller rationale/history behind each of
+ * these three quirks, all verified live there first):
+ *  - constructor needs an (empty is fine) options object — the installed @types/google.maps
+ *    declares it required even though the runtime accepts a bare call in some builds.
+ *  - fires `gmp-select` with `event.placePrediction`, not `event.place` (stale beta-era typings).
+ *  - its shadow DOM's background/placeholder/corner-radius don't come from any typed API or the
+ *    documented Places UI Kit custom properties (verified live - no effect); `colorScheme`,
+ *    `border`/`border-radius`, and a plain `placeholder` attribute on the host all work instead.
+ */
+function GooglePlaceSearchBox({ onPlaceSelected }: { onPlaceSelected: (place: google.maps.places.Place) => void }) {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const elementRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null)
+  const onPlaceSelectedRef = useRef(onPlaceSelected)
+  onPlaceSelectedRef.current = onPlaceSelected
+  const { theme } = useTheme()
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const element = new google.maps.places.PlaceAutocompleteElement({})
+    element.style.width = '100%'
+    element.style.borderRadius = '8px'
+    element.setAttribute('placeholder', 'Search for an address or place…')
+    container.appendChild(element)
+    elementRef.current = element
+
+    function handleSelect(event: Event) {
+      const { placePrediction } = event as unknown as { placePrediction: google.maps.places.PlacePrediction | null }
+      if (!placePrediction) return
+      const place = placePrediction.toPlace()
+      place.fetchFields({ fields: ['displayName', 'formattedAddress', 'location'] }).then(() => onPlaceSelectedRef.current(place))
+    }
+    element.addEventListener('gmp-select', handleSelect)
+
+    return () => {
+      element.removeEventListener('gmp-select', handleSelect)
+      container.removeChild(element)
+      elementRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!elementRef.current) return
+    elementRef.current.style.colorScheme = theme
+    elementRef.current.style.border = `1px solid ${theme === 'dark' ? '#334155' : '#e2e8f0'}`
+  }, [theme])
+
+  return <div ref={containerRef} className="w-full" />
 }

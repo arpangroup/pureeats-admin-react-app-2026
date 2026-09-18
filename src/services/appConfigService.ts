@@ -166,4 +166,19 @@ export const appConfigService = {
       vapidKey: data.data.firebaseVapidKey || '',
     }
   },
+
+  /**
+   * Same reasoning as getPublicFirebaseConfig above — off the public GET /app-config rather than
+   * the admin-only endpoint, since LocationPickerMap is also used from the restaurant-owner role's
+   * own restaurant form, which can't call /admin/app-config. Used to decide Google Maps vs.
+   * OpenStreetMap for every map in this app, mirroring the customer app's own fallback.
+   */
+  async getPublicGoogleMapsApiKey(): Promise<string | null> {
+    if (IS_MOCK) {
+      await mockDelay()
+      return null
+    }
+    const { data } = await apiClient.get<{ data: { googleMapsApiKey: string | null } }>('/app-config')
+    return data.data.googleMapsApiKey || null
+  },
 }

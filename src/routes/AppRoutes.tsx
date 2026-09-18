@@ -32,6 +32,7 @@ import RestaurantOwnerRestaurantsPage from '@/pages/admin/RestaurantOwnerRestaur
 import DeliveryGuysPage from '@/pages/admin/DeliveryGuysPage'
 import DeliveryGuyDetailPage from '@/pages/admin/DeliveryGuyDetailPage'
 import DeliveryGuyRestaurantsPage from '@/pages/admin/DeliveryGuyRestaurantsPage'
+import DeliverySimulatorPage from '@/pages/admin/DeliverySimulatorPage'
 import RestaurantPayoutsPage from '@/pages/admin/RestaurantPayoutsPage'
 import WalletTransactionsPage from '@/pages/admin/WalletTransactionsPage'
 import DeliveryCollectionsPage from '@/pages/admin/DeliveryCollectionsPage'
@@ -118,6 +119,7 @@ export function AppRoutes() {
         <Route path="delivery-guys" element={<DeliveryGuysPage />} />
         <Route path="delivery-guys/:id" element={<DeliveryGuyDetailPage />} />
         <Route path="delivery-guys-restaurants" element={<DeliveryGuyRestaurantsPage />} />
+        <Route path="delivery-simulator" element={<DeliverySimulatorPage />} />
         <Route path="restaurant-payouts" element={<RestaurantPayoutsPage />} />
         <Route path="wallet-transactions" element={<WalletTransactionsPage />} />
         <Route path="delivery-collections" element={<DeliveryCollectionsPage />} />
