@@ -94,6 +94,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
   const [showPassword, setShowPassword] = useState(false)
   const [passwordSaved, setPasswordSaved] = useState(false)
   const [notifiable, setNotifiable] = useState(true)
+  const [rating, setRating] = useState(0)
   const [walletAction, setWalletAction] = useState<'credit' | 'debit' | null>(null)
 
   useEffect(() => {
@@ -105,7 +106,10 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
   }, [user, initialized])
 
   useEffect(() => {
-    if (guyDetail) setNotifiable(guyDetail.isNotifiable)
+    if (guyDetail) {
+      setNotifiable(guyDetail.isNotifiable)
+      setRating(guyDetail.rating)
+    }
   }, [guyDetail])
 
   if (isLoading || !initialized) return <LoadingBlock />
@@ -122,7 +126,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
       const now = new Date().toISOString()
       await userService.update(user!.id, { ...values, updatedBy: 1, updatedAt: now })
       if (isDeliveryGuy && guyDetail) {
-        await deliveryGuyService.update(guyDetail.id, { isNotifiable: notifiable, photo: values.photo ?? guyDetail.photo })
+        await deliveryGuyService.update(guyDetail.id, { isNotifiable: notifiable, rating, photo: values.photo ?? guyDetail.photo })
         reloadGuy()
       }
       reload()
@@ -337,9 +341,17 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
                   <span className="text-slate-500 dark:text-slate-400">Vehicle number</span>
                   <span className="font-medium text-slate-700 dark:text-slate-200">{guyDetail.vehicleNumber || '—'}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex items-center justify-between gap-3">
                   <span className="text-slate-500 dark:text-slate-400">Rating</span>
-                  <span className="font-medium text-slate-700 dark:text-slate-200">{guyDetail.rating.toFixed(1)}</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={5}
+                    step={0.1}
+                    value={rating}
+                    onChange={(e) => setRating(Number(e.target.value))}
+                    className="input w-20 text-right"
+                  />
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 dark:text-slate-400">Max simultaneous deliveries</span>
