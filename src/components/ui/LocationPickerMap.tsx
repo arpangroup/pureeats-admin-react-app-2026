@@ -29,8 +29,10 @@ const DEFAULT_CENTER: [number, number] = [12.9716, 77.5946]
 
 // Minimum characters before we bother querying, and how long to wait after the user stops typing —
 // keeps this well under Nominatim's ~1 request/sec usage-policy ceiling without a search button.
-const MIN_QUERY_LENGTH = 3
-const DEBOUNCE_MS = 450
+// Exported so other Nominatim-backed search inputs (e.g. DeliverySimulatorPage's route-drawing
+// search box) use the same rate-limit-friendly pacing instead of picking their own values.
+export const MIN_QUERY_LENGTH = 3
+export const DEBOUNCE_MS = 450
 
 /**
  * Validates and narrows in one step — a plain `(lat, lng) is number` predicate can only narrow the
@@ -54,14 +56,14 @@ function toValidCoordinate(lat: number | null | undefined, lng: number | null | 
   return null
 }
 
-interface GeocodeResult {
+export interface GeocodeResult {
   label: string
   lat: number
   lng: number
 }
 
-/** OpenStreetMap's free Nominatim geocoder. */
-async function searchAddress(query: string, signal: AbortSignal): Promise<GeocodeResult[]> {
+/** OpenStreetMap's free Nominatim geocoder. Exported for reuse by other OSM-only search inputs. */
+export async function searchAddress(query: string, signal: AbortSignal): Promise<GeocodeResult[]> {
   const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=6&q=${encodeURIComponent(query)}`, { signal })
   if (!res.ok) throw new Error('Search failed')
   const rows: { display_name: string; lat: string; lon: string }[] = await res.json()
@@ -460,7 +462,7 @@ function GoogleLocationPicker({ lat, lng, onChange, onAddressResolved, height = 
  *    documented Places UI Kit custom properties (verified live - no effect); `colorScheme`,
  *    `border`/`border-radius`, and a plain `placeholder` attribute on the host all work instead.
  */
-function GooglePlaceSearchBox({ onPlaceSelected }: { onPlaceSelected: (place: google.maps.places.Place) => void }) {
+export function GooglePlaceSearchBox({ onPlaceSelected }: { onPlaceSelected: (place: google.maps.places.Place) => void }) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const elementRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null)
   const onPlaceSelectedRef = useRef(onPlaceSelected)
