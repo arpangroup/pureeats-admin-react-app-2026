@@ -238,6 +238,19 @@ export const DELIVERY_APP_GROUPS: SettingGroupDef[] = [
       },
     ],
   },
+  {
+    title: 'Location tracking',
+    icon: MapPin,
+    fields: [
+      {
+        key: 'driver_location_tracking_enabled',
+        label: 'Enable driver location tracking',
+        fieldType: 'boolean',
+        defaultValue: 'true',
+        info: 'When off, every delivery partner\'s app stops sending GPS pings and shows a "Maintenance mode" banner instead of the online/offline toggle - use this to pause location tracking platform-wide (e.g. during a backend issue) without disabling the app itself.',
+      },
+    ],
+  },
 ]
 
 export const STORE_DASHBOARD_GROUPS: SettingGroupDef[] = [
