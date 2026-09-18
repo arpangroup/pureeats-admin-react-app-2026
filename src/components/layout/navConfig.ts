@@ -36,6 +36,7 @@ import {
   Smartphone,
   Cable,
   ListChecks,
+  Navigation,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -86,6 +87,7 @@ export const adminNav: NavSection[] = [
       { label: 'Owner ↔ Stores', to: '/admin/restaurant-owners-restaurants', icon: LayoutGrid },
       { label: 'Delivery Partners', to: '/admin/delivery-guys', icon: Bike },
       { label: 'Rider ↔ Stores', to: '/admin/delivery-guys-restaurants', icon: LayoutGrid },
+      { label: 'Delivery Simulator', to: '/admin/delivery-simulator', icon: Navigation },
     ],
   },
   {
