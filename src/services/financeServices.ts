@@ -122,17 +122,20 @@ export interface PayoutRow extends RestaurantPayout {
 }
 
 export const payoutService = {
+  /** `params.filters.restaurantId`, when set, scopes this to one restaurant's payout history (e.g. the admin restaurant detail page) instead of every payout platform-wide. */
   async list(params: ListParams = {}): Promise<Paginated<PayoutRow>> {
+    const restaurantIdFilter = params.filters?.restaurantId
     if (IS_MOCK) {
       await mockDelay()
-      const rows: PayoutRow[] = restaurantPayouts.map((p) => ({
+      let rows: PayoutRow[] = restaurantPayouts.map((p) => ({
         ...p,
         restaurantName: restaurants.find((r) => r.id === p.restaurantId)?.name ?? 'Unknown',
       }))
+      if (restaurantIdFilter !== undefined) rows = rows.filter((r) => r.restaurantId === Number(restaurantIdFilter))
       return paginate(rows, params, ['restaurantName', 'status', 'transactionId'])
     }
     const { data } = await apiClient.get<{ data: PageResponse<PayoutRow> }>('/admin/restaurant-payouts', {
-      params: { page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
+      params: { restaurantId: restaurantIdFilter, page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
     })
     return toPaginated(data.data)
   },
@@ -187,6 +190,19 @@ export const earningsService = {
       return
     }
     await apiClient.post(`/store-owner/restaurants/${restaurantId}/earnings/payout-request`)
+  },
+
+  /** This restaurant's past payout requests (pending/processing/paid/rejected), newest first. */
+  async payoutHistory(restaurantId: number, params: ListParams = {}): Promise<Paginated<RestaurantPayout>> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const rows = restaurantPayouts.filter((p) => p.restaurantId === restaurantId)
+      return paginate(rows, params, ['status', 'transactionId'])
+    }
+    const { data } = await apiClient.get<{ data: PageResponse<RestaurantPayout> }>(`/store-owner/restaurants/${restaurantId}/earnings/payouts`, {
+      params: { page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
+    })
+    return toPaginated(data.data)
   },
 }
 

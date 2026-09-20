@@ -1,14 +1,30 @@
 import { useEffect, useState } from 'react'
 import { Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { EmptyState, LoadingBlock } from '@/components/ui/Feedback'
+import { Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
 import { Select } from '@/components/ui/FormControls'
 import { StatCard } from '@/components/ui/StatCard'
+import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { restaurantService } from '@/services/restaurantService'
 import { earningsService } from '@/services/financeServices'
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, formatDate } from '@/lib/format'
+import type { RestaurantPayout } from '@/types/entities'
+
+const statusTone: Record<RestaurantPayout['status'], 'slate' | 'green' | 'amber' | 'red'> = {
+  pending: 'slate',
+  processing: 'amber',
+  paid: 'green',
+  rejected: 'red',
+}
+
+const columns: Column<RestaurantPayout>[] = [
+  { key: 'amount', header: 'Amount', render: (row) => <span className="font-medium text-slate-800 dark:text-slate-100">{formatCurrency(row.amount)}</span> },
+  { key: 'mode', header: 'Mode', render: (row) => row.transactionMode ?? '—' },
+  { key: 'status', header: 'Status', render: (row) => <Badge tone={statusTone[row.status]}>{row.status}</Badge> },
+  { key: 'requested', header: 'Requested', render: (row) => formatDate(row.createdAt) },
+]
 
 export default function EarningsPage() {
   const { user } = useAuth()
@@ -24,6 +40,13 @@ export default function EarningsPage() {
     () => (restaurantId ? earningsService.unsettledBalance(restaurantId) : Promise.resolve(null)),
     [restaurantId],
   )
+
+  const [historyPage, setHistoryPage] = useState(1)
+  const { data: history, isLoading: loadingHistory, reload: reloadHistory } = useAsync(
+    () => (restaurantId ? earningsService.payoutHistory(restaurantId, { page: historyPage, perPage: 10 }) : Promise.resolve(null)),
+    [restaurantId, historyPage],
+  )
+
   const [requesting, setRequesting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [requested, setRequested] = useState(false)
@@ -36,6 +59,7 @@ export default function EarningsPage() {
       await earningsService.requestPayout(restaurantId)
       setRequested(true)
       reload()
+      reloadHistory()
     } catch (err) {
       setError((err as { message?: string })?.message ?? 'Unable to request payout')
     } finally {
@@ -55,7 +79,7 @@ export default function EarningsPage() {
           restaurants.length > 1 ? (
             <Select
               value={restaurantId ?? ''}
-              onChange={(e) => { setRestaurantId(Number(e.target.value)); setRequested(false) }}
+              onChange={(e) => { setRestaurantId(Number(e.target.value)); setRequested(false); setHistoryPage(1) }}
               className="w-56"
             >
               {restaurants.map((r) => (
@@ -71,15 +95,30 @@ export default function EarningsPage() {
       {isLoading ? (
         <LoadingBlock />
       ) : (
-        <div className="space-y-4">
-          <StatCard label="Unsettled balance" value={formatCurrency(balance ?? 0)} icon={Wallet} tone="green" />
-          <button
-            className="btn-primary"
-            onClick={requestPayout}
-            disabled={requesting || requested || !balance}
-          >
-            {requesting ? 'Requesting…' : requested ? 'Payout requested' : 'Request payout'}
-          </button>
+        <div className="space-y-5">
+          <div className="space-y-4">
+            <StatCard label="Unsettled balance" value={formatCurrency(balance ?? 0)} icon={Wallet} tone="green" />
+            <button
+              className="btn-primary"
+              onClick={requestPayout}
+              disabled={requesting || requested || !balance}
+            >
+              {requesting ? 'Requesting…' : requested ? 'Payout requested' : 'Request payout'}
+            </button>
+          </div>
+
+          <div>
+            <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">Payout history</h2>
+            <DataTable
+              columns={columns}
+              rows={history?.data ?? []}
+              rowKey={(row) => row.id}
+              isLoading={loadingHistory}
+              emptyTitle="No payouts requested yet"
+              pagination={history ?? undefined}
+              onPageChange={setHistoryPage}
+            />
+          </div>
         </div>
       )}
     </div>

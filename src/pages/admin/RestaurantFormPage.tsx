@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, History } from 'lucide-react'
+import { ArrowLeft, History, Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingBlock } from '@/components/ui/Feedback'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { RestaurantForm } from '@/components/restaurants/RestaurantForm'
 import { RestaurantAuditLogTable } from '@/components/restaurants/RestaurantAuditLogTable'
+import { RestaurantPayoutHistoryTable } from '@/components/restaurants/RestaurantPayoutHistoryTable'
 import { useAsync } from '@/hooks/useAsync'
 import { restaurantService } from '@/services/restaurantService'
 import { IS_MOCK } from '@/config/env'
@@ -115,7 +116,10 @@ export default function AdminRestaurantFormPage() {
       </div>
 
       {!IS_MOCK && !isNew && (
-        <div className="mt-5">
+        <div className="mt-5 space-y-5">
+          <SectionCard title="Payout history" description="Every payout requested for this restaurant, settled or not." icon={Wallet}>
+            <RestaurantPayoutHistoryTable restaurantId={Number(id)} />
+          </SectionCard>
           <SectionCard title="Audit log" description="Every field changed on this store, and by whom." icon={History}>
             <RestaurantAuditLogTable restaurantId={Number(id)} />
           </SectionCard>
