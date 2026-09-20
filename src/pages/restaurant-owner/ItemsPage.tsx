@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Pencil, Plus, UtensilsCrossed } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { ActiveBadge, Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
-import { Switch } from '@/components/ui/FormControls'
+import { Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
+import { Select, Switch } from '@/components/ui/FormControls'
 import { Modal } from '@/components/ui/Modal'
 import { DataTable, type Column } from '@/components/DataTable'
 import { ItemForm } from '@/components/items/ItemForm'
@@ -170,9 +170,18 @@ export default function OwnerItemsPage() {
         title={scopedRestaurant ? `Items — ${scopedRestaurant.name}` : 'Items'}
         description="Menu items available for ordering. Only active items are shown here — this mirrors what customers see."
         actions={
-          <button className="btn-primary" onClick={openCreate}>
-            <Plus size={16} /> Add Item
-          </button>
+          <>
+            {restaurants.length > 1 && (
+              <Select value={restaurantId} onChange={(e) => setRestaurantId(Number(e.target.value))} className="w-56">
+                {restaurants.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </Select>
+            )}
+            <button className="btn-primary" onClick={openCreate}>
+              <Plus size={16} /> Add Item
+            </button>
+          </>
         }
       />
 
