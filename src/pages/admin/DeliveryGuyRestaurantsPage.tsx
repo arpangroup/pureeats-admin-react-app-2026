@@ -5,10 +5,13 @@ import { Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
 import { Modal } from '@/components/ui/Modal'
 import { useAsync } from '@/hooks/useAsync'
 import { deliveryGuyService } from '@/services/deliveryGuyService'
-import { restaurants } from '@/mocks/fixtures'
+import { restaurantService } from '@/services/restaurantService'
+import type { Restaurant } from '@/types/entities'
 
 export default function DeliveryGuyRestaurantsPage() {
   const { data, isLoading, reload } = useAsync(() => deliveryGuyService.list({ perPage: 50 }), [])
+  const { data: restaurantsData } = useAsync(() => restaurantService.list({ perPage: 500 }), [])
+  const restaurants = restaurantsData?.data ?? []
   const [editingId, setEditingId] = useState<number | null>(null)
   const [selected, setSelected] = useState<number[]>([])
   const [saving, setSaving] = useState(false)
@@ -52,7 +55,7 @@ export default function DeliveryGuyRestaurantsPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {riders.map((rider) => (
-            <RiderCard key={rider.id} riderId={rider.id} name={rider.name} onEdit={() => openEdit(rider.id)} />
+            <RiderCard key={rider.id} riderId={rider.id} name={rider.name} restaurants={restaurants} onEdit={() => openEdit(rider.id)} />
           ))}
         </div>
       )}
@@ -82,7 +85,7 @@ export default function DeliveryGuyRestaurantsPage() {
   )
 }
 
-function RiderCard({ riderId, name, onEdit }: { riderId: number; name: string; onEdit: () => void }) {
+function RiderCard({ riderId, name, restaurants, onEdit }: { riderId: number; name: string; restaurants: Restaurant[]; onEdit: () => void }) {
   const { data } = useAsync(() => deliveryGuyService.assignedRestaurantIds(riderId), [riderId])
   const assigned = (data ?? []).map((id) => restaurants.find((r) => r.id === id)).filter(Boolean)
 

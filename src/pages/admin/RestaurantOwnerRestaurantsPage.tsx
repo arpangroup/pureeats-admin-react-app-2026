@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Pencil, Store, X } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -6,22 +6,37 @@ import { Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
 import { Modal } from '@/components/ui/Modal'
 import { useAsync } from '@/hooks/useAsync'
 import { userService } from '@/services/userService'
-import { restaurants } from '@/mocks/fixtures'
+import { restaurantService } from '@/services/restaurantService'
+import type { Restaurant } from '@/types/entities'
 
 export default function RestaurantOwnerRestaurantsPage() {
   const { data, isLoading, reload } = useAsync(() => userService.listByRole('restaurant-owner', { perPage: 50 }), [])
+  const owners = useMemo(() => data?.data ?? [], [data])
+
+  const { data: restaurantsData } = useAsync(() => restaurantService.list({ perPage: 500 }), [])
+  const allRestaurants = restaurantsData?.data ?? []
+
+  const { data: assignments, isLoading: assignmentsLoading } = useAsync(async () => {
+    const entries = await Promise.all(owners.map(async (o) => [o.id, await userService.restaurantsForOwner(o.id)] as const))
+    return new Map(entries)
+  }, [owners])
+
   const [editingId, setEditingId] = useState<number | null>(null)
   const [selected, setSelected] = useState<number[]>([])
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [searchParams, setSearchParams] = useSearchParams()
   const filterRestaurantId = searchParams.get('restaurantId') ? Number(searchParams.get('restaurantId')) : null
-  const filterRestaurant = filterRestaurantId ? restaurants.find((r) => r.id === filterRestaurantId) : undefined
+  const filterRestaurant = filterRestaurantId ? allRestaurants.find((r) => r.id === filterRestaurantId) : undefined
 
-  function openEdit(ownerId: number) {
+  function assignedFor(ownerId: number): Restaurant[] {
+    return assignments?.get(ownerId) ?? []
+  }
+
+  async function openEdit(ownerId: number) {
     setEditingId(ownerId)
     setSaveError(null)
-    setSelected(userService.restaurantsForOwner(ownerId).map((r) => r.id))
+    setSelected((await userService.restaurantsForOwner(ownerId)).map((r) => r.id))
   }
 
   function toggle(restaurantId: number) {
@@ -43,10 +58,9 @@ export default function RestaurantOwnerRestaurantsPage() {
     }
   }
 
-  const allOwners = data?.data ?? []
-  const owners = filterRestaurantId
-    ? allOwners.filter((owner) => userService.restaurantsForOwner(owner.id).some((r) => r.id === filterRestaurantId))
-    : allOwners
+  const visibleOwners = filterRestaurantId
+    ? owners.filter((owner) => assignedFor(owner.id).some((r) => r.id === filterRestaurantId))
+    : owners
 
   return (
     <div>
@@ -66,14 +80,14 @@ export default function RestaurantOwnerRestaurantsPage() {
         </div>
       )}
 
-      {isLoading ? (
+      {isLoading || assignmentsLoading ? (
         <LoadingBlock />
-      ) : owners.length === 0 ? (
+      ) : visibleOwners.length === 0 ? (
         <EmptyState title={filterRestaurant ? 'No owners found for this restaurant' : 'No restaurant owners yet'} />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {owners.map((owner) => {
-            const assigned = userService.restaurantsForOwner(owner.id)
+          {visibleOwners.map((owner) => {
+            const assigned = assignedFor(owner.id)
             return (
               <div key={owner.id} className="card p-4">
                 <div className="mb-2 flex items-center justify-between">
@@ -109,7 +123,7 @@ export default function RestaurantOwnerRestaurantsPage() {
       >
         {saveError && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>}
         <div className="space-y-2">
-          {restaurants.map((r) => (
+          {allRestaurants.map((r) => (
             <label key={r.id} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-slate-100 px-3 py-2 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
               <input type="checkbox" checked={selected.includes(r.id)} onChange={() => toggle(r.id)} className="h-4 w-4 rounded border-slate-300 text-brand-600" />
               <span className="text-sm text-slate-700 dark:text-slate-300">{r.name}</span>

@@ -7,7 +7,7 @@ import { users, restaurantUsers, restaurants, loginSessions } from '@/mocks/fixt
 import { mockDelay as delay, nextMockId } from '@/lib/mockUtils'
 import { mapFrontendRole } from '@/types/auth'
 import type { ListParams, Paginated, UserRole } from '@/types/common'
-import type { User, RestaurantUser, LoginSession, Address } from '@/types/entities'
+import type { User, RestaurantUser, Restaurant, LoginSession, Address } from '@/types/entities'
 
 const base = createCrudService<User>(users, '/admin/users', ['name', 'email', 'phone'])
 
@@ -37,14 +37,26 @@ export const userService = {
   ...base,
   listByRole,
 
+  /** Backend expects the `Role` enum name (e.g. `STORE_OWNER`), not the frontend's kebab-case `role` field. */
+  async create(payload: Partial<User>): Promise<User> {
+    if (IS_MOCK) return base.create(payload)
+    const { role, ...rest } = payload
+    return base.create({ ...rest, role: role ? mapFrontendRole(role) : undefined } as Partial<User>)
+  },
+
   async toggleActive(id: number, isActive: boolean) {
     return base.update(id, { isActive } as Partial<User>)
   },
 
   /** Restaurants owned by a given restaurant-owner user (for the mapping screen). */
-  restaurantsForOwner(ownerId: number) {
-    const ids = restaurantUsers.filter((ru) => ru.userId === ownerId).map((ru) => ru.restaurantId)
-    return restaurants.filter((r) => ids.includes(r.id))
+  async restaurantsForOwner(ownerId: number): Promise<Restaurant[]> {
+    if (IS_MOCK) {
+      await delay(150)
+      const ids = restaurantUsers.filter((ru) => ru.userId === ownerId).map((ru) => ru.restaurantId)
+      return restaurants.filter((r) => ids.includes(r.id))
+    }
+    const { data } = await apiClient.get<{ data: Restaurant[] }>(`/admin/restaurant-owners/${ownerId}/restaurants`)
+    return data.data
   },
 
   async updateOwnerRestaurants(ownerId: number, restaurantIds: number[]): Promise<void> {
@@ -60,7 +72,7 @@ export const userService = {
       })
       return
     }
-    await apiClient.put(`/restaurant-owners/${ownerId}/restaurants`, { restaurantIds })
+    await apiClient.put(`/admin/restaurant-owners/${ownerId}/restaurants`, { restaurantIds })
   },
 
   /** Uploads/replaces a user's photo (admin-scoped — works for any user, not just the caller). */
