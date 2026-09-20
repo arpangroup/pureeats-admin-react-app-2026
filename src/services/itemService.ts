@@ -49,6 +49,28 @@ export const itemService = {
     return base.update(id, { isActive } as Partial<Item>)
   },
 
+  /** Store-owner-scoped create — hits /store-owner/restaurants/{restaurantId}/items, not the admin endpoint. */
+  async createForOwner(restaurantId: number, payload: Partial<Item>): Promise<Item> {
+    if (IS_MOCK) return base.create({ ...payload, restaurantId })
+    const { data } = await apiClient.post<{ data: Item }>(`/store-owner/restaurants/${restaurantId}/items`, payload)
+    return data.data
+  },
+
+  /** Store-owner-scoped update — hits /store-owner/items/{id}, not the admin endpoint. There is no store-owner delete or bulk-upload endpoint. */
+  async updateAsOwner(id: number, payload: Partial<Item>): Promise<Item> {
+    if (IS_MOCK) return base.update(id, payload)
+    const { data } = await apiClient.put<{ data: Item }>(`/store-owner/items/${id}`, payload)
+    return data.data
+  },
+
+  async toggleActiveAsOwner(id: number, isActive: boolean): Promise<void> {
+    if (IS_MOCK) {
+      await base.update(id, { isActive } as Partial<Item>)
+      return
+    }
+    await apiClient.patch(`/store-owner/items/${id}/${isActive ? 'enable' : 'disable'}`)
+  },
+
   /** Live mode only — item's image field is set immediately on upload, returning the resolved URL. */
   async uploadImage(id: number, file: File): Promise<string> {
     const formData = new FormData()

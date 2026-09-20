@@ -5,13 +5,15 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingBlock } from '@/components/ui/Feedback'
 import { RestaurantForm } from '@/components/restaurants/RestaurantForm'
 import { useAsync } from '@/hooks/useAsync'
+import { useAuth } from '@/hooks/useAuth'
 import { restaurantService } from '@/services/restaurantService'
 import type { Restaurant } from '@/types/entities'
 
 export default function OwnerRestaurantFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { data: existing, isLoading } = useAsync(() => restaurantService.get(Number(id)), [id])
+  const { user } = useAuth()
+  const { data: existing, isLoading } = useAsync(() => restaurantService.getOwned(user!.id, Number(id)), [id, user?.id])
 
   const [values, setValues] = useState<Partial<Restaurant>>({})
   const [initialized, setInitialized] = useState(false)
@@ -31,7 +33,7 @@ export default function OwnerRestaurantFormPage() {
     setSaving(true)
     setError(null)
     try {
-      await restaurantService.update(Number(id), values)
+      await restaurantService.updateAsOwner(Number(id), values)
       navigate('/restaurant-owner/restaurants')
     } catch (err) {
       setError((err as { message?: string })?.message ?? 'Unable to save changes')

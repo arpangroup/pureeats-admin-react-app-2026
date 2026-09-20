@@ -44,6 +44,118 @@ import type {
 export const itemCategoryService = createCrudService<ItemCategory>(itemCategories, '/admin/item-categories', ['name'])
 export const addonCategoryService = createCrudService<AddonCategory>(addonCategories, '/admin/addon-categories', ['name'])
 export const addonService = createCrudService<Addon>(addons, '/admin/addons', ['name'])
+
+/**
+ * Store-owner-scoped item categories — separate from the admin-only itemCategoryService above,
+ * since a STORE_OWNER can't reach /api/v1/admin/**. The backend (StoreOwnerMenuController) only
+ * offers list/create plus an enable/disable toggle, never a generic update or delete, so this
+ * intentionally has no `update`/`remove` (mirrors how restaurantService.toggleActive works —
+ * a dedicated toggle method, not a PUT).
+ */
+export interface OwnerItemCategory { id: number; name: string; isEnabled: boolean }
+
+export const ownerItemCategoryService = {
+  async list(userId: number): Promise<OwnerItemCategory[]> {
+    if (IS_MOCK) {
+      await mockDelay()
+      return itemCategories.filter((c) => c.userId === userId).map((c) => ({ id: c.id, name: c.name, isEnabled: c.isEnabled }))
+    }
+    const { data } = await apiClient.get<{ data: OwnerItemCategory[] }>('/store-owner/item-categories')
+    return data.data
+  },
+
+  async create(userId: number, name: string): Promise<OwnerItemCategory> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const now = new Date().toISOString()
+      const created: ItemCategory = { id: nextMockId(), name, isEnabled: true, userId, createdAt: now, updatedAt: now }
+      itemCategories.unshift(created)
+      return { id: created.id, name: created.name, isEnabled: created.isEnabled }
+    }
+    const { data } = await apiClient.post<{ data: OwnerItemCategory }>('/store-owner/item-categories', { name })
+    return data.data
+  },
+
+  async setEnabled(id: number, enabled: boolean): Promise<void> {
+    if (IS_MOCK) {
+      await mockDelay(100)
+      const i = itemCategories.findIndex((c) => c.id === id)
+      if (i !== -1) itemCategories[i] = { ...itemCategories[i], isEnabled: enabled }
+      return
+    }
+    await apiClient.patch(`/store-owner/item-categories/${id}/${enabled ? 'enable' : 'disable'}`)
+  },
+}
+
+/**
+ * Store-owner-scoped addon categories. Unlike item categories, the backend
+ * (StoreOwnerAddonController) has no enable/disable for addon categories at all — just list and
+ * create, so there is no per-row action here.
+ */
+export interface OwnerAddonCategory { id: number; name: string; type: 'single' | 'multiple' }
+
+export const ownerAddonCategoryService = {
+  async list(userId: number): Promise<OwnerAddonCategory[]> {
+    if (IS_MOCK) {
+      await mockDelay()
+      return addonCategories.filter((c) => c.userId === userId).map((c) => ({ id: c.id, name: c.name, type: c.type }))
+    }
+    const { data } = await apiClient.get<{ data: OwnerAddonCategory[] }>('/store-owner/addon-categories')
+    return data.data
+  },
+
+  async create(userId: number, name: string, type: 'single' | 'multiple'): Promise<OwnerAddonCategory> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const now = new Date().toISOString()
+      const created: AddonCategory = { id: nextMockId(), name, type, userId, createdAt: now, updatedAt: now }
+      addonCategories.unshift(created)
+      return { id: created.id, name: created.name, type: created.type }
+    }
+    const { data } = await apiClient.post<{ data: OwnerAddonCategory }>('/store-owner/addon-categories', { name, type })
+    return data.data
+  },
+}
+
+/**
+ * Store-owner-scoped addons. The backend has no flat "all my addons" list — addons are only
+ * listable per addon-category (`GET /store-owner/addon-categories/{id}/addons`), and only
+ * create + enable/disable exist, never a generic update or delete.
+ */
+export interface OwnerAddon { id: number; addonCategoryId: number; name: string; price: number; isActive: boolean }
+
+export const ownerAddonService = {
+  async listForCategory(addonCategoryId: number): Promise<OwnerAddon[]> {
+    if (IS_MOCK) {
+      await mockDelay()
+      return addons.filter((a) => a.addonCategoryId === addonCategoryId).map((a) => ({ id: a.id, addonCategoryId: a.addonCategoryId, name: a.name, price: a.price, isActive: a.isActive }))
+    }
+    const { data } = await apiClient.get<{ data: OwnerAddon[] }>(`/store-owner/addon-categories/${addonCategoryId}/addons`)
+    return data.data
+  },
+
+  async create(userId: number, payload: { addonCategoryId: number; name: string; price: number }): Promise<OwnerAddon> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const now = new Date().toISOString()
+      const created: Addon = { id: nextMockId(), name: payload.name, price: payload.price, addonCategoryId: payload.addonCategoryId, userId, isActive: true, createdAt: now, updatedAt: now }
+      addons.unshift(created)
+      return { id: created.id, addonCategoryId: created.addonCategoryId, name: created.name, price: created.price, isActive: created.isActive }
+    }
+    const { data } = await apiClient.post<{ data: OwnerAddon }>('/store-owner/addons', payload)
+    return data.data
+  },
+
+  async setEnabled(id: number, enabled: boolean): Promise<void> {
+    if (IS_MOCK) {
+      await mockDelay(100)
+      const i = addons.findIndex((a) => a.id === id)
+      if (i !== -1) addons[i] = { ...addons[i], isActive: enabled }
+      return
+    }
+    await apiClient.patch(`/store-owner/addons/${id}/${enabled ? 'enable' : 'disable'}`)
+  },
+}
 export const couponService = createCrudService<Coupon>(coupons, '/admin/coupons', ['name', 'code'])
 /** Store-owner scoped — same shape, but hits /store-owner/coupons (list/update/delete are ownership-checked server-side: only the coupon's creator may edit/delete it). */
 export const ownerCouponService = createCrudService<Coupon>(coupons, '/store-owner/coupons', ['name', 'code'])

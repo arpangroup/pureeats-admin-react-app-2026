@@ -8,19 +8,30 @@ import { IS_MOCK } from '@/config/env'
 import { classNames } from '@/lib/format'
 import type { Item } from '@/types/entities'
 
+interface NamedOption {
+  id: number
+  name: string
+}
+
 interface ItemFormProps {
   values: Partial<Item>
   onChange: <K extends keyof Item>(key: K, value: Item[K]) => void
   showRestaurantPicker?: boolean
+  /** Pre-fetched option lists, for a caller (e.g. the restaurant-owner Items page) that can't hit
+   * the admin-only /admin/restaurants, /admin/item-categories, /admin/addon-categories endpoints
+   * this form otherwise fetches itself. When provided, the matching internal fetch is skipped. */
+  restaurantOptions?: NamedOption[]
+  itemCategoryOptions?: NamedOption[]
+  addonCategoryOptions?: NamedOption[]
 }
 
-export function ItemForm({ values, onChange, showRestaurantPicker = true }: ItemFormProps) {
-  const { data: restaurantPage } = useAsync(() => restaurantService.list({ perPage: 100 }), [])
-  const restaurants = restaurantPage?.data ?? []
-  const { data: itemCategoryPage } = useAsync(() => itemCategoryService.list({ perPage: 100 }), [])
-  const itemCategories = itemCategoryPage?.data ?? []
-  const { data: addonCategoryPage } = useAsync(() => addonCategoryService.list({ perPage: 100 }), [])
-  const addonCategoriesAvailable = addonCategoryPage?.data ?? []
+export function ItemForm({ values, onChange, showRestaurantPicker = true, restaurantOptions, itemCategoryOptions, addonCategoryOptions }: ItemFormProps) {
+  const { data: restaurantPage } = useAsync(() => (restaurantOptions ? Promise.resolve(null) : restaurantService.list({ perPage: 100 })), [restaurantOptions])
+  const restaurants = restaurantOptions ?? restaurantPage?.data ?? []
+  const { data: itemCategoryPage } = useAsync(() => (itemCategoryOptions ? Promise.resolve(null) : itemCategoryService.list({ perPage: 100 })), [itemCategoryOptions])
+  const itemCategories = itemCategoryOptions ?? itemCategoryPage?.data ?? []
+  const { data: addonCategoryPage } = useAsync(() => (addonCategoryOptions ? Promise.resolve(null) : addonCategoryService.list({ perPage: 100 })), [addonCategoryOptions])
+  const addonCategoriesAvailable = addonCategoryOptions ?? addonCategoryPage?.data ?? []
   const addonCategoryIds = values.addonCategoryIds ?? []
 
   function toggleAddonCategory(id: number) {

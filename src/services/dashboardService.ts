@@ -3,6 +3,7 @@ import { mockDelay } from '@/lib/mockUtils'
 import { IS_MOCK } from '@/config/env'
 import { orders, orderStatuses, restaurants, users, deliveryGuyDetails, ratings } from '@/mocks/fixtures'
 import { orderService, type OrderRow } from './orderService'
+import { storeOwnerOrderService, type StoreOwnerOrderSummary } from './storeOwnerOrderService'
 
 export interface TrendPoint {
   label: string
@@ -31,7 +32,7 @@ export interface OwnerDashboardStats {
   pendingOrders: number
   avgRating: number
   trend: TrendPoint[]
-  recentOrders: OrderRow[]
+  recentOrders: StoreOwnerOrderSummary[]
 }
 
 function buildTrend(days: number, filterRestaurantId?: number): TrendPoint[] {
@@ -117,13 +118,22 @@ export const dashboardService = {
         pendingOrders: mine.filter((o) => pendingStatusIds.includes(o.orderstatusId)).length,
         avgRating: myRatings.length ? myRatings.reduce((s, r) => s + r.rating, 0) / myRatings.length : 0,
         trend: buildTrend(14, restaurantId),
-        recentOrders: recent.data,
+        recentOrders: recent.data.map((o) => ({
+          id: o.id, uniqueOrderId: o.uniqueOrderId, status: o.statusName, restaurantId, total: o.total, createdAt: o.createdAt, deliveryGuyName: o.deliveryGuyName,
+        })),
       }
     }
-    const [{ data }, recent] = await Promise.all([
+    // The admin-only /admin/orders endpoint 403s for a STORE_OWNER — "recent orders" here is built
+    // from the same new/running buckets the Orders page uses, not a generic order list (the
+    // store-owner order API has no such endpoint - see StoreOwnerOrderController).
+    const [{ data }, newRows, runningRows] = await Promise.all([
       apiClient.get<{ data: Omit<OwnerDashboardStats, 'recentOrders'> }>(`/store-owner/dashboard/${restaurantId}`),
-      orderService.list({ restaurantId, page: 1, perPage: 6 }),
+      storeOwnerOrderService.newOrders(restaurantId),
+      storeOwnerOrderService.runningOrders(restaurantId),
     ])
-    return { ...data.data, recentOrders: recent.data }
+    const recentOrders = [...newRows, ...runningRows]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 6)
+    return { ...data.data, recentOrders }
   },
 }

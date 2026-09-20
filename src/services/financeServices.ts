@@ -16,7 +16,6 @@ import type { ListParams, Paginated, Id } from '@/types/common'
 import type {
   Transaction,
   RestaurantPayout,
-  RestaurantEarning,
   DeliveryCollection,
   DeliveryCollectionLog,
   Wallet,
@@ -162,26 +161,32 @@ export const payoutService = {
   },
 }
 
+/**
+ * Store-owner-scoped earnings — hits /store-owner/restaurants/{id}/earnings, not the old
+ * /restaurants/{id}/earnings path (which doesn't exist on the backend at all). The backend models
+ * this as a single unsettled balance for the whole restaurant (StoreOwnerEarningsController), not
+ * a list of discrete earning rows with a per-row payout request — {@link RestaurantEarning} and
+ * the old per-row API shape above don't match what the backend actually offers.
+ */
 export const earningsService = {
-  async forRestaurant(restaurantId: number): Promise<RestaurantEarning[]> {
+  async unsettledBalance(restaurantId: number): Promise<number> {
     if (IS_MOCK) {
       await mockDelay()
-      return restaurantEarnings.filter((e) => e.restaurantId === restaurantId)
+      return restaurantEarnings.filter((e) => e.restaurantId === restaurantId && !e.isProcessed).reduce((sum, e) => sum + e.amount, 0)
     }
-    const { data } = await apiClient.get<RestaurantEarning[]>(`/restaurants/${restaurantId}/earnings`)
-    return data
+    const { data } = await apiClient.get<{ data: number }>(`/store-owner/restaurants/${restaurantId}/earnings`)
+    return data.data
   },
 
-  async requestPayout(restaurantId: number, earningId: number): Promise<RestaurantEarning> {
+  async requestPayout(restaurantId: number): Promise<void> {
     if (IS_MOCK) {
       await mockDelay()
-      const index = restaurantEarnings.findIndex((e) => e.id === earningId && e.restaurantId === restaurantId)
-      if (index === -1) throw { message: 'Earning record not found' }
-      restaurantEarnings[index] = { ...restaurantEarnings[index], isRequested: true, updatedAt: new Date().toISOString() }
-      return restaurantEarnings[index]
+      restaurantEarnings.forEach((e, i) => {
+        if (e.restaurantId === restaurantId && !e.isProcessed) restaurantEarnings[i] = { ...e, isRequested: true, updatedAt: new Date().toISOString() }
+      })
+      return
     }
-    const { data } = await apiClient.post<RestaurantEarning>(`/restaurants/${restaurantId}/earnings/${earningId}/request-payout`)
-    return data
+    await apiClient.post(`/store-owner/restaurants/${restaurantId}/earnings/payout-request`)
   },
 }
 

@@ -56,8 +56,28 @@ export const restaurantService = {
       const rows = restaurants.filter((r) => ownedIds.includes(r.id))
       return paginate(rows, params, ['name', 'sku'])
     }
-    const { data } = await apiClient.get<Paginated<Restaurant>>('/restaurant-owner/restaurants', { params })
-    return data
+    // The backend returns a plain, unpaginated array here (StoreOwnerRestaurantController has no
+    // pagination — an owner never has enough restaurants to need it), so real page/total/totalPages
+    // metadata doesn't exist; synthesize a single-page Paginated<Restaurant> instead of passing the
+    // raw ApiResponse envelope through as if it were one.
+    const { data } = await apiClient.get<{ data: Restaurant[] }>('/store-owner/restaurants')
+    return { data: data.data, page: 1, perPage: data.data.length || 1, total: data.data.length, totalPages: 1 }
+  },
+
+  /** A single owned restaurant, by id — the store-owner API has no `GET /{id}`, only a list of everything the caller owns, so this fetches that list and picks the row out of it. */
+  async getOwned(ownerId: number, id: number): Promise<Restaurant | undefined> {
+    const page = await restaurantService.listByOwner(ownerId, { perPage: 100 })
+    return page.data.find((r) => r.id === id)
+  },
+
+  /** Restaurant-owner scoped update — hits /store-owner/restaurants/{id} (ownership-checked server-side), not the admin endpoint. The backend's RestaurantUpdateRequest accepts a smaller field set than the admin one (no location/categories/schedule/commission/etc.) — those stay display-only for an owner. */
+  async updateAsOwner(id: number, payload: Partial<Restaurant>): Promise<Restaurant> {
+    const body = withFlatDeliveryCharge(payload)
+    if (IS_MOCK) {
+      return base.update(id, body)
+    }
+    const { data } = await apiClient.put<{ data: Restaurant }>(`/store-owner/restaurants/${id}`, body)
+    return data.data
   },
 
   async toggleActive(id: number, isActive: boolean) {

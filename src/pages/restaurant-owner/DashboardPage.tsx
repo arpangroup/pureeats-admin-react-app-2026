@@ -87,7 +87,7 @@ export default function OwnerDashboardPage() {
                 <div key={order.id} className="flex items-center justify-between py-2.5 text-sm">
                   <div>
                     <p className="font-medium text-slate-700">{order.uniqueOrderId}</p>
-                    <p className="text-xs text-slate-400">{order.customerName} · {order.statusName}</p>
+                    <p className="text-xs text-slate-400">{order.status}</p>
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-slate-700">{formatCurrency(order.total)}</p>

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
+import { Wallet } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
+import { EmptyState, LoadingBlock } from '@/components/ui/Feedback'
 import { Select } from '@/components/ui/FormControls'
-import { DataTable, type Column } from '@/components/DataTable'
+import { StatCard } from '@/components/ui/StatCard'
 import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { restaurantService } from '@/services/restaurantService'
 import { earningsService } from '@/services/financeServices'
-import { formatCurrency, formatDate } from '@/lib/format'
-import type { RestaurantEarning } from '@/types/entities'
+import { formatCurrency } from '@/lib/format'
 
 export default function EarningsPage() {
   const { user } = useAuth()
@@ -20,44 +20,28 @@ export default function EarningsPage() {
     if (!restaurantId && restaurants.length > 0) setRestaurantId(restaurants[0].id)
   }, [restaurants, restaurantId])
 
-  const { data: earnings, isLoading, reload } = useAsync(
-    () => (restaurantId ? earningsService.forRestaurant(restaurantId) : Promise.resolve([])),
+  const { data: balance, isLoading, reload } = useAsync(
+    () => (restaurantId ? earningsService.unsettledBalance(restaurantId) : Promise.resolve(null)),
     [restaurantId],
   )
-  const [requestingId, setRequestingId] = useState<number | null>(null)
+  const [requesting, setRequesting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [requested, setRequested] = useState(false)
 
-  async function requestPayout(earning: RestaurantEarning) {
+  async function requestPayout() {
     if (!restaurantId) return
-    setRequestingId(earning.id)
+    setRequesting(true)
+    setError(null)
     try {
-      await earningsService.requestPayout(restaurantId, earning.id)
+      await earningsService.requestPayout(restaurantId)
+      setRequested(true)
       reload()
+    } catch (err) {
+      setError((err as { message?: string })?.message ?? 'Unable to request payout')
     } finally {
-      setRequestingId(null)
+      setRequesting(false)
     }
   }
-
-  const columns: Column<RestaurantEarning>[] = [
-    { key: 'amount', header: 'Amount', render: (row) => <span className="font-medium text-slate-800">{formatCurrency(row.amount)}</span> },
-    { key: 'earned', header: 'Earned on', render: (row) => formatDate(row.createdAt) },
-    {
-      key: 'status',
-      header: 'Status',
-      render: (row) =>
-        row.isProcessed ? <Badge tone="green">Paid out</Badge> : row.isRequested ? <Badge tone="amber">Payout requested</Badge> : <Badge tone="slate">Not requested</Badge>,
-    },
-    {
-      key: 'actions',
-      header: '',
-      className: 'px-4 py-3 text-right',
-      render: (row) =>
-        !row.isRequested && !row.isProcessed ? (
-          <button className="btn-secondary px-3 py-1.5 text-xs" disabled={requestingId === row.id} onClick={() => requestPayout(row)}>
-            {requestingId === row.id ? 'Requesting…' : 'Request payout'}
-          </button>
-        ) : null,
-    },
-  ]
 
   if (loadingRestaurants) return <LoadingBlock />
   if (restaurants.length === 0) return <EmptyState title="No restaurant assigned" />
@@ -66,10 +50,14 @@ export default function EarningsPage() {
     <div>
       <PageHeader
         title="Earnings"
-        description="Track and request payouts for your restaurant's earnings."
+        description="Track and request a payout of your restaurant's unsettled balance."
         actions={
           restaurants.length > 1 ? (
-            <Select value={restaurantId ?? ''} onChange={(e) => setRestaurantId(Number(e.target.value))} className="w-56">
+            <Select
+              value={restaurantId ?? ''}
+              onChange={(e) => { setRestaurantId(Number(e.target.value)); setRequested(false) }}
+              className="w-56"
+            >
               {restaurants.map((r) => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
@@ -77,7 +65,23 @@ export default function EarningsPage() {
           ) : undefined
         }
       />
-      <DataTable columns={columns} rows={earnings ?? []} rowKey={(row) => row.id} isLoading={isLoading} emptyTitle="No earnings yet" />
+
+      {error && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{error}</p>}
+
+      {isLoading ? (
+        <LoadingBlock />
+      ) : (
+        <div className="space-y-4">
+          <StatCard label="Unsettled balance" value={formatCurrency(balance ?? 0)} icon={Wallet} tone="green" />
+          <button
+            className="btn-primary"
+            onClick={requestPayout}
+            disabled={requesting || requested || !balance}
+          >
+            {requesting ? 'Requesting…' : requested ? 'Payout requested' : 'Request payout'}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

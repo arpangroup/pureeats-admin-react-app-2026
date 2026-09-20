@@ -180,7 +180,7 @@ export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
           const results = await Promise.all(
             restaurantsPage.data.map((r) => storeOwnerOrderService.newOrders(r.id).then((rows) => rows.map((row) => ({ ...row, restaurantName: r.name })))),
           )
-          fetched = results.flat().map((o) => ({ id: o.id, uniqueOrderId: o.uniqueOrderId, restaurantName: o.restaurantName, payable: o.payable, createdAt: o.createdAt }))
+          fetched = results.flat().map((o) => ({ id: o.id, uniqueOrderId: o.uniqueOrderId, restaurantName: o.restaurantName, payable: o.total, createdAt: o.createdAt }))
         }
 
         if (cancelled) return
