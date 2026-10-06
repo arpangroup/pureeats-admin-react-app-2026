@@ -90,7 +90,7 @@ export function SectionVisibilityPanel() {
       </div>
 
       <div className="mt-6 border-t border-slate-100 pt-4 dark:border-slate-800">
-        <Field label="Platform fee (₹)" hint="Flat fee added to every order's total, alongside tax/restaurant/delivery charges. 0 = no fee charged.">
+        <Field label="Platform fee (₹)" hint="Flat platform charge added to every order (shown to customers as “Platform fee” in cart, checkout and order details) to cover running the service - payments, app and support. Kept by the platform, separate from tax and the restaurant's packaging charge. 0 = not charged.">
           <TextInput
             type="number"
             min={0}
