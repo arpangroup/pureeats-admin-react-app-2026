@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Bike, Pencil, Plus, Star, Trash2 } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput, Field, TextInput, Select } from '@/components/ui/FormControls'
-import { ActiveBadge, Badge } from '@/components/ui/Feedback'
+import { ActiveBadge } from '@/components/ui/Feedback'
+import { DriverStatusBadge } from '@/components/deliveryGuys/DriverStatusBadge'
 import { Modal, ConfirmDialog } from '@/components/ui/Modal'
 import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
@@ -118,7 +119,7 @@ export default function DeliveryGuysPage() {
       render: (row) => (
         <div className="flex flex-wrap gap-1">
           <ActiveBadge active={row.isActive} />
-          {row.isOnline && <Badge tone="green">Online</Badge>}
+          <DriverStatusBadge driver={row} showTime />
         </div>
       ),
     },

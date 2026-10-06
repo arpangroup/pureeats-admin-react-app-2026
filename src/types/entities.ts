@@ -333,6 +333,8 @@ export interface GpsPoint {
   updatedAt: string
 }
 
+export type DriverOfflineReason = 'SELF' | 'INACTIVITY' | 'ADMIN'
+
 export interface DeliveryGuyDetail {
   id: Id
   userId: Id
@@ -351,6 +353,10 @@ export interface DeliveryGuyDetail {
   lastLat: number | null
   lastLng: number | null
   lastSeenAt: string | null
+  /** Why the driver went offline: SELF, INACTIVITY (auto-offlined by the backend's inactivity scheduler - a "forced stop") or ADMIN. Null while online / unknown. */
+  offlineReason?: DriverOfflineReason | null
+  /** When the online/offline status last changed. */
+  statusChangedAt?: string | null
   createdBy: Id | null
   updatedBy: Id | null
   createdAt: string

@@ -3,6 +3,7 @@ import { AlertTriangle, ExternalLink, Info } from 'lucide-react'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { Field, RadioGroup, Select, Switch, Textarea, TextInput } from '@/components/ui/FormControls'
 import type { SettingFieldDef, SettingGroupDef } from '@/config/settingsFieldsConfig'
+import { AudioSettingField } from '@/components/settings/AudioSettingField'
 
 function FieldNotes({ field }: { field: SettingFieldDef }) {
   if (!field.info && !field.warning && !field.link) return null
@@ -63,6 +64,9 @@ export function DynamicField({
     case 'radio':
       control = <RadioGroup name={field.key} value={value} options={field.options ?? []} onChange={onChange} />
       break
+    case 'audio':
+      control = <AudioSettingField value={value} onChange={onChange} />
+      break
     case 'textarea':
       control = <Textarea value={value} placeholder={field.placeholder} onChange={(e) => onChange(e.target.value)} />
       break
@@ -108,7 +112,7 @@ export function DynamicSettingsForm({
         <SectionCard key={group.title} title={group.title} description={group.description} icon={group.icon}>
           <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
             {group.fields.map((field) => (
-              <div key={field.key} className={field.fieldType === 'textarea' ? 'sm:col-span-2' : undefined}>
+              <div key={field.key} className={field.fieldType === 'textarea' || field.fieldType === 'audio' ? 'sm:col-span-2' : undefined}>
                 <DynamicField field={field} value={values[field.key] ?? field.defaultValue} onChange={(v) => onChange(field.key, v)} />
               </div>
             ))}

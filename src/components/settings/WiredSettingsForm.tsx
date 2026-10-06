@@ -109,7 +109,7 @@ function WiredSettingsGroupCard({ group, settings, reload }: { group: SettingGro
       {saveError && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>}
       <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
         {group.fields.map((field) => (
-          <div key={field.key} className={field.fieldType === 'textarea' ? 'sm:col-span-2' : undefined}>
+          <div key={field.key} className={field.fieldType === 'textarea' || field.fieldType === 'audio' ? 'sm:col-span-2' : undefined}>
             <DynamicField field={field} value={draft[field.key] ?? field.defaultValue} onChange={(v) => handleChange(field.key, v)} />
           </div>
         ))}

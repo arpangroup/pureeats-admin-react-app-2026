@@ -1,4 +1,6 @@
-const STORAGE_KEY = 'pureeats_new_order_alert_settings'
+// v2: alerts default to ON. Under v1 they defaulted to off, so most restaurant partners never got
+// a popup or a sound at all; bumping the key gives everyone the new default once.
+const STORAGE_KEY = 'pureeats_new_order_alert_settings_v2'
 
 export interface NewOrderAlertSettings {
   enabled: boolean
@@ -9,7 +11,7 @@ export interface NewOrderAlertSettings {
 }
 
 export const DEFAULT_NEW_ORDER_ALERT_SETTINGS: NewOrderAlertSettings = {
-  enabled: false,
+  enabled: true,
   soundEnabled: true,
   intervalSeconds: 20,
   usePush: true,

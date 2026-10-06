@@ -26,7 +26,8 @@ import {
  * the two in sync — a field added on one side without the other means it shows up in exactly one
  * of the two modes.
  */
-export type SettingFieldType = 'text' | 'password' | 'number' | 'email' | 'url' | 'textarea' | 'boolean' | 'dropdown' | 'radio'
+/** 'audio' = an uploaded MP3/WAV; the stored value is the file's URL (blank = built-in default sound) - see AudioSettingField. */
+export type SettingFieldType = 'text' | 'password' | 'number' | 'email' | 'url' | 'textarea' | 'boolean' | 'dropdown' | 'radio' | 'audio'
 
 export interface SettingOption {
   label: string
@@ -124,6 +125,22 @@ export const GENERAL_TIMING_GROUP: SettingGroupDef = {
   ],
 }
 
+/** Mirrors SettingSchemaService#generalSection()'s "Order alert sound" group. */
+export const GENERAL_ORDER_SOUND_GROUP: SettingGroupDef = {
+  title: 'Order alert sound',
+  description: 'Played on the admin panel, restaurant partner dashboard and driver app when a new order arrives.',
+  icon: Bell,
+  fields: [
+    {
+      key: 'order_alert_sound_url',
+      label: 'New order sound',
+      fieldType: 'audio',
+      defaultValue: '',
+      info: "Upload an MP3 or WAV file (max 2MB). Leave empty to use the built-in chime - it needs no download and is also the automatic fallback if the custom file can't be played.",
+    },
+  ],
+}
+
 export const CUSTOMER_APP_GROUPS: SettingGroupDef[] = [
   {
     title: 'Address & checkout',
@@ -197,6 +214,27 @@ export const CUSTOMER_APP_GROUPS: SettingGroupDef[] = [
       },
     ],
   },
+  {
+    title: 'Order limits',
+    description: 'Caps how many orders a customer can have in progress at once. Use {count} as a placeholder in the message.',
+    icon: Timer,
+    fields: [
+      {
+        key: 'max_active_orders_per_customer',
+        label: 'Max orders in queue per customer',
+        fieldType: 'number',
+        defaultValue: '3',
+        placeholder: 'e.g. 3',
+        info: 'How many not-yet-delivered orders a customer may have in progress at once. 0 = no limit.',
+      },
+      {
+        key: 'max_active_orders_message',
+        label: 'Message shown when the queue limit is hit',
+        fieldType: 'textarea',
+        defaultValue: 'You already have {count} orders in progress - please wait for one to be delivered before placing another.',
+      },
+    ],
+  },
 ]
 
 export const DELIVERY_APP_GROUPS: SettingGroupDef[] = [
@@ -248,6 +286,26 @@ export const DELIVERY_APP_GROUPS: SettingGroupDef[] = [
         fieldType: 'boolean',
         defaultValue: 'true',
         info: 'When off, every delivery partner\'s app stops sending GPS pings and shows a "Maintenance mode" banner instead of the online/offline toggle - use this to pause location tracking platform-wide (e.g. during a backend issue) without disabling the app itself.',
+      },
+    ],
+  },
+  {
+    title: 'Inactivity auto-offline',
+    icon: Bike,
+    fields: [
+      {
+        key: 'driver_auto_offline_enabled',
+        label: 'Auto-offline inactive drivers',
+        fieldType: 'boolean',
+        defaultValue: 'true',
+        info: 'A scheduler marks an online driver offline once their app stops reporting location for the timeout below. The admin panel shows these as a "Forced stop". Drivers with a delivery in progress are never auto-offlined.',
+      },
+      {
+        key: 'driver_inactivity_timeout_minutes',
+        label: 'Inactivity timeout (minutes)',
+        fieldType: 'number',
+        defaultValue: '10',
+        placeholder: 'e.g. 10',
       },
     ],
   },

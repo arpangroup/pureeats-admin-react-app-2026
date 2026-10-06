@@ -5,7 +5,8 @@ import { restaurantService } from '@/services/restaurantService'
 import { storeOwnerOrderService } from '@/services/storeOwnerOrderService'
 import { appConfigService, type FirebaseWebConfig } from '@/services/appConfigService'
 import { onForegroundMessage } from '@/lib/firebaseMessaging'
-import { playNewOrderChime } from '@/lib/notificationSound'
+import { installAudioUnlock, playOrderSound, setCustomOrderSoundUrl } from '@/lib/orderSound'
+import { settingsService } from '@/services/settingsService'
 import {
   readNewOrderAlertSettings,
   writeNewOrderAlertSettings,
@@ -43,7 +44,7 @@ export const NewOrderAlertContext = createContext<NewOrderAlertContextValue | un
 /**
  * Surfaces a global toast + optional chime for newly-placed orders, regardless of which page is
  * currently open — mounted once above the router so it keeps running across every admin/
- * restaurant-owner route. Entirely inert (no listening, no UI) until the user opts in via
+ * restaurant-owner route. On by default (it used to be opt-in, which left most restaurant partners with no alert or sound at all); can be switched off per browser via
  * settings — see readNewOrderAlertSettings.
  *
  * Two mechanisms, picked by `settings.usePush` (default true): a real-time push (see
@@ -52,6 +53,15 @@ export const NewOrderAlertContext = createContext<NewOrderAlertContextValue | un
  * whether THIS browser listens for it) or polling the backend on an interval. Push automatically
  * falls back to polling if Firebase isn't configured (or a token can't be obtained) — see the
  * `pushAvailable` effect below - so "usePush: true" is a preference, not a hard requirement.
+ *
+ * Polling also keeps running (at its normal interval) while push is in use: a push that arrives
+ * while this tab is in the background goes to the service worker, never to onMessage, so push
+ * alone silently misses exactly the orders that come in while the owner is looking at another tab.
+ * Alerts are de-duplicated by order id, so an order seen by both paths only alerts once.
+ *
+ * The sound is the admin-uploaded one (Settings -> General -> Order alert sound) with the built-in
+ * chime as fallback - see lib/orderSound.ts, which also unlocks audio on the first click so alerts
+ * fired later from a poll/push are actually audible.
  */
 export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
   const { user, isAuthenticated } = useAuth()
@@ -59,6 +69,9 @@ export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
   const [alerts, setAlerts] = useState<NewOrderAlertItem[]>([])
   const [pushAvailable, setPushAvailable] = useState(false)
   const seenIds = useRef<Set<number> | null>(null)
+  /** Every order id already alerted this session - shared by the push and polling paths. */
+  const alertedIds = useRef<Set<number>>(new Set())
+  const pollNowRef = useRef<(() => void) | null>(null)
 
   const isAdminLike = user?.role === 'admin' || user?.role === 'employee'
   const isStoreOwner = user?.role === 'restaurant-owner'
@@ -80,13 +93,37 @@ export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
     setAlerts([])
   }, [])
 
+  useEffect(() => {
+    installAudioUnlock()
+  }, [])
+
+  // Admin-configured order sound - refreshed every few minutes so a change in Settings reaches
+  // already-open dashboards without a reload.
+  useEffect(() => {
+    if (!isAuthenticated || (!isAdminLike && !isStoreOwner)) return
+    let cancelled = false
+    const load = () =>
+      settingsService.getOrderAlertSoundUrl().then((url) => {
+        if (!cancelled) setCustomOrderSoundUrl(url)
+      })
+    load()
+    const id = window.setInterval(load, 5 * 60 * 1000)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [isAuthenticated, isAdminLike, isStoreOwner])
+
   const addAlert = useCallback(
     (order: { id: number; uniqueOrderId: string; restaurantName?: string; payable: number; createdAt: string }) => {
+      if (alertedIds.current.has(order.id)) return
+      alertedIds.current.add(order.id)
+      seenIds.current?.add(order.id)
       setAlerts((prev) => [
         { key: `${order.id}-${Date.now()}`, orderId: order.id, uniqueOrderId: order.uniqueOrderId, restaurantName: order.restaurantName, payable: order.payable, createdAt: order.createdAt },
         ...prev,
       ])
-      if (settings.soundEnabled) playNewOrderChime()
+      if (settings.soundEnabled) playOrderSound()
     },
     [settings.soundEnabled],
   )
@@ -141,8 +178,8 @@ export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
     }
   }, [usingPush, addAlert])
 
-  // Polling path: primary mechanism when usePush is off, and the automatic fallback while push
-  // availability hasn't resolved yet or Firebase isn't configured at all.
+  // Polling path: primary mechanism when usePush is off or Firebase isn't configured, and a safety
+  // net alongside push otherwise (see the provider doc - background tabs never see onMessage).
   useEffect(() => {
     // Reset the "already seen" baseline whenever polling (re)starts, so the very first poll never
     // dumps every currently-placed order as a flurry of "new" alerts.
@@ -150,7 +187,7 @@ export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
   }, [settings.enabled, user?.id])
 
   useEffect(() => {
-    if (!isAuthenticated || !user || !settings.enabled || (!isAdminLike && !isStoreOwner) || usingPush) {
+    if (!isAuthenticated || !user || !settings.enabled || (!isAdminLike && !isStoreOwner)) {
       return
     }
 
@@ -200,19 +237,31 @@ export function NewOrderAlertProvider({ children }: { children: ReactNode }) {
     }
 
     poll()
+    pollNowRef.current = poll
     const intervalId = window.setInterval(poll, Math.max(15, settings.intervalSeconds) * 1000)
     return () => {
       cancelled = true
+      pollNowRef.current = null
       window.clearInterval(intervalId)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user?.id, settings.enabled, settings.intervalSeconds, usingPush, isAdminLike, isStoreOwner, addAlert])
+  }, [isAuthenticated, user?.id, settings.enabled, settings.intervalSeconds, isAdminLike, isStoreOwner, addAlert])
+
+  // Background tabs get their timers throttled (to once a minute or less) - catch up the moment
+  // the dashboard is looked at again.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') pollNowRef.current?.()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
 
   useEffect(() => {
     // Keep ringing every few seconds while unacknowledged alerts are on screen, not just once when
     // they first appear — stops as soon as the alert list empties (dismissed individually or all at once).
     if (alerts.length === 0 || !settings.soundEnabled) return
-    const intervalId = window.setInterval(() => playNewOrderChime(), REPEAT_CHIME_INTERVAL_SECONDS * 1000)
+    const intervalId = window.setInterval(() => playOrderSound(), REPEAT_CHIME_INTERVAL_SECONDS * 1000)
     return () => window.clearInterval(intervalId)
   }, [alerts.length, settings.soundEnabled])
 

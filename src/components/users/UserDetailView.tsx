@@ -25,6 +25,7 @@ import { MapEmbed } from '@/components/ui/MapEmbed'
 import { SlideOver } from '@/components/ui/SlideOver'
 import { DataTable, type Column } from '@/components/DataTable'
 import { AccountStatusBadge } from '@/components/users/UsersListView'
+import { DriverStatusBadge, driverStatusExplanation } from '@/components/deliveryGuys/DriverStatusBadge'
 import { useAsync } from '@/hooks/useAsync'
 import { userService } from '@/services/userService'
 import { deliveryGuyService } from '@/services/deliveryGuyService'
@@ -300,13 +301,17 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
             {isDeliveryGuy && guyDetail && (
               <div className="mb-3 flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 dark:bg-slate-800/60">
                 <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 dark:text-slate-200">
-                  <span className={`h-2 w-2 rounded-full ${guyDetail.isOnline ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                  {guyDetail.isOnline ? 'Online' : 'Offline'}
+                  <DriverStatusBadge driver={guyDetail} showTime />
                 </span>
                 <span className="text-xs text-slate-400 dark:text-slate-500">
                   Last seen {guyDetail.lastSeenAt ? timeAgo(guyDetail.lastSeenAt) : '—'}
                 </span>
               </div>
+            )}
+            {isDeliveryGuy && guyDetail && driverStatusExplanation(guyDetail) && (
+              <p className={`-mt-1 mb-3 text-xs ${guyDetail.offlineReason === 'INACTIVITY' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'}`}>
+                {driverStatusExplanation(guyDetail)}
+              </p>
             )}
             <p className="mb-1.5 text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">Last 5 logins</p>
             {sessions && sessions.length > 0 ? (

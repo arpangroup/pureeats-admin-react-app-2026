@@ -50,6 +50,33 @@ export const settingsService = {
     return mapToSettings(data.data)
   },
 
+  /** The admin-uploaded new-order sound URL (public setting `order_alert_sound_url`), or null for the built-in chime. Never throws. */
+  async getOrderAlertSoundUrl(): Promise<string | null> {
+    try {
+      const all = await settingsService.getAll()
+      const value = all.find((s) => s.key === 'order_alert_sound_url')?.value?.trim()
+      return value ? value : null
+    } catch {
+      return null
+    }
+  },
+
+  /**
+   * Uploads an MP3/WAV for an `audio` setting field and returns its URL. Doesn't save the setting
+   * itself - the caller puts the URL into the form and it's persisted by the normal Save (so the
+   * confirmation password and change history apply as for any other field).
+   */
+  async uploadAudio(file: File): Promise<string> {
+    if (IS_MOCK) {
+      await mockDelay()
+      return URL.createObjectURL(file)
+    }
+    const formData = new FormData()
+    formData.append('file', file)
+    const { data } = await apiClient.post<{ data: { url: string } }>('/admin/settings/audio', formData)
+    return data.data.url
+  },
+
   /** Upserts several keys in one request — prefer this over calling update() in a loop when saving a whole form/tab at once. `confirmPassword` is only checked when the AppConfig-level settingsConfirmationEnabled flag is on — see ConfirmPasswordDialog / useSettingsConfirmation. */
   async updateMany(updates: Record<string, string>, confirmPassword?: string): Promise<SettingKeyValue[]> {
     if (IS_MOCK) {
