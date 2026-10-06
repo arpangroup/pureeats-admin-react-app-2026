@@ -26,6 +26,7 @@ import { SlideOver } from '@/components/ui/SlideOver'
 import { DataTable, type Column } from '@/components/DataTable'
 import { AccountStatusBadge } from '@/components/users/UsersListView'
 import { DriverStatusBadge, driverStatusExplanation } from '@/components/deliveryGuys/DriverStatusBadge'
+import { RiderSettlementCard } from '@/components/deliveryGuys/RiderSettlementCard'
 import { useAsync } from '@/hooks/useAsync'
 import { userService } from '@/services/userService'
 import { deliveryGuyService } from '@/services/deliveryGuyService'
@@ -77,7 +78,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
     [role, user?.id],
   )
 
-  const { data: earnings } = useAsync(
+  const { data: earnings, reload: reloadEarnings } = useAsync(
     () => (isDeliveryGuy && guyDetail ? deliveryGuyService.earningsForRider(guyDetail.userId) : Promise.resolve([])),
     [isDeliveryGuy, guyDetail?.id],
   )
@@ -267,6 +268,17 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
               {passwordSaved && <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">Password updated</span>}
             </div>
           </SectionCard>
+
+          {isDeliveryGuy && guyDetail && (
+            <RiderSettlementCard
+              riderUserId={guyDetail.userId}
+              onSettled={() => {
+                reloadEarnings()
+                reloadWallet()
+                reloadTxns()
+              }}
+            />
+          )}
 
           {isDeliveryGuy && (
             <SectionCard title="Earnings" description="Per-order rider earnings." icon={Receipt} >
