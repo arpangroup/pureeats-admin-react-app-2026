@@ -290,6 +290,8 @@ export interface Order {
   restaurantCharge: number
   deliveryCharge: number
   driverTipAmount: number
+  /** Flat platform fee (Settings -> Customer Application); present on live order detail. */
+  platformFee?: number
   total: number
   payable: number
   paymentMode: PaymentMode
