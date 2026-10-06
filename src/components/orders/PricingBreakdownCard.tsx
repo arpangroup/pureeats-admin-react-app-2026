@@ -4,6 +4,7 @@ import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { restaurantService } from '@/services/restaurantService'
 import { formatCurrency } from '@/lib/format'
+import { SETTINGS_LINKS } from '@/lib/settingsLinks'
 import type { DeliveryChargeRates, OrderRow, PricingBreakdown } from '@/services/orderService'
 
 /** Opens a config page in a new tab, so the admin keeps their place on the order. */
@@ -170,7 +171,7 @@ export function PricingBreakdownCard({ order, isAdmin }: { order: OrderRow; isAd
           label={
             <>
               Tax ({b.taxPercentage}%)
-              {isAdmin && <ConfigLink to="/admin/settings/general">Settings</ConfigLink>}
+              {isAdmin && <ConfigLink to={SETTINGS_LINKS.commerce}>Settings → Commerce</ConfigLink>}
             </>
           }
           value={formatCurrency(b.taxAmount)}
@@ -206,7 +207,7 @@ export function PricingBreakdownCard({ order, isAdmin }: { order: OrderRow; isAd
           label={
             <>
               Platform fee
-              {isAdmin && <ConfigLink to="/admin/settings/customer-app">Settings</ConfigLink>}
+              {isAdmin && <ConfigLink to={SETTINGS_LINKS.platformFee}>Settings → Platform fee</ConfigLink>}
             </>
           }
           value={formatCurrency(platformFee)}
