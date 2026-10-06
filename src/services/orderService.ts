@@ -45,6 +45,18 @@ export interface PricingBreakdown {
   restaurantLongitude: string | null
   customerLatitude: string | null
   customerLongitude: string | null
+  /** Restaurant delivery rates applied at order time - null on orders placed before they were recorded. */
+  deliveryChargeRates?: DeliveryChargeRates | null
+}
+
+/** See the backend's DeliveryChargeRates: FIXED uses flatCharge; DYNAMIC = baseCharge + extraUnits * extraCharge, extraUnits = ceil((distance - baseDistanceKm) / extraDistanceKm). */
+export interface DeliveryChargeRates {
+  flatCharge: number | null
+  baseCharge: number | null
+  baseDistanceKm: number | null
+  extraCharge: number | null
+  extraDistanceKm: number | null
+  extraUnits: number | null
 }
 
 export interface OrderStatusLogRow {
@@ -85,7 +97,36 @@ function toRow(order: Order): OrderRow {
     coupon: order.couponName
       ? { couponId: null, code: order.couponName, name: order.couponName, discountType: null, discountAmount: 0 }
       : null,
-    pricingBreakdown: null,
+    pricingBreakdown: restaurant ? mockBreakdown(order, restaurant) : null,
+  }
+}
+
+/** Mock-only: a pricing breakdown consistent with the fixture order and its restaurant's rates, so the order details "How this was calculated" card renders in mock mode too. */
+function mockBreakdown(order: Order, restaurant: (typeof restaurants)[number]): PricingBreakdown {
+  const distanceKm = 4.2
+  const dynamic = restaurant.deliveryChargeType === 'dynamic'
+  const extraUnits = dynamic && restaurant.extraDeliveryDistance > 0 ? Math.max(0, Math.ceil((distanceKm - restaurant.baseDeliveryDistance) / restaurant.extraDeliveryDistance)) : 0
+  const deliveryCharge = dynamic ? restaurant.baseDeliveryCharge + extraUnits * restaurant.extraDeliveryCharge : restaurant.deliveryCharges
+  // Back the item total out of the payable so the mock lines always add up (fixture totals aren't internally consistent).
+  const afterDiscount = Math.max(0, Math.round((order.payable - order.tax - order.restaurantCharge - deliveryCharge - (order.driverTipAmount ?? 0)) * 100) / 100)
+  return {
+    itemTotal: afterDiscount,
+    discountAmount: 0,
+    amountAfterDiscount: afterDiscount,
+    taxAmount: order.tax,
+    taxPercentage: afterDiscount ? Math.round((order.tax / afterDiscount) * 1000) / 10 : 5,
+    restaurantChargeAmount: order.restaurantCharge,
+    restaurantChargePercentage: afterDiscount ? Math.round((order.restaurantCharge / afterDiscount) * 1000) / 10 : 0,
+    deliveryChargeAmount: deliveryCharge,
+    deliveryChargeBasis: dynamic ? 'DYNAMIC' : 'FIXED',
+    distanceKm,
+    restaurantLatitude: String(restaurant.latitude ?? '12.9352'),
+    restaurantLongitude: String(restaurant.longitude ?? '77.6245'),
+    customerLatitude: '12.9716',
+    customerLongitude: '77.5946',
+    deliveryChargeRates: dynamic
+      ? { flatCharge: null, baseCharge: restaurant.baseDeliveryCharge, baseDistanceKm: restaurant.baseDeliveryDistance, extraCharge: restaurant.extraDeliveryCharge, extraDistanceKm: restaurant.extraDeliveryDistance, extraUnits }
+      : { flatCharge: restaurant.deliveryCharges, baseCharge: null, baseDistanceKm: null, extraCharge: null, extraDistanceKm: null, extraUnits: null },
   }
 }
 
@@ -139,6 +180,7 @@ interface LiveOrderDetail {
   tax: number
   restaurantCharge: number
   deliveryCharge: number
+  platformFee?: number
   driverTipAmount: number
   discountAmount: number
   total: number
@@ -245,6 +287,7 @@ function liveDetailToRow(d: LiveOrderDetail): OrderRow {
     restaurantCharge: d.restaurantCharge,
     deliveryCharge: d.deliveryCharge,
     driverTipAmount: d.driverTipAmount,
+    platformFee: d.platformFee ?? 0,
     total: d.total,
     payable: d.payable,
     paymentMode: mapPaymentMode(d.paymentMode),

@@ -80,7 +80,13 @@ export const GENERAL_INFO_GROUPS: SettingGroupDef[] = [
     description: 'Defaults applied to new restaurants and payouts.',
     icon: Percent,
     fields: [
-      { key: 'default_tax_percent', label: 'Default tax (%)', fieldType: 'number', defaultValue: '5' },
+      {
+        key: 'default_tax_percent',
+        label: 'Tax on orders (%)',
+        fieldType: 'number',
+        defaultValue: '5',
+        info: 'Applied to every new order on the amount after discount. Orders already placed keep the rate they were charged.',
+      },
       { key: 'default_commission_rate', label: 'Default commission (%)', fieldType: 'number', defaultValue: '15' },
       { key: 'min_withdrawal_amount', label: 'Minimum withdrawal (₹)', fieldType: 'number', defaultValue: '500' },
     ],

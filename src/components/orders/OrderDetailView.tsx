@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Bike, Calculator, GitBranch, History, MapPin, MessageSquare, Phone, Printer, Receipt, Store, Tag, User as UserIcon, UserPlus, ExternalLink } from 'lucide-react'
+import { ArrowLeft, Bike, GitBranch, History, MapPin, MessageSquare, Phone, Printer, Receipt, Store, Tag, User as UserIcon, UserPlus } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
 import { Select, TextInput } from '@/components/ui/FormControls'
@@ -15,6 +15,7 @@ import type { OrderStatus } from '@/types/entities'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { OrderInvoice } from './OrderInvoice'
 import { OrderJourneyOverlay } from './OrderJourneyOverlay'
+import { PricingBreakdownCard } from './PricingBreakdownCard'
 
 export function OrderDetailView({ basePath }: { basePath: string }) {
   const { id } = useParams()
@@ -192,57 +193,7 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
           </div>
 
           
-          {order.pricingBreakdown && (
-            <div className="card p-4 print:hidden">
-              <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                <Calculator size={16} /> How this was calculated
-              </h2>
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-                <dt className="text-slate-500 dark:text-slate-400">Item total</dt>
-                <dd className="text-right text-slate-700 dark:text-slate-200">{formatCurrency(order.pricingBreakdown.itemTotal)}</dd>
-                <dt className="text-slate-500 dark:text-slate-400">Discount</dt>
-                <dd className="text-right text-slate-700 dark:text-slate-200">-{formatCurrency(order.pricingBreakdown.discountAmount)}</dd>
-                <dt className="text-slate-500 dark:text-slate-400">Amount after discount</dt>
-                <dd className="text-right text-slate-700 dark:text-slate-200">{formatCurrency(order.pricingBreakdown.amountAfterDiscount)}</dd>
-                <dt className="text-slate-500 dark:text-slate-400">Tax ({order.pricingBreakdown.taxPercentage}%)</dt>
-                <dd className="text-right text-slate-700 dark:text-slate-200">{formatCurrency(order.pricingBreakdown.taxAmount)}</dd>
-                <dt className="text-slate-500 dark:text-slate-400">Restaurant charge ({order.pricingBreakdown.restaurantChargePercentage}%)</dt>
-                <dd className="text-right text-slate-700 dark:text-slate-200">{formatCurrency(order.pricingBreakdown.restaurantChargeAmount)}</dd>
-                <dt className="text-slate-500 dark:text-slate-400">Delivery charge basis</dt>
-                <dd className="text-right capitalize text-slate-700 dark:text-slate-200">{order.pricingBreakdown.deliveryChargeBasis.toLowerCase().replace(/_/g, ' ')}</dd>
-                <dt className="text-slate-500 dark:text-slate-400">Distance (restaurant → customer)</dt>
-                <dd className="text-right text-slate-700 dark:text-slate-200">
-                  {order.pricingBreakdown.distanceKm} km
-                  {order.pricingBreakdown.restaurantLatitude && order.pricingBreakdown.customerLatitude && (
-                    <a
-                      href={`https://www.google.com/maps/dir/?api=1&travelmode=driving&origin=${order.pricingBreakdown.restaurantLatitude},${order.pricingBreakdown.restaurantLongitude}&destination=${order.pricingBreakdown.customerLatitude},${order.pricingBreakdown.customerLongitude}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-2 inline-flex items-center gap-0.5 text-xs font-medium text-brand-600 hover:underline dark:text-brand-400"
-                    >
-                      View on map <ExternalLink size={11} />
-                    </a>
-                  )}
-                </dd>
-                {order.pricingBreakdown.restaurantLatitude && (
-                  <>
-                    <dt className="text-slate-500 dark:text-slate-400">Restaurant coordinates</dt>
-                    <dd className="text-right text-slate-700 dark:text-slate-200">
-                      {order.pricingBreakdown.restaurantLatitude}, {order.pricingBreakdown.restaurantLongitude}
-                    </dd>
-                  </>
-                )}
-                {order.pricingBreakdown.customerLatitude && (
-                  <>
-                    <dt className="text-slate-500 dark:text-slate-400">Customer coordinates</dt>
-                    <dd className="text-right text-slate-700 dark:text-slate-200">
-                      {order.pricingBreakdown.customerLatitude}, {order.pricingBreakdown.customerLongitude}
-                    </dd>
-                  </>
-                )}
-              </dl>
-            </div>
-          )}
+          {order.pricingBreakdown && <PricingBreakdownCard order={order} isAdmin={isAdmin} />}
 
           <div className="card p-4">
             <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">Order timeline</h2>
