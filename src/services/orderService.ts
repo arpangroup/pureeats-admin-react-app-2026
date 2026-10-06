@@ -13,6 +13,8 @@ export interface OrderRow extends Order {
   restaurantName: string
   restaurantPhone: string | null
   statusName: string
+  /** Google Maps directions restaurant -> customer (live order detail only). */
+  mapDirectionsUrl?: string | null
   deliveryGuyName: string | null
   /** Live mode only — which statuses this order may legally move to next; null in mock mode (all statuses stay selectable, as before). */
   legalNextStatuses: string[] | null
@@ -155,6 +157,7 @@ interface LiveOrderDetail {
   pricingBreakdown: PricingBreakdown | null
   deliveryGuyId: number | null
   deliveryGuyName: string | null
+  mapDirectionsUrl?: string | null
 }
 
 interface LiveOrderSummary {
@@ -290,6 +293,7 @@ function liveDetailToRow(d: LiveOrderDetail): OrderRow {
     restaurantName: d.restaurant.name,
     restaurantPhone: d.restaurant.contactNumber,
     statusName: d.status,
+    mapDirectionsUrl: d.mapDirectionsUrl ?? null,
     deliveryGuyName: d.deliveryGuyName,
     legalNextStatuses: d.legalNextStatuses,
     coupon: d.coupon

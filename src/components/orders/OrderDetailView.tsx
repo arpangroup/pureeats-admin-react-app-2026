@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Bike, Calculator, GitBranch, History, MapPin, MessageSquare, Phone, Printer, Receipt, Store, Tag, User as UserIcon, UserPlus } from 'lucide-react'
+import { ArrowLeft, Bike, Calculator, GitBranch, History, MapPin, MessageSquare, Phone, Printer, Receipt, Store, Tag, User as UserIcon, UserPlus, ExternalLink } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
 import { Select, TextInput } from '@/components/ui/FormControls'
@@ -272,6 +272,16 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
             <p className="mt-2 flex items-start gap-1.5 text-sm text-slate-500 dark:text-slate-400">
               <MapPin size={14} className="mt-0.5 shrink-0" /> {order.address}
             </p>
+            {order.mapDirectionsUrl && (
+              <a
+                href={order.mapDirectionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-1 inline-flex items-center gap-1 pl-5 text-xs font-medium text-brand-600 hover:underline dark:text-brand-400"
+              >
+                View route on Google Maps <ExternalLink size={12} />
+              </a>
+            )}
             {order.orderComment && (
               <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-500/10">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">Order note / cooking instructions</p>
