@@ -187,7 +187,7 @@ export function PricingBreakdownCard({ order, isAdmin }: { order: OrderRow; isAd
             </>
           }
           value={formatCurrency(b.restaurantChargeAmount)}
-          note={`Packaging & handling charge set by the store - ${b.restaurantChargePercentage}% of ${formatCurrency(b.amountAfterDiscount)}. Goes to the restaurant.`}
+          note={`Packaging & handling charge, set per store - ${b.restaurantChargePercentage}% of ${formatCurrency(b.amountAfterDiscount)}, charged to the customer on top of the items.`}
         />
         <Row
           label={
