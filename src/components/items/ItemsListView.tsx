@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Pencil, Plus, Trash2, UploadCloud, UtensilsCrossed } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput } from '@/components/ui/FormControls'
@@ -105,6 +105,16 @@ export function ItemsListView({ restaurantId }: { restaurantId?: number }) {
       setDeleting(false)
     }
   }
+
+  // ?editItem={id} opens that item's edit dialog - the order details page links each line item here.
+  const editItemParam = searchParams.get('editItem')
+  useEffect(() => {
+    if (!editItemParam) return
+    itemService.get(Number(editItemParam)).then((item) => {
+      if (item) openEdit(item)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editItemParam])
 
   function closeBulkUpload() {
     setBulkUploadOpen(false)

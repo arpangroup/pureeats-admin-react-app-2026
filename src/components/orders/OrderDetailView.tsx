@@ -144,7 +144,14 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
                 <div key={item.id} className="flex items-start justify-between py-2.5 text-sm">
                   <div>
                     <p className="font-medium text-slate-700 dark:text-slate-200">
-                      {item.quantity} × {item.name}
+                      {item.quantity} ×{' '}
+                      {isAdmin && item.itemId ? (
+                        <a href={`/admin/items?editItem=${item.itemId}`} target="_blank" rel="noopener noreferrer" className="hover:text-brand-600 hover:underline">
+                          {item.name}
+                        </a>
+                      ) : (
+                        item.name
+                      )}
                     </p>
                     {item.addons.length > 0 && (
                       <p className="text-xs text-slate-400 dark:text-slate-500">

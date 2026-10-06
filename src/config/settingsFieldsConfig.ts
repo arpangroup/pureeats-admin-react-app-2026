@@ -77,7 +77,7 @@ export const GENERAL_INFO_GROUPS: SettingGroupDef[] = [
   },
   {
     title: 'Commerce',
-    description: 'Defaults applied to new restaurants and payouts.',
+    description: "Tax charged to customers and the platform's commission on restaurant sales.",
     icon: Percent,
     fields: [
       {
@@ -85,10 +85,43 @@ export const GENERAL_INFO_GROUPS: SettingGroupDef[] = [
         label: 'Tax on orders (%)',
         fieldType: 'number',
         defaultValue: '5',
-        info: 'Applied to every new order on the amount after discount. Orders already placed keep the rate they were charged.',
+        info: 'Charged to the customer on the amount after discount. Example: items ₹400, coupon −₹50 → ₹350 × 5% = ₹17.50 tax. Applies to new orders and the cart preview; orders already placed keep the rate they were charged.',
       },
-      { key: 'default_commission_rate', label: 'Default commission (%)', fieldType: 'number', defaultValue: '15' },
-      { key: 'min_withdrawal_amount', label: 'Minimum withdrawal (₹)', fieldType: 'number', defaultValue: '500' },
+      {
+        key: 'default_commission_rate',
+        label: 'Default commission (%)',
+        fieldType: 'number',
+        defaultValue: '15',
+        info: "The platform's cut of a restaurant's item total, deducted from the restaurant's payout - customers never see it. Used for every store that has no commission rate of its own (a store's own rate, set on its edit page, wins). Example: items ₹500 at 15% → ₹75 commission; the restaurant is paid ₹500 − ₹75 + its packaging charge.",
+      },
+      {
+        key: 'min_withdrawal_amount',
+        label: 'Minimum withdrawal (₹)',
+        fieldType: 'number',
+        defaultValue: '500',
+        info: "Reserved for self-service payout requests (e.g. a balance below ₹500 can't be withdrawn). Not enforced yet - payouts are currently recorded by an admin.",
+      },
+    ],
+  },
+  {
+    title: 'Platform fee',
+    description: 'A charge the platform adds to every customer bill, on top of items, tax, packaging and delivery.',
+    icon: Wallet,
+    fields: [
+      {
+        key: 'platform_fee_type',
+        label: 'Platform fee type',
+        fieldType: 'dropdown',
+        defaultValue: 'FLAT',
+        options: [
+          { label: 'Flat amount (₹ per order)', value: 'FLAT' },
+          { label: 'Percentage of the order', value: 'PERCENTAGE' },
+        ],
+        info: 'Flat: the same fee on every order. Percentage: a % of the amount after discount, optionally capped. Shown to customers as "Platform fee" in the cart, at checkout, on order tracking and on the invoice. Kept by the platform.',
+      },
+      { key: 'platform_fee_amount', label: 'Flat fee (₹)', fieldType: 'number', defaultValue: '0', placeholder: 'e.g. 5', info: "Used when the type is Flat. Example: ₹5 → every order pays ₹5, whether it's ₹150 or ₹1,500. 0 = no platform fee." },
+      { key: 'platform_fee_percentage', label: 'Percentage fee (%)', fieldType: 'number', defaultValue: '0', placeholder: 'e.g. 2', info: 'Used when the type is Percentage, on the amount after discount. Example: 2% of a ₹350 order = ₹7. 0 = no platform fee.' },
+      { key: 'platform_fee_max_amount', label: 'Maximum fee (₹)', fieldType: 'number', defaultValue: '0', placeholder: 'e.g. 25', info: 'Cap for a Percentage fee. Example: 2% capped at ₹25 → a ₹2,000 order pays ₹25, not ₹40. 0 = no cap. Ignored for Flat.' },
     ],
   },
   {

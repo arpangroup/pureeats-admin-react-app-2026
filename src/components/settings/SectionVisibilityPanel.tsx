@@ -1,6 +1,8 @@
+import { Link } from 'react-router-dom'
 import { Check, LayoutGrid } from 'lucide-react'
+import { SETTINGS_LINKS } from '@/lib/settingsLinks'
 import { SectionCard } from '@/components/ui/SectionCard'
-import { Field, Switch, TextInput } from '@/components/ui/FormControls'
+import { Switch } from '@/components/ui/FormControls'
 import { LoadingBlock } from '@/components/ui/Feedback'
 import { useAppConfigAdminForm } from '@/hooks/useAppConfigAdminForm'
 import { useSettingsConfirmation } from '@/hooks/useSettingsConfirmation'
@@ -89,17 +91,17 @@ export function SectionVisibilityPanel() {
         />
       </div>
 
-      <div className="mt-6 border-t border-slate-100 pt-4 dark:border-slate-800">
-        <Field label="Platform fee (₹)" hint="Flat fee added to every order's total, alongside tax/restaurant/delivery charges. 0 = no fee charged.">
-          <TextInput
-            type="number"
-            min={0}
-            step="0.01"
-            className="max-w-[160px]"
-            value={draft.platformFee}
-            onChange={(e) => set('platformFee', Number(e.target.value))}
-          />
-        </Field>
+      {/* The platform fee moved to Settings → General → Platform fee (flat or percentage). This App
+          config value is still honoured as the flat fee until that section is saved. */}
+      <div className="mt-6 border-t border-slate-100 pt-4 text-sm dark:border-slate-800">
+        <p className="font-medium text-slate-700 dark:text-slate-200">Platform fee</p>
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          Now set under{' '}
+          <Link to={SETTINGS_LINKS.platformFee} className="font-medium text-brand-600 hover:underline dark:text-brand-400">
+            General → Platform fee
+          </Link>
+          , where it can be a flat amount or a percentage of the order.
+        </p>
       </div>
     </SectionCard>
   )

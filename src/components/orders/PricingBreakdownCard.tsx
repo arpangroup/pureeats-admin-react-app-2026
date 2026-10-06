@@ -4,6 +4,7 @@ import { useAsync } from '@/hooks/useAsync'
 import { useAuth } from '@/hooks/useAuth'
 import { restaurantService } from '@/services/restaurantService'
 import { formatCurrency } from '@/lib/format'
+import { SETTINGS_LINKS } from '@/lib/settingsLinks'
 import type { DeliveryChargeRates, OrderRow, PricingBreakdown } from '@/services/orderService'
 
 /** Opens a config page in a new tab, so the admin keeps their place on the order. */
@@ -159,14 +160,18 @@ export function PricingBreakdownCard({ order, isAdmin }: { order: OrderRow; isAd
         <Calculator size={16} /> How this was calculated
       </h2>
       <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 text-sm">
-        <Row label="Item total" value={formatCurrency(b.itemTotal)} />
-        <Row label="Discount" value={`-${formatCurrency(b.discountAmount)}`} />
+        <Row label="Item total" value={formatCurrency(b.itemTotal)} note="Menu price of every item and add-on, times quantity." />
+        <Row
+          label="Discount"
+          value={`-${formatCurrency(b.discountAmount)}`}
+          note={order.coupon?.code ? `Coupon ${order.coupon.code}` : 'No coupon applied'}
+        />
         <Row label="Amount after discount" value={formatCurrency(b.amountAfterDiscount)} />
         <Row
           label={
             <>
               Tax ({b.taxPercentage}%)
-              {isAdmin && <ConfigLink to="/admin/settings/general">Settings</ConfigLink>}
+              {isAdmin && <ConfigLink to={SETTINGS_LINKS.commerce}>Settings → Commerce</ConfigLink>}
             </>
           }
           value={formatCurrency(b.taxAmount)}
@@ -176,11 +181,14 @@ export function PricingBreakdownCard({ order, isAdmin }: { order: OrderRow; isAd
           label={
             <>
               Restaurant charge ({b.restaurantChargePercentage}%)
+              <span className="ml-1.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                Packaging
+              </span>
               <ConfigLink to={storeEditPath}>Store settings</ConfigLink>
             </>
           }
           value={formatCurrency(b.restaurantChargeAmount)}
-          note={`${b.restaurantChargePercentage}% of ${formatCurrency(b.amountAfterDiscount)}`}
+          note={`Packaging & handling charge, set per store - ${b.restaurantChargePercentage}% of ${formatCurrency(b.amountAfterDiscount)}, charged to the customer on top of the items.`}
         />
         <Row
           label={
@@ -195,18 +203,25 @@ export function PricingBreakdownCard({ order, isAdmin }: { order: OrderRow; isAd
         <dd className="col-span-2 -mt-0.5 mb-1 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
           <DeliveryChargeSteps breakdown={b} source={source} />
         </dd>
-        {platformFee > 0 && (
-          <Row
-            label={
-              <>
-                Platform fee
-                {isAdmin && <ConfigLink to="/admin/settings/customer-app">Settings</ConfigLink>}
-              </>
-            }
-            value={formatCurrency(platformFee)}
-          />
-        )}
-        {tip > 0 && <Row label="Delivery partner tip" value={formatCurrency(tip)} note="Chosen by the customer - paid to the rider in full." />}
+        <Row
+          label={
+            <>
+              Platform fee
+              {isAdmin && <ConfigLink to={SETTINGS_LINKS.platformFee}>Settings → Platform fee</ConfigLink>}
+            </>
+          }
+          value={formatCurrency(platformFee)}
+          note={
+            platformFee > 0
+              ? 'Flat fee PureEats adds to every order to run the service (payments, app, customer support). Kept by the platform.'
+              : 'Flat fee PureEats can add to every order to run the service - not charged on this order (set to ₹0).'
+          }
+        />
+        <Row
+          label="Delivery partner tip"
+          value={formatCurrency(tip)}
+          note={tip > 0 ? 'Chosen by the customer - paid to the rider in full.' : 'No tip added by the customer.'}
+        />
         <div className="col-span-2 my-1 border-t border-slate-200 dark:border-slate-700" />
         <Row label="Customer paid" value={formatCurrency(order.payable)} strong />
         {Math.abs(sum - order.payable) > 0.01 && (

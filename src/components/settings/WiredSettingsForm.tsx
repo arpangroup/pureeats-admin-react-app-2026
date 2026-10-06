@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AlertTriangle, Check } from 'lucide-react'
 import { SectionCard } from '@/components/ui/SectionCard'
+import { settingsSlug } from '@/lib/settingsLinks'
 import { LoadingBlock, EmptyState } from '@/components/ui/Feedback'
 import { useAsync } from '@/hooks/useAsync'
 import { useSettingsConfirmation } from '@/hooks/useSettingsConfirmation'
@@ -92,6 +93,7 @@ function WiredSettingsGroupCard({ group, settings, reload }: { group: SettingGro
       title={group.title}
       description={group.description}
       icon={group.icon}
+      anchorId={settingsSlug(group.title)}
       actions={
         <div className="flex items-center gap-3">
           {savedAt && !saveError && dirtyKeys.length === 0 && (
