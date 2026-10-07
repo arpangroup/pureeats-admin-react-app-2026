@@ -178,7 +178,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
         description={user.email}
         actions={
           <>
-            <AccountStatusBadge status={user.accountStatus} />
+            <AccountStatusBadge status={user.accountStatus} isActive={user.isActive} />
             <button className="btn-primary" onClick={handleSave} disabled={saving}>
               {saving ? 'Saving…' : 'Save changes'}
             </button>
