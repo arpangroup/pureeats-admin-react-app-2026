@@ -59,6 +59,13 @@ export interface DeliveryChargeRates {
   extraUnits: number | null
 }
 
+/** A photo the delivery partner took of the order (at pickup or at handover). */
+export interface OrderPhoto {
+  id: number
+  url: string
+  takenAt: string
+}
+
 /** GET /admin/orders/{id}/earnings - see the backend's OrderEarningsSplitResponse. */
 export interface OrderEarningsSplit {
   customerPaid: number
@@ -492,12 +499,22 @@ export const orderService = {
    * the remainder, so restaurant + rider + platform + tax = what the customer paid.
    */
   /** Photos of the packed order the delivery partner took at pickup - GET /admin/orders/{id}/pickup-photos. */
-  async pickupPhotos(orderId: number): Promise<{ id: number; url: string; takenAt: string }[]> {
+  async pickupPhotos(orderId: number): Promise<OrderPhoto[]> {
     if (IS_MOCK) {
       await mockDelay()
       return []
     }
-    const { data } = await apiClient.get<{ data: { id: number; url: string; takenAt: string }[] }>(`/admin/orders/${orderId}/pickup-photos`)
+    const { data } = await apiClient.get<{ data: OrderPhoto[] }>(`/admin/orders/${orderId}/pickup-photos`)
+    return data.data ?? []
+  },
+
+  /** Photos the delivery partner took handing the order to the customer - GET /admin/orders/{id}/delivery-photos. */
+  async deliveryPhotos(orderId: number): Promise<OrderPhoto[]> {
+    if (IS_MOCK) {
+      await mockDelay()
+      return []
+    }
+    const { data } = await apiClient.get<{ data: OrderPhoto[] }>(`/admin/orders/${orderId}/delivery-photos`)
     return data.data ?? []
   },
 
