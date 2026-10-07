@@ -33,6 +33,7 @@ import DeliveryGuysPage from '@/pages/admin/DeliveryGuysPage'
 import DeliveryGuyDetailPage from '@/pages/admin/DeliveryGuyDetailPage'
 import DeliveryPartnerApprovalsPage from '@/pages/admin/DeliveryPartnerApprovalsPage'
 import PartnerWithdrawalsPage from '@/pages/admin/PartnerWithdrawalsPage'
+import SettlementsPage from '@/pages/admin/SettlementsPage'
 import DeliveryGuyRestaurantsPage from '@/pages/admin/DeliveryGuyRestaurantsPage'
 import DeliverySimulatorPage from '@/pages/admin/DeliverySimulatorPage'
 import RestaurantPayoutsPage from '@/pages/admin/RestaurantPayoutsPage'
@@ -121,6 +122,7 @@ export function AppRoutes() {
         <Route path="delivery-guys" element={<DeliveryGuysPage />} />
         <Route path="delivery-guys/approvals" element={<DeliveryPartnerApprovalsPage />} />
         <Route path="partner-withdrawals" element={<PartnerWithdrawalsPage />} />
+        <Route path="settlements" element={<SettlementsPage />} />
         <Route path="delivery-guys/:id" element={<DeliveryGuyDetailPage />} />
         <Route path="delivery-guys-restaurants" element={<DeliveryGuyRestaurantsPage />} />
         <Route path="delivery-simulator" element={<DeliverySimulatorPage />} />
