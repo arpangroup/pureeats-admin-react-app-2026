@@ -50,6 +50,7 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
   }
 
   const status = partner.approvalStatus ?? 'APPROVED'
+  const hasSignUpDetails = !!(partner.licenseNumber || partner.idProofNumber || partner.payoutMethod)
 
   return (
     <div className="space-y-3">
@@ -61,7 +62,14 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
         <p className="rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">Reason given: {partner.rejectionReason}</p>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+      {!hasSignUpDetails && (
+        <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/60 dark:text-slate-400">
+          Added before sign-up verification (or by an admin) - no licence, ID or payout details on file yet.
+        </p>
+      )}
+
+      {/* The licence image only takes a column when there is one - no empty placeholder box. */}
+      <div className={partner.licensePhotoUrl ? 'grid gap-4 sm:grid-cols-[1fr_auto]' : ''}>
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           <Line label="Name" value={partner.name} />
           <Line
@@ -75,21 +83,20 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
           />
           <Line label="Email" value={partner.email} />
           <Line label="Driving licence" value={partner.licenseNumber} />
+          {!partner.licensePhotoUrl && <Line label="Licence photo" value={<span className="font-normal text-slate-400">Not uploaded</span>} />}
           <Line label={partner.idProofType === 'PAN' ? 'PAN' : 'Aadhaar'} value={partner.idProofNumber} />
           <Line label="Vehicle" value={[partner.vehicleType ? VEHICLE[partner.vehicleType] : null, partner.vehicleNumber].filter(Boolean).join(' · ')} />
           <Line
             label="Payout"
             value={partner.payoutMethod === 'UPI' ? `UPI ${partner.upiId ?? ''}` : partner.payoutMethod === 'BANK' ? `${partner.bankAccountHolder} · ${partner.bankAccountNumber} · ${partner.bankIfsc}` : null}
           />
-          <Line label="Applied" value={formatDate(partner.createdAt)} />
+          <Line label={hasSignUpDetails ? 'Applied' : 'Joined'} value={formatDate(partner.createdAt)} />
         </div>
-        {partner.licensePhotoUrl ? (
+        {partner.licensePhotoUrl && (
           <a href={partner.licensePhotoUrl} target="_blank" rel="noopener noreferrer" className="block">
             <img src={partner.licensePhotoUrl} alt="Driving licence" className="h-40 w-full rounded-lg object-cover ring-1 ring-slate-200 sm:w-60 dark:ring-slate-700" />
             <span className="mt-1 block text-center text-[11px] text-slate-400">Driving licence - open full size</span>
           </a>
-        ) : (
-          <div className="flex h-40 items-center justify-center rounded-lg bg-slate-50 px-6 text-center text-xs text-slate-400 sm:w-60 dark:bg-slate-800/60">No licence photo</div>
         )}
       </div>
 
