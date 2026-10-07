@@ -5,6 +5,7 @@ import { PageHeader } from '@/components/ui/PageHeader'
 import { SearchInput, Field, TextInput, Select } from '@/components/ui/FormControls'
 import { ActiveBadge } from '@/components/ui/Feedback'
 import { DriverStatusBadge } from '@/components/deliveryGuys/DriverStatusBadge'
+import { ApprovalBadge } from '@/components/deliveryGuys/PartnerApplicationReview'
 import { Modal, ConfirmDialog } from '@/components/ui/Modal'
 import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
@@ -118,6 +119,7 @@ export default function DeliveryGuysPage() {
       header: 'Status',
       render: (row) => (
         <div className="flex flex-wrap gap-1">
+          {row.approvalStatus && row.approvalStatus !== 'APPROVED' && <ApprovalBadge status={row.approvalStatus} />}
           <ActiveBadge active={row.isActive} />
           <DriverStatusBadge driver={row} showTime />
         </div>

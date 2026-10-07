@@ -3,7 +3,8 @@ import { mockDelay } from '@/lib/mockUtils'
 import { IS_MOCK } from '@/config/env'
 import { tripDetails } from '@/mocks/fixtures'
 
-export type SettlementDirection = 'PAID_TO_RIDER' | 'COLLECTED_FROM_RIDER' | 'EVEN'
+/** BOTH = COD cash collected and earnings paid in one settlement (they're never netted). */
+export type SettlementDirection = 'PAID_TO_RIDER' | 'COLLECTED_FROM_RIDER' | 'EVEN' | 'BOTH'
 
 export interface RiderSettlement {
   id: number
@@ -18,9 +19,19 @@ export interface RiderSettlement {
   note: string | null
   settledBy: number | null
   createdAt: string
+  /** REQUESTED = partner's withdrawal waiting to be paid; PAID; REJECTED. */
+  status?: 'REQUESTED' | 'PAID' | 'REJECTED'
+  requestedAt?: string | null
+  paidAt?: string | null
+  riderName?: string | null
+  /** Where to pay, e.g. "UPI ravi@okhdfcbank" or "Name · A/c 1234 · IFSC". */
+  payoutTo?: string | null
 }
 
-/** netPending = pendingEarnings - cashInHand: positive -> platform pays the rider, negative -> rider pays in. */
+/**
+ * Two separate balances, never netted: cashInHand = COD cash the rider must hand over in full;
+ * pendingEarnings = commission + tips the platform pays in full. netPending is legacy only.
+ */
 export interface RiderSettlementSummary {
   lifetimeEarnings: number
   lifetimeTrips: number
@@ -31,12 +42,30 @@ export interface RiderSettlementSummary {
   unsettledTrips: number
   settledEarnings: number
   lastSettlement: RiderSettlement | null
+  /** Delivered orders not fully settled yet, and what customers paid for them. */
+  openOrders: number
+  openOrderValue: number
+  /** COD orders whose cash the rider still holds. */
+  codOrders: number
+  /** Unpaid trips recorded on a different earnings basis than today's setting - see recalculate(). */
+  earningsOnOldBasis: number
+  /** Earnings in the wallet (pendingEarnings carries the same value). */
+  walletBalance: number
+  /** Withdrawal requests waiting to be paid. */
+  pendingWithdrawals: number
+  /** What can be paid out now: wallet balance minus requested withdrawals. */
+  availableToWithdraw: number
+  payoutTo: string | null
 }
 
 export interface SettleRiderPayload {
   transactionMode?: string
   transactionReference?: string
   note?: string
+  /** Collect all COD cash the rider holds (default true). */
+  collectCod?: boolean
+  /** Pay out all pending earnings (default true). */
+  payEarnings?: boolean
 }
 
 /** BigDecimal fields can arrive as a JSON number or a string. */
@@ -77,6 +106,14 @@ export const riderSettlementService = {
         unsettledTrips: pending.length,
         settledEarnings: round(lifetime - pendingEarnings),
         lastSettlement: mockSettlements.filter((s) => s.riderUserId === riderUserId)[0] ?? null,
+        openOrders: pending.length,
+        openOrderValue: round(pending.reduce((a, t) => a + t.riderEarning * 8, 0)),
+        codOrders: pending.filter((t) => t.cashCollectedFromCustomer > 0).length,
+        earningsOnOldBasis: 0,
+        walletBalance: pendingEarnings,
+        pendingWithdrawals: 0,
+        availableToWithdraw: pendingEarnings,
+        payoutTo: null,
       }
     }
     const { data } = await apiClient.get<{ data: RiderSettlementSummary }>(`/admin/delivery-guys/${riderUserId}/settlement-summary`)
@@ -89,7 +126,60 @@ export const riderSettlementService = {
       netPending: toNumber(s.netPending),
       settledEarnings: toNumber(s.settledEarnings),
       lastSettlement: s.lastSettlement ? nSettlement(s.lastSettlement) : null,
+      openOrders: s.openOrders ?? s.unsettledTrips,
+      openOrderValue: toNumber(s.openOrderValue),
+      codOrders: s.codOrders ?? 0,
+      earningsOnOldBasis: s.earningsOnOldBasis ?? 0,
+      walletBalance: toNumber(s.walletBalance ?? s.pendingEarnings),
+      pendingWithdrawals: toNumber(s.pendingWithdrawals ?? 0),
+      availableToWithdraw: toNumber(s.availableToWithdraw ?? s.pendingEarnings),
+      payoutTo: s.payoutTo ?? null,
     }
+  },
+
+  /** Partners' withdrawal requests (default: waiting to be paid), oldest first. */
+  async withdrawals(status: 'REQUESTED' | 'PAID' | 'REJECTED' = 'REQUESTED'): Promise<RiderSettlement[]> {
+    if (IS_MOCK) {
+      await mockDelay(150)
+      return mockSettlements.filter((s) => s.status === status)
+    }
+    const { data } = await apiClient.get<{ data: RiderSettlement[] }>('/admin/rider-withdrawals', { params: { status } })
+    return (data.data ?? []).map(nSettlement)
+  },
+
+  /** Mark a withdrawal paid after transferring it - debits the partner's wallet. */
+  async payWithdrawal(id: number, transactionMode: string, transactionReference?: string): Promise<RiderSettlement> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const s = mockSettlements.find((x) => x.id === id)
+      if (!s) throw { message: 'Withdrawal request not found' }
+      Object.assign(s, { status: 'PAID', paidAt: new Date().toISOString(), transactionMode, transactionReference: transactionReference ?? null })
+      return s
+    }
+    const { data } = await apiClient.post<{ data: RiderSettlement }>(`/admin/rider-withdrawals/${id}/pay`, { transactionMode, transactionReference })
+    return nSettlement(data.data)
+  },
+
+  async rejectWithdrawal(id: number, reason: string): Promise<RiderSettlement> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const s = mockSettlements.find((x) => x.id === id)
+      if (!s) throw { message: 'Withdrawal request not found' }
+      Object.assign(s, { status: 'REJECTED', note: `Rejected: ${reason}` })
+      return s
+    }
+    const { data } = await apiClient.post<{ data: RiderSettlement }>(`/admin/rider-withdrawals/${id}/reject`, { reason })
+    return nSettlement(data.data)
+  },
+
+  /** Re-records unpaid earnings recorded on a different basis than today's setting (the wallet is adjusted). */
+  async recalculate(riderUserId: number): Promise<{ trips: number; before: number; after: number }> {
+    if (IS_MOCK) {
+      await mockDelay()
+      return { trips: 0, before: 0, after: 0 }
+    }
+    const { data } = await apiClient.post<{ data: { trips: number; before: number; after: number } }>(`/admin/delivery-guys/${riderUserId}/earnings/recalculate`)
+    return { trips: data.data.trips, before: toNumber(data.data.before), after: toNumber(data.data.after) }
   },
 
   async list(riderUserId: number): Promise<RiderSettlement[]> {
