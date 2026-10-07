@@ -130,7 +130,7 @@ export function OrderEarningsCard({ order }: { order: OrderRow }) {
                 </p>
                 {e.rider.notRecorded && (
                   <p className="text-[11px] text-rose-600 dark:text-rose-400">
-                    This order was marked delivered by an admin status change before earnings were recorded on that path, so nothing was credited to the partner. The amount above is what they would have earned.
+                    Marked delivered by an admin before that path recorded earnings. It's recorded and credited to the partner automatically when the backend starts - refresh after the next deploy.
                   </p>
                 )}
               </>
