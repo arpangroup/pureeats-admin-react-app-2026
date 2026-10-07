@@ -42,11 +42,12 @@ export default function DeliveryPartnerApprovalsPage() {
       </div>
 
       {isLoading && <LoadingBlock />}
-      {data && data.data.length === 0 && (
+      {!isLoading && data && data.data.length === 0 && (
         <EmptyState title={status === 'PENDING' ? 'No applications waiting' : `No ${status.toLowerCase()} partners`} icon={<UserCheck size={22} />} />
       )}
       <div className="space-y-4">
-        {data?.data.map((p) => (
+        {/* Never show the previous tab's partners (with their Approve/Reject buttons) while the next tab loads. */}
+        {!isLoading && data?.data.map((p) => (
           <div key={p.id} className="card p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">{p.name}</h2>
