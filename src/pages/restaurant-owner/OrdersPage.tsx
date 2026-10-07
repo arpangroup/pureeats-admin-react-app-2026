@@ -1,3 +1,4 @@
+import { StickyNote } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
@@ -124,6 +125,14 @@ export default function OwnerOrdersPage() {
                   {formatDate(order.createdAt)}
                   {order.deliveryGuyName && <> · Rider: {order.deliveryGuyName}</>}
                 </p>
+                {order.orderComment && (
+                  <p className="mt-1 flex max-w-md items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
+                    <StickyNote size={12} className="mt-0.5 shrink-0" />
+                    <span>
+                      <span className="font-semibold">Note:</span> {order.orderComment}
+                    </span>
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-3">
                 <span className="font-medium text-slate-700 dark:text-slate-200">{formatCurrency(order.total)}</span>

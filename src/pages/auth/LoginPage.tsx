@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react'
+import { SignedOutNotice } from '@/components/auth/SignedOutNotice'
 import { useNavigate, Link } from 'react-router-dom'
 import { Lock, Mail, Phone } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
@@ -24,6 +25,7 @@ function MockLoginForm() {
 
   return (
     <div className="card p-6">
+      <SignedOutNotice />
       <form onSubmit={handleSubmit} className="space-y-4">
         <Field label="Email" required>
           <div className="relative">
@@ -135,6 +137,7 @@ function LiveOtpLoginForm() {
         </button>
       </div>
 
+      <SignedOutNotice />
       <form onSubmit={handleSubmit} className="space-y-4">
         {method === 'EMAIL' ? (
           <Field label="Email" required>

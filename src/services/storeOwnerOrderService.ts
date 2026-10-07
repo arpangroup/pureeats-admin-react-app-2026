@@ -11,6 +11,8 @@ export interface StoreOwnerOrderSummary {
   total: number
   createdAt: string
   deliveryGuyName: string | null
+  /** The customer's note for the order, or null. */
+  orderComment?: string | null
 }
 
 const RUNNING_STATUS_NAMES = ['Accepted', 'Preparing', 'Ready for Pickup', 'Rider Assigned', 'Picked Up', 'On the way', 'Arrived']
@@ -24,6 +26,7 @@ function toSummary(o: (typeof mockOrders)[number]): StoreOwnerOrderSummary {
     total: o.total,
     createdAt: o.createdAt,
     deliveryGuyName: null,
+    orderComment: o.orderComment ?? null,
   }
 }
 
