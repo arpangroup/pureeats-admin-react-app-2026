@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from 'react'
-import { BadgeCheck, CheckCircle2, XCircle } from 'lucide-react'
+import { BadgeCheck, CheckCircle2, Pencil, XCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/Feedback'
 import { Modal } from '@/components/ui/Modal'
 import { Field, Textarea } from '@/components/ui/FormControls'
 import { deliveryGuyService, type DeliveryGuyRow } from '@/services/deliveryGuyService'
 import { formatDate } from '@/lib/format'
 import type { PartnerApprovalStatus } from '@/types/entities'
+import { PartnerDocumentsEditor } from '@/components/deliveryGuys/PartnerDocumentsEditor'
 
 const VEHICLE = { BIKE: 'Bike', CYCLE: 'Cycle', EV: 'EV' } as const
 
@@ -30,6 +31,7 @@ function Line({ label, value }: { label: string; value: ReactNode }) {
  */
 export function PartnerApplicationReview({ partner, onReviewed }: { partner: DeliveryGuyRow; onReviewed: (updated: DeliveryGuyRow) => void }) {
   const [rejecting, setRejecting] = useState(false)
+  const [editing, setEditing] = useState(false)
   const [reason, setReason] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -102,6 +104,9 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
       <div className="flex flex-wrap gap-2">
+        <button className="btn-secondary" onClick={() => setEditing(true)} disabled={busy}>
+          <Pencil size={15} /> Edit details
+        </button>
         {status !== 'APPROVED' && (
           <button className="btn-primary" onClick={() => act(true)} disabled={busy}>
             <CheckCircle2 size={15} /> Approve
@@ -113,6 +118,8 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
           </button>
         )}
       </div>
+
+      {editing && <PartnerDocumentsEditor partner={partner} open={editing} onClose={() => setEditing(false)} onSaved={onReviewed} />}
 
       <Modal
         open={rejecting}

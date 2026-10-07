@@ -366,6 +366,10 @@ export const DELIVERY_APP_GROUPS: SettingGroupDef[] = [
       { key: 'driver_edit_about', label: 'About', fieldType: 'boolean', defaultValue: 'false' },
       { key: 'driver_edit_phone', label: 'Mobile number', fieldType: 'boolean', defaultValue: 'false' },
       { key: 'driver_edit_email', label: 'Email', fieldType: 'boolean', defaultValue: 'false' },
+      { key: 'driver_edit_license', label: 'Driving licence (number + photo)', fieldType: 'boolean', defaultValue: 'false' },
+      { key: 'driver_edit_id_proof', label: 'Aadhaar / PAN', fieldType: 'boolean', defaultValue: 'false' },
+      { key: 'driver_edit_vehicle_type', label: 'Vehicle type', fieldType: 'boolean', defaultValue: 'false' },
+      { key: 'driver_edit_payout', label: 'Bank account / UPI', fieldType: 'boolean', defaultValue: 'false' },
     ],
   },
   {

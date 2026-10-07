@@ -35,6 +35,21 @@ export const deliveryGuyService = {
     return toPaginated(data.data)
   },
 
+  /** Admin uploads/replaces a partner's driving licence photo. */
+  async uploadLicensePhoto(id: number, file: File): Promise<DeliveryGuyRow> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const d = deliveryGuyDetails.find((x) => x.id === id)
+      if (!d) throw { message: 'Delivery partner not found' }
+      d.licensePhotoUrl = URL.createObjectURL(file)
+      return toRow(d)
+    }
+    const form = new FormData()
+    form.append('file', file)
+    const { data } = await apiClient.post<{ data: DeliveryGuyRow }>(`/admin/delivery-guys/${id}/license-photo`, form)
+    return data.data
+  },
+
   /** Applications waiting for review (for the nav badge). */
   async pendingApprovalCount(): Promise<number> {
     if (IS_MOCK) return deliveryGuyDetails.filter((d) => d.approvalStatus === 'PENDING').length
