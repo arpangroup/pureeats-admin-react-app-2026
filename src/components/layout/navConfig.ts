@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  Scale,
   UserCheck,
   LayoutDashboard,
   ShoppingBag,
@@ -95,6 +96,7 @@ export const adminNav: NavSection[] = [
   {
     title: 'Finance',
     items: [
+      { label: 'Settlements', to: '/admin/settlements', icon: Scale },
       { label: 'Store Payouts', to: '/admin/restaurant-payouts', icon: HandCoins },
       { label: 'Partner Withdrawals', to: '/admin/partner-withdrawals', icon: Wallet },
       { label: 'Wallet Transactions', to: '/admin/wallet-transactions', icon: Wallet },
