@@ -59,6 +59,84 @@ export interface DeliveryChargeRates {
   extraUnits: number | null
 }
 
+/** GET /admin/orders/{id}/earnings - see the backend's OrderEarningsSplitResponse. */
+export interface OrderEarningsSplit {
+  customerPaid: number
+  taxCollected: number
+  ratesFromSnapshot: boolean
+  restaurant: {
+    restaurantId: number
+    restaurantName: string
+    itemTotal: number
+    commissionPercentage: number
+    commissionAmount: number
+    /** False = the platform default commission was used. */
+    storeOwnRate: boolean
+    packagingCharge: number
+    amount: number
+    finalized: boolean
+    /** Delivered under an earlier payout rule - amount is what was recorded, not today's formula. */
+    recordedUnderEarlierRule: boolean
+  }
+  rider: {
+    assigned: boolean
+    riderUserId: number | null
+    riderName: string | null
+    commissionRate: number | null
+    commissionBasis: string
+    commissionBase: number | null
+    commissionAmount: number
+    tip: number
+    amount: number
+    finalized: boolean
+  }
+  platform: {
+    /** What the platform kept from the restaurant side (items + packaging − restaurant share). */
+    commission: number
+    platformFee: number
+    deliveryCharge: number
+    riderCommission: number
+    discount: number
+    amount: number
+  }
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100
+const num = (v: unknown) => (v == null ? 0 : Number(v))
+
+function normalizeEarnings(e: OrderEarningsSplit): OrderEarningsSplit {
+  return {
+    ...e,
+    customerPaid: num(e.customerPaid),
+    taxCollected: num(e.taxCollected),
+    restaurant: {
+      ...e.restaurant,
+      itemTotal: num(e.restaurant.itemTotal),
+      commissionPercentage: num(e.restaurant.commissionPercentage),
+      commissionAmount: num(e.restaurant.commissionAmount),
+      packagingCharge: num(e.restaurant.packagingCharge),
+      amount: num(e.restaurant.amount),
+      recordedUnderEarlierRule: !!e.restaurant.recordedUnderEarlierRule,
+    },
+    rider: {
+      ...e.rider,
+      commissionRate: e.rider.commissionRate == null ? null : num(e.rider.commissionRate),
+      commissionBase: e.rider.commissionBase == null ? null : num(e.rider.commissionBase),
+      commissionAmount: num(e.rider.commissionAmount),
+      tip: num(e.rider.tip),
+      amount: num(e.rider.amount),
+    },
+    platform: {
+      commission: num(e.platform.commission),
+      platformFee: num(e.platform.platformFee),
+      deliveryCharge: num(e.platform.deliveryCharge),
+      riderCommission: num(e.platform.riderCommission),
+      discount: num(e.platform.discount),
+      amount: num(e.platform.amount),
+    },
+  }
+}
+
 export interface OrderStatusLogRow {
   id: number
   fromStatus: string | null
@@ -400,6 +478,40 @@ export const orderService = {
     }
     const { data } = await apiClient.patch<{ data: LiveOrderDetail }>(`/admin/orders/${id}/status`, { toStatus: status.name })
     return liveDetailToRow(data.data)
+  },
+
+  /**
+   * Who earns what from this order (admin only) - GET /admin/orders/{id}/earnings. Restaurant and rider
+   * shares come from what was recorded at delivery when the order is fulfilled; the platform's share is
+   * the remainder, so restaurant + rider + platform + tax = what the customer paid.
+   */
+  async earnings(order: OrderRow): Promise<OrderEarningsSplit> {
+    if (IS_MOCK) {
+      await mockDelay(120)
+      const itemTotal = order.pricingBreakdown?.itemTotal ?? order.total
+      const packaging = order.restaurantCharge
+      const commissionPercentage = 15
+      const commission = round2((itemTotal * commissionPercentage) / 100)
+      const restaurantAmount = round2(itemTotal - commission + packaging)
+      const tip = order.driverTipAmount ?? 0
+      const riderCommission = order.deliveryGuyId ? round2((itemTotal * 10) / 100) : 0
+      const riderAmount = round2(riderCommission + (order.deliveryGuyId ? tip : 0))
+      const platformFee = order.platformFee ?? 0
+      const deliveryCharge = order.pricingBreakdown?.deliveryChargeAmount ?? order.deliveryCharge
+      const platformAmount = round2(order.payable - order.tax - restaurantAmount - riderAmount)
+      return {
+        customerPaid: order.payable,
+        taxCollected: order.tax,
+        ratesFromSnapshot: true,
+        restaurant: { restaurantId: order.restaurantId, restaurantName: order.restaurantName, itemTotal, commissionPercentage, commissionAmount: commission, storeOwnRate: false, packagingCharge: packaging, amount: restaurantAmount, finalized: false, recordedUnderEarlierRule: false },
+        rider: order.deliveryGuyId
+          ? { assigned: true, riderUserId: order.deliveryGuyId, riderName: order.deliveryGuyName ?? 'Delivery partner', commissionRate: 10, commissionBasis: 'FULL_ORDER', commissionBase: itemTotal, commissionAmount: riderCommission, tip, amount: riderAmount, finalized: false }
+          : { assigned: false, riderUserId: null, riderName: null, commissionRate: null, commissionBasis: 'FULL_ORDER', commissionBase: null, commissionAmount: 0, tip: 0, amount: 0, finalized: false },
+        platform: { commission: round2(itemTotal + packaging - restaurantAmount), platformFee, deliveryCharge, riderCommission, discount: order.pricingBreakdown?.discountAmount ?? 0, amount: platformAmount },
+      }
+    }
+    const { data } = await apiClient.get<{ data: OrderEarningsSplit }>(`/admin/orders/${order.id}/earnings`)
+    return normalizeEarnings(data.data)
   },
 
   async journey(id: number): Promise<OrderStatusLogRow[]> {

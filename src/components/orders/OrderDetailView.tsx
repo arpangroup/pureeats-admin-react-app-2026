@@ -16,6 +16,7 @@ import { OrderStatusBadge } from './OrderStatusBadge'
 import { OrderInvoice } from './OrderInvoice'
 import { OrderJourneyOverlay } from './OrderJourneyOverlay'
 import { PricingBreakdownCard } from './PricingBreakdownCard'
+import { OrderEarningsCard } from './OrderEarningsCard'
 
 export function OrderDetailView({ basePath }: { basePath: string }) {
   const { id } = useParams()
@@ -201,6 +202,9 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
 
           
           {order.pricingBreakdown && <PricingBreakdownCard order={order} isAdmin={isAdmin} />}
+
+          {/* Admin only: the endpoint is admin-gated and commission/rider rates aren't for store owners. */}
+          {isAdmin && <OrderEarningsCard order={order} />}
 
           <div className="card p-4">
             <h2 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">Order timeline</h2>
