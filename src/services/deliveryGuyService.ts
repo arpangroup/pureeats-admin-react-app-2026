@@ -4,7 +4,7 @@ import { toPaginated, type PageResponse } from '@/lib/pageResponse'
 import { IS_MOCK } from '@/config/env'
 import { deliveryGuyDetails, users, deliveryGuyRestaurantAssignments, tripDetails } from '@/mocks/fixtures'
 import type { ListParams, Paginated } from '@/types/common'
-import type { DeliveryGuyDetail, TripDetail, User } from '@/types/entities'
+import type { DeliveryGuyDetail, PartnerApprovalStatus, TripDetail, User } from '@/types/entities'
 
 export interface DeliveryGuyRow extends DeliveryGuyDetail {
   email: string
@@ -23,15 +23,47 @@ function toRow(detail: DeliveryGuyDetail): DeliveryGuyRow {
 }
 
 export const deliveryGuyService = {
-  async list(params: ListParams = {}): Promise<Paginated<DeliveryGuyRow>> {
+  async list(params: ListParams = {}, approvalStatus?: PartnerApprovalStatus): Promise<Paginated<DeliveryGuyRow>> {
     if (IS_MOCK) {
       await mockDelay()
-      return paginate(deliveryGuyDetails.map(toRow), params, ['name', 'vehicleNumber', 'phone'])
+      const rows = deliveryGuyDetails.map(toRow).filter((r) => !approvalStatus || (r.approvalStatus ?? 'APPROVED') === approvalStatus)
+      return paginate(rows, params, ['name', 'vehicleNumber', 'phone'])
     }
     const { data } = await apiClient.get<{ data: PageResponse<DeliveryGuyRow> }>('/admin/delivery-guys', {
-      params: { search: params.search, page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
+      params: { search: params.search, approvalStatus, page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
     })
     return toPaginated(data.data)
+  },
+
+  /** Applications waiting for review (for the nav badge). */
+  async pendingApprovalCount(): Promise<number> {
+    if (IS_MOCK) return deliveryGuyDetails.filter((d) => d.approvalStatus === 'PENDING').length
+    const { data } = await apiClient.get<{ data: number }>('/admin/delivery-guys/approvals/pending-count')
+    return Number(data.data ?? 0)
+  },
+
+  async approve(id: number): Promise<DeliveryGuyRow> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const d = deliveryGuyDetails.find((x) => x.id === id)
+      if (!d) throw { message: 'Delivery partner not found' }
+      Object.assign(d, { approvalStatus: 'APPROVED', rejectionReason: null, approvalUpdatedAt: new Date().toISOString() })
+      return toRow(d)
+    }
+    const { data } = await apiClient.post<{ data: DeliveryGuyRow }>(`/admin/delivery-guys/${id}/approve`)
+    return data.data
+  },
+
+  async reject(id: number, reason: string): Promise<DeliveryGuyRow> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const d = deliveryGuyDetails.find((x) => x.id === id)
+      if (!d) throw { message: 'Delivery partner not found' }
+      Object.assign(d, { approvalStatus: 'REJECTED', rejectionReason: reason, approvalUpdatedAt: new Date().toISOString(), isOnline: false })
+      return toRow(d)
+    }
+    const { data } = await apiClient.post<{ data: DeliveryGuyRow }>(`/admin/delivery-guys/${id}/reject`, { reason })
+    return data.data
   },
 
   async get(id: number): Promise<DeliveryGuyRow | undefined> {

@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  UserCheck,
   LayoutDashboard,
   ShoppingBag,
   Store,
@@ -86,6 +87,7 @@ export const adminNav: NavSection[] = [
       { label: 'Store Owners', to: '/admin/restaurant-owners', icon: UserCog },
       { label: 'Owner ↔ Stores', to: '/admin/restaurant-owners-restaurants', icon: LayoutGrid },
       { label: 'Delivery Partners', to: '/admin/delivery-guys', icon: Bike },
+      { label: 'Partner Approvals', to: '/admin/delivery-guys/approvals', icon: UserCheck },
       { label: 'Rider ↔ Stores', to: '/admin/delivery-guys-restaurants', icon: LayoutGrid },
       { label: 'Delivery Simulator', to: '/admin/delivery-simulator', icon: Navigation },
     ],
@@ -94,6 +96,7 @@ export const adminNav: NavSection[] = [
     title: 'Finance',
     items: [
       { label: 'Store Payouts', to: '/admin/restaurant-payouts', icon: HandCoins },
+      { label: 'Partner Withdrawals', to: '/admin/partner-withdrawals', icon: Wallet },
       { label: 'Wallet Transactions', to: '/admin/wallet-transactions', icon: Wallet },
       { label: 'Delivery Collections', to: '/admin/delivery-collections', icon: Banknote },
     ],

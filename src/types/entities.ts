@@ -338,6 +338,8 @@ export interface GpsPoint {
 
 export type DriverOfflineReason = 'SELF' | 'INACTIVITY' | 'ADMIN'
 
+export type PartnerApprovalStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
 export interface DeliveryGuyDetail {
   id: Id
   userId: Id
@@ -360,6 +362,22 @@ export interface DeliveryGuyDetail {
   offlineReason?: DriverOfflineReason | null
   /** When the online/offline status last changed. */
   statusChangedAt?: string | null
+  /** Only APPROVED partners can go online and take orders; legacy/admin-created ones report APPROVED. */
+  approvalStatus?: PartnerApprovalStatus
+  rejectionReason?: string | null
+  approvalUpdatedAt?: string | null
+  // Sign-up details, for verification.
+  licenseNumber?: string | null
+  licensePhotoUrl?: string | null
+  idProofType?: 'AADHAAR' | 'PAN' | null
+  idProofNumber?: string | null
+  vehicleType?: 'BIKE' | 'CYCLE' | 'EV' | null
+  payoutMethod?: 'BANK' | 'UPI' | null
+  bankAccountHolder?: string | null
+  bankAccountNumber?: string | null
+  bankIfsc?: string | null
+  upiId?: string | null
+  phoneVerified?: boolean
   createdBy: Id | null
   updatedBy: Id | null
   createdAt: string

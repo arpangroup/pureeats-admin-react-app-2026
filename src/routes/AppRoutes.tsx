@@ -31,6 +31,8 @@ import RestaurantOwnerDetailPage from '@/pages/admin/RestaurantOwnerDetailPage'
 import RestaurantOwnerRestaurantsPage from '@/pages/admin/RestaurantOwnerRestaurantsPage'
 import DeliveryGuysPage from '@/pages/admin/DeliveryGuysPage'
 import DeliveryGuyDetailPage from '@/pages/admin/DeliveryGuyDetailPage'
+import DeliveryPartnerApprovalsPage from '@/pages/admin/DeliveryPartnerApprovalsPage'
+import PartnerWithdrawalsPage from '@/pages/admin/PartnerWithdrawalsPage'
 import DeliveryGuyRestaurantsPage from '@/pages/admin/DeliveryGuyRestaurantsPage'
 import DeliverySimulatorPage from '@/pages/admin/DeliverySimulatorPage'
 import RestaurantPayoutsPage from '@/pages/admin/RestaurantPayoutsPage'
@@ -117,6 +119,8 @@ export function AppRoutes() {
         <Route path="restaurant-owners/:id" element={<RestaurantOwnerDetailPage />} />
         <Route path="restaurant-owners-restaurants" element={<RestaurantOwnerRestaurantsPage />} />
         <Route path="delivery-guys" element={<DeliveryGuysPage />} />
+        <Route path="delivery-guys/approvals" element={<DeliveryPartnerApprovalsPage />} />
+        <Route path="partner-withdrawals" element={<PartnerWithdrawalsPage />} />
         <Route path="delivery-guys/:id" element={<DeliveryGuyDetailPage />} />
         <Route path="delivery-guys-restaurants" element={<DeliveryGuyRestaurantsPage />} />
         <Route path="delivery-simulator" element={<DeliverySimulatorPage />} />

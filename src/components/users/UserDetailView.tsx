@@ -27,6 +27,7 @@ import { DataTable, type Column } from '@/components/DataTable'
 import { AccountStatusBadge } from '@/components/users/UsersListView'
 import { DriverStatusBadge, driverStatusExplanation } from '@/components/deliveryGuys/DriverStatusBadge'
 import { RiderSettlementCard } from '@/components/deliveryGuys/RiderSettlementCard'
+import { PartnerApplicationReview } from '@/components/deliveryGuys/PartnerApplicationReview'
 import { useAsync } from '@/hooks/useAsync'
 import { userService } from '@/services/userService'
 import { deliveryGuyService } from '@/services/deliveryGuyService'
@@ -275,6 +276,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
           {isDeliveryGuy && guyDetail && (
             <RiderSettlementCard
               riderUserId={guyDetail.userId}
+              payout={guyDetail}
               onSettled={() => {
                 reloadEarnings()
                 reloadWallet()
@@ -352,6 +354,12 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
           {role === 'customer' && (
             <SectionCard title="Addresses" description="Saved addresses — select one to preview its location." icon={MapPin}>
               <AddressesPanel addresses={addresses ?? []} />
+            </SectionCard>
+          )}
+
+          {isDeliveryGuy && guyDetail && (
+            <SectionCard title="Partner application" description="Sign-up details, licence and approval. Only approved partners can go online and take orders." icon={ShieldAlert}>
+              <PartnerApplicationReview partner={guyDetail} onReviewed={() => reloadGuy()} />
             </SectionCard>
           )}
 
