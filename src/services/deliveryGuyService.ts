@@ -4,12 +4,14 @@ import { toPaginated, type PageResponse } from '@/lib/pageResponse'
 import { IS_MOCK } from '@/config/env'
 import { deliveryGuyDetails, users, deliveryGuyRestaurantAssignments, tripDetails } from '@/mocks/fixtures'
 import type { ListParams, Paginated } from '@/types/common'
-import type { DeliveryGuyDetail, PartnerApprovalStatus, TripDetail, User } from '@/types/entities'
+import type { AccountStatus, DeliveryGuyDetail, PartnerApprovalStatus, TripDetail, User } from '@/types/entities'
 
 export interface DeliveryGuyRow extends DeliveryGuyDetail {
   email: string
   phone: string
   isUserActive: boolean
+  /** The partner's login account status (ACTIVE / BLOCKED / DELETED / ...). */
+  accountStatus?: AccountStatus
 }
 
 function toRow(detail: DeliveryGuyDetail): DeliveryGuyRow {
@@ -19,6 +21,7 @@ function toRow(detail: DeliveryGuyDetail): DeliveryGuyRow {
     email: user?.email ?? '',
     phone: user?.phone ?? '',
     isUserActive: user?.isActive ?? false,
+    accountStatus: user?.accountStatus ?? (user && !user.isActive ? 'BLOCKED' : 'ACTIVE'),
   }
 }
 

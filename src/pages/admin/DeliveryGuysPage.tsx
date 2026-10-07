@@ -6,6 +6,7 @@ import { SearchInput, Field, TextInput, Select } from '@/components/ui/FormContr
 import { ActiveBadge } from '@/components/ui/Feedback'
 import { DriverStatusBadge } from '@/components/deliveryGuys/DriverStatusBadge'
 import { ApprovalBadge } from '@/components/deliveryGuys/PartnerApplicationReview'
+import { AccountStatusBadge } from '@/components/users/UsersListView'
 import { Modal, ConfirmDialog } from '@/components/ui/Modal'
 import { DataTable, type Column } from '@/components/DataTable'
 import { useAsync } from '@/hooks/useAsync'
@@ -119,6 +120,10 @@ export default function DeliveryGuysPage() {
       header: 'Status',
       render: (row) => (
         <div className="flex flex-wrap gap-1">
+          {/* Blocked / deleted login account first - it overrides everything else about the partner. */}
+          {(row.accountStatus && row.accountStatus !== 'ACTIVE') || row.isUserActive === false ? (
+            <AccountStatusBadge status={row.accountStatus} isActive={row.isUserActive} />
+          ) : null}
           {row.approvalStatus && row.approvalStatus !== 'APPROVED' && <ApprovalBadge status={row.approvalStatus} />}
           <ActiveBadge active={row.isActive} />
           <DriverStatusBadge driver={row} showTime />

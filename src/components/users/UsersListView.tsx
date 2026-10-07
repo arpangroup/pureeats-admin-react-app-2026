@@ -50,8 +50,10 @@ const statusBadgeLabel: Record<AccountStatus, string> = {
   DISABLED: 'Disabled',
 }
 
-export function AccountStatusBadge({ status }: { status?: AccountStatus }) {
-  const resolved = status ?? 'ACTIVE'
+/** `isActive: false` with an ACTIVE status = blocked through the old switch (older backend data) - shown as Blocked. */
+export function AccountStatusBadge({ status, isActive }: { status?: AccountStatus; isActive?: boolean }) {
+  const base = status ?? 'ACTIVE'
+  const resolved: AccountStatus = base === 'ACTIVE' && isActive === false ? 'BLOCKED' : base
   return <Badge tone={statusBadgeTone[resolved]}>{statusBadgeLabel[resolved]}</Badge>
 }
 
@@ -134,7 +136,7 @@ export function UsersListView({
       ),
     },
     { key: 'phone', header: 'Phone', render: (row) => row.phone || '—' },
-    { key: 'status', header: 'Status', render: (row) => <AccountStatusBadge status={row.accountStatus} /> },
+    { key: 'status', header: 'Status', render: (row) => <AccountStatusBadge status={row.accountStatus} isActive={row.isActive} /> },
     {
       key: 'actions',
       header: '',
