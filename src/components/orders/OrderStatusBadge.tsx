@@ -8,6 +8,7 @@ const toneByStatus: Record<string, 'slate' | 'green' | 'red' | 'amber' | 'blue' 
   'Rider Assigned': 'purple',
   'Picked Up': 'blue',
   'On the way': 'blue',
+  Arrived: 'blue',
   Delivered: 'green',
   'Delivered (Self-Pickup)': 'green',
   Cancelled: 'red',

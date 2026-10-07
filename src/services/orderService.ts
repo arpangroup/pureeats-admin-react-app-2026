@@ -83,12 +83,16 @@ export interface OrderEarningsSplit {
     riderUserId: number | null
     riderName: string | null
     commissionRate: number | null
+    /** True: the partner's own rate; false: the platform default (Settings -> Delivery Application -> Earnings). */
+    ownRate: boolean
     commissionBasis: string
     commissionBase: number | null
     commissionAmount: number
     tip: number
     amount: number
     finalized: boolean
+    /** Delivered, but no earning was recorded at delivery (older admin status change) - the partner was never credited. */
+    notRecorded: boolean
   }
   platform: {
     /** What the platform kept from the restaurant side (items + packaging − restaurant share). */
@@ -125,6 +129,8 @@ function normalizeEarnings(e: OrderEarningsSplit): OrderEarningsSplit {
       commissionAmount: num(e.rider.commissionAmount),
       tip: num(e.rider.tip),
       amount: num(e.rider.amount),
+      ownRate: !!e.rider.ownRate,
+      notRecorded: !!e.rider.notRecorded,
     },
     platform: {
       commission: num(e.platform.commission),
@@ -485,6 +491,16 @@ export const orderService = {
    * shares come from what was recorded at delivery when the order is fulfilled; the platform's share is
    * the remainder, so restaurant + rider + platform + tax = what the customer paid.
    */
+  /** Photos of the packed order the delivery partner took at pickup - GET /admin/orders/{id}/pickup-photos. */
+  async pickupPhotos(orderId: number): Promise<{ id: number; url: string; takenAt: string }[]> {
+    if (IS_MOCK) {
+      await mockDelay()
+      return []
+    }
+    const { data } = await apiClient.get<{ data: { id: number; url: string; takenAt: string }[] }>(`/admin/orders/${orderId}/pickup-photos`)
+    return data.data ?? []
+  },
+
   async earnings(order: OrderRow): Promise<OrderEarningsSplit> {
     if (IS_MOCK) {
       await mockDelay(120)
@@ -505,8 +521,8 @@ export const orderService = {
         ratesFromSnapshot: true,
         restaurant: { restaurantId: order.restaurantId, restaurantName: order.restaurantName, itemTotal, commissionPercentage, commissionAmount: commission, storeOwnRate: false, packagingCharge: packaging, amount: restaurantAmount, finalized: false, recordedUnderEarlierRule: false },
         rider: order.deliveryGuyId
-          ? { assigned: true, riderUserId: order.deliveryGuyId, riderName: order.deliveryGuyName ?? 'Delivery partner', commissionRate: 10, commissionBasis: 'FULL_ORDER', commissionBase: itemTotal, commissionAmount: riderCommission, tip, amount: riderAmount, finalized: false }
-          : { assigned: false, riderUserId: null, riderName: null, commissionRate: null, commissionBasis: 'FULL_ORDER', commissionBase: null, commissionAmount: 0, tip: 0, amount: 0, finalized: false },
+          ? { assigned: true, riderUserId: order.deliveryGuyId, riderName: order.deliveryGuyName ?? 'Delivery partner', commissionRate: 10, ownRate: false, commissionBasis: 'FULL_ORDER', commissionBase: itemTotal, commissionAmount: riderCommission, tip, amount: riderAmount, finalized: false, notRecorded: false }
+          : { assigned: false, riderUserId: null, riderName: null, commissionRate: null, ownRate: false, commissionBasis: 'FULL_ORDER', commissionBase: null, commissionAmount: 0, tip: 0, amount: 0, finalized: false, notRecorded: false },
         platform: { commission: round2(itemTotal + packaging - restaurantAmount), platformFee, deliveryCharge, riderCommission, discount: order.pricingBreakdown?.discountAmount ?? 0, amount: platformAmount },
       }
     }

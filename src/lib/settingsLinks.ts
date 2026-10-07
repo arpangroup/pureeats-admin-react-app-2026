@@ -20,4 +20,6 @@ export function settingsSectionPath(category: string, sectionTitle: string): str
 export const SETTINGS_LINKS = {
   commerce: settingsSectionPath('general', 'Commerce'),
   platformFee: settingsSectionPath('general', 'Platform fee'),
+  /** Default delivery partner commission (%). */
+  riderEarnings: settingsSectionPath('delivery-app', 'Earnings'),
 } as const

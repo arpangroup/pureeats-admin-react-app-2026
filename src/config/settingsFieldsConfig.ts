@@ -289,6 +289,13 @@ export const DELIVERY_APP_GROUPS: SettingGroupDef[] = [
         info: 'Shows an earnings summary inside the delivery partner app.',
       },
       {
+        key: 'default_rider_commission_rate',
+        label: 'Default delivery partner commission (%)',
+        fieldType: 'number',
+        defaultValue: '10',
+        info: "What a delivery partner earns per delivered order, as a percentage of the order total (plus the customer's tip). Used for every partner without a rate of their own - a partner's own rate wins; set it to 0 to follow this default.",
+      },
+      {
         key: 'delivery_earning_from',
         label: "Delivery guy's earning from",
         fieldType: 'dropdown',
@@ -313,6 +320,32 @@ export const DELIVERY_APP_GROUPS: SettingGroupDef[] = [
         defaultValue: 'false',
         info: 'When off, the delivery app shows only the area/locality until the order is accepted.',
       },
+    ],
+  },
+  {
+    title: 'Order screens',
+    icon: Bike,
+    fields: [
+      {
+        key: 'driver_show_payout',
+        label: 'Show payout to delivery partners',
+        fieldType: 'boolean',
+        defaultValue: 'false',
+        info: 'When on, the rider app shows what the partner will earn on the new-order popup, the available orders list and the active delivery. Off: hidden there (still in Wallet & Earnings).',
+      },
+    ],
+  },
+  {
+    title: 'Profile editing',
+    icon: UserCheck,
+    fields: [
+      { key: 'driver_edit_name', label: 'Name', fieldType: 'boolean', defaultValue: 'false' },
+      { key: 'driver_edit_vehicle_number', label: 'Vehicle number', fieldType: 'boolean', defaultValue: 'false' },
+      { key: 'driver_edit_age', label: 'Age', fieldType: 'boolean', defaultValue: 'false' },
+      { key: 'driver_edit_gender', label: 'Gender', fieldType: 'boolean', defaultValue: 'false' },
+      { key: 'driver_edit_about', label: 'About', fieldType: 'boolean', defaultValue: 'false' },
+      { key: 'driver_edit_phone', label: 'Mobile number', fieldType: 'boolean', defaultValue: 'false' },
+      { key: 'driver_edit_email', label: 'Email', fieldType: 'boolean', defaultValue: 'false' },
     ],
   },
   {

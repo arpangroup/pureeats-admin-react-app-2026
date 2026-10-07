@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Bike, Building2, CheckCircle2, Clock, ExternalLink, Landmark, PieChart, Store } from 'lucide-react'
+import { AlertTriangle, Bike, Building2, CheckCircle2, Clock, ExternalLink, Landmark, PieChart, Store } from 'lucide-react'
 import { useAsync } from '@/hooks/useAsync'
 import { orderService, type OrderRow } from '@/services/orderService'
 import { formatCurrency } from '@/lib/format'
@@ -25,7 +25,14 @@ function Line({ label, value, children }: { label: ReactNode; value: string; chi
   )
 }
 
-function Status({ recorded }: { recorded: boolean }) {
+function Status({ recorded, notRecorded = false }: { recorded: boolean; notRecorded?: boolean }) {
+  if (notRecorded) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-400" title="Delivered without the earnings being recorded">
+        <AlertTriangle size={11} /> Not recorded
+      </span>
+    )
+  }
   return recorded ? (
     <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
       <CheckCircle2 size={11} /> Recorded
@@ -37,14 +44,14 @@ function Status({ recorded }: { recorded: boolean }) {
   )
 }
 
-function Party({ icon, title, amount, recorded, children }: { icon: ReactNode; title: ReactNode; amount: number; recorded: boolean | null; children: ReactNode }) {
+function Party({ icon, title, amount, recorded, notRecorded, children }: { icon: ReactNode; title: ReactNode; amount: number; recorded: boolean | null; notRecorded?: boolean; children: ReactNode }) {
   return (
     <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">{icon}</span>
           <span className="truncate text-sm font-semibold text-slate-800 dark:text-slate-100">{title}</span>
-          {recorded !== null && <Status recorded={recorded} />}
+          {recorded !== null && <Status recorded={recorded} notRecorded={notRecorded} />}
         </div>
         <span className="shrink-0 text-base font-bold tabular-nums text-slate-900 dark:text-white">{formatCurrency(amount)}</span>
       </div>
@@ -101,17 +108,31 @@ export function OrderEarningsCard({ order }: { order: OrderRow }) {
             title={e.rider.assigned ? e.rider.riderName ?? 'Delivery partner' : 'Delivery partner'}
             amount={e.rider.amount}
             recorded={e.rider.assigned ? e.rider.finalized : null}
+            notRecorded={e.rider.notRecorded}
           >
             {e.rider.assigned ? (
               <>
                 <Line
-                  label={`Commission ${e.rider.commissionRate ?? 0}% × ${formatCurrency(e.rider.commissionBase ?? 0)} (${e.rider.commissionBasis === 'DELIVERY_CHARGE_ONLY' ? 'delivery charge' : 'order total'})`}
+                  label={`Commission ${e.rider.commissionRate ?? 0}%${e.rider.ownRate ? ' (partner rate)' : ' (platform default)'} × ${formatCurrency(e.rider.commissionBase ?? 0)} (${e.rider.commissionBasis === 'DELIVERY_CHARGE_ONLY' ? 'delivery charge' : 'order total'})`}
                   value={formatCurrency(e.rider.commissionAmount)}
                 >
-                  {e.rider.riderUserId && <ConfigLink to={`/admin/delivery-guys/${e.rider.riderUserId}`}>Partner rate</ConfigLink>}
+                  {e.rider.ownRate && e.rider.riderUserId ? (
+                    <ConfigLink to={`/admin/delivery-guys/${e.rider.riderUserId}#commission`}>Partner rate</ConfigLink>
+                  ) : (
+                    <ConfigLink to={SETTINGS_LINKS.riderEarnings}>Default commission</ConfigLink>
+                  )}
                 </Line>
                 <Line label="+ Customer tip (paid in full)" value={`+${formatCurrency(e.rider.tip)}`} />
-                <p className="text-[11px] text-slate-400">Commission base (order total vs delivery charge) is a server setting: COMMISSION_BASIS.</p>
+                <p className="text-[11px] text-slate-400">
+                  {e.rider.ownRate
+                    ? "This partner has their own rate - set it to 0 on the partner's page to use the platform default."
+                    : 'No rate of their own - uses Settings → Delivery Application → Earnings → Default delivery partner commission.'}
+                </p>
+                {e.rider.notRecorded && (
+                  <p className="text-[11px] text-rose-600 dark:text-rose-400">
+                    This order was marked delivered by an admin status change before earnings were recorded on that path, so nothing was credited to the partner. The amount above is what they would have earned.
+                  </p>
+                )}
               </>
             ) : (
               <p className="text-xs text-slate-400">No delivery partner on this order{order.deliveryType === 'pickup' ? ' (self-pickup)' : ' yet'}.</p>

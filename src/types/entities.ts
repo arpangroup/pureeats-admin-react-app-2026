@@ -248,6 +248,7 @@ export interface OrderStatus {
     | 'Ready for Pickup'
     | 'Picked Up'
     | 'On the way'
+    | 'Arrived'
     | 'Delivered'
     | 'Cancelled'
     | 'Rejected'

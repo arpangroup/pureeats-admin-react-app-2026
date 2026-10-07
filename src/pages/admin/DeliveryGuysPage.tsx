@@ -35,7 +35,7 @@ const emptyForm: DeliveryGuyFormValues = {
   gender: 'male',
   vehicleNumber: '',
   description: '',
-  commissionRate: 12,
+  commissionRate: 0,
   maxAcceptDeliveryLimit: 3,
   isNotifiable: true,
   isActive: true,
@@ -187,7 +187,7 @@ export default function DeliveryGuysPage() {
           <Field label="Age">
             <TextInput type="number" value={values.age} onChange={(e) => setValues((p) => ({ ...p, age: Number(e.target.value) }))} />
           </Field>
-          <Field label="Commission rate (%)">
+          <Field label="Commission rate (%)" hint="0 = use the platform default (Settings → Delivery Application → Earnings).">
             <TextInput type="number" value={values.commissionRate} onChange={(e) => setValues((p) => ({ ...p, commissionRate: Number(e.target.value) }))} />
           </Field>
           <Field label="Max simultaneous deliveries">

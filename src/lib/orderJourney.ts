@@ -367,7 +367,7 @@ export function buildOrderJourney(order: OrderRow): OrderJourney {
     // fixture never produces it, so this entry is a no-op there and only matters against the API.
     const rank: Record<string, number> = {
       Placed: 0, Accepted: 1, Preparing: 2, 'Ready for Pickup': 3, 'Rider Assigned': 4,
-      'Picked Up': 5, 'On the way': 6, Delivered: 8,
+      'Picked Up': 5, 'On the way': 6, Arrived: 7, Delivered: 8,
     }
     // Returned implies the order got all the way through pickup, regardless of rank lookup.
     const baseRank = isReturned ? 7 : (rank[order.statusName] ?? 0)
@@ -454,7 +454,7 @@ export function buildOrderJourney(order: OrderRow): OrderJourney {
     // "Nearby" has no distinct status in the coarse order-status list yet — reconstructed
     // deterministically so roughly half of in-progress "On the way" orders show as nearby.
     const nearbyReached =
-      onTheWayReached && (isReturned ? returnOrigin === 'NEARBY' || returnOrigin === 'CUSTOMER_UNAVAILABLE' : isDelivered || seed % 2 === 0)
+      onTheWayReached && (isReturned ? returnOrigin === 'NEARBY' || returnOrigin === 'CUSTOMER_UNAVAILABLE' : isDelivered || order.statusName === 'Arrived' || seed % 2 === 0)
     if (nearbyReached) {
       addEdge('ON_THE_WAY', 'NEARBY')
       reach('NEARBY', nearbyAt)

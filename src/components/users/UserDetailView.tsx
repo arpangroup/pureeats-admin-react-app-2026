@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   ArrowLeft,
   Bike,
@@ -30,6 +30,7 @@ import { RiderSettlementCard } from '@/components/deliveryGuys/RiderSettlementCa
 import { useAsync } from '@/hooks/useAsync'
 import { userService } from '@/services/userService'
 import { deliveryGuyService } from '@/services/deliveryGuyService'
+import { SETTINGS_LINKS } from '@/lib/settingsLinks'
 import { walletService } from '@/services/financeServices'
 import { formatCurrency, formatDate, timeAgo } from '@/lib/format'
 import { IS_MOCK } from '@/config/env'
@@ -98,6 +99,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
   const [passwordSaved, setPasswordSaved] = useState(false)
   const [notifiable, setNotifiable] = useState(true)
   const [rating, setRating] = useState(0)
+  const [commissionRate, setCommissionRate] = useState(0)
   const [walletAction, setWalletAction] = useState<'credit' | 'debit' | null>(null)
 
   useEffect(() => {
@@ -112,6 +114,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
     if (guyDetail) {
       setNotifiable(guyDetail.isNotifiable)
       setRating(guyDetail.rating)
+      setCommissionRate(guyDetail.commissionRate ?? 0)
     }
   }, [guyDetail])
 
@@ -129,7 +132,7 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
       const now = new Date().toISOString()
       await userService.update(user!.id, { ...values, updatedBy: 1, updatedAt: now })
       if (isDeliveryGuy && guyDetail) {
-        await deliveryGuyService.update(guyDetail.id, { isNotifiable: notifiable, rating, photo: values.photo ?? guyDetail.photo })
+        await deliveryGuyService.update(guyDetail.id, { isNotifiable: notifiable, rating, commissionRate, photo: values.photo ?? guyDetail.photo })
         reloadGuy()
       }
       reload()
@@ -370,6 +373,27 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
                     onChange={(e) => setRating(Number(e.target.value))}
                     className="input w-20 text-right"
                   />
+                </div>
+                <div id="commission" className="scroll-mt-24">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-slate-500 dark:text-slate-400">Commission rate (%)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={commissionRate}
+                      onChange={(e) => setCommissionRate(Math.max(0, Number(e.target.value)))}
+                      className="input w-20 text-right"
+                    />
+                  </div>
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    0 = use the platform default (
+                    <Link to={SETTINGS_LINKS.riderEarnings} className="text-brand-600 hover:underline dark:text-brand-400">
+                      Settings → Delivery Application → Earnings
+                    </Link>
+                    ). Applies to orders delivered from now on.
+                  </p>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500 dark:text-slate-400">Max simultaneous deliveries</span>

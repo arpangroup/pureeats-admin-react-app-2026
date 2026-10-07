@@ -13,7 +13,7 @@ export interface StoreOwnerOrderSummary {
   deliveryGuyName: string | null
 }
 
-const RUNNING_STATUS_NAMES = ['Accepted', 'Ready for Pickup', 'Picked Up', 'On the way']
+const RUNNING_STATUS_NAMES = ['Accepted', 'Preparing', 'Ready for Pickup', 'Rider Assigned', 'Picked Up', 'On the way', 'Arrived']
 
 function toSummary(o: (typeof mockOrders)[number]): StoreOwnerOrderSummary {
   return {

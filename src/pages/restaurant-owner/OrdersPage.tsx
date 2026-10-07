@@ -133,7 +133,7 @@ export default function OwnerOrdersPage() {
                       {actingId === order.id ? 'Accepting…' : 'Accept'}
                     </button>
                   )}
-                  {tab === 'running' && order.status === 'Accepted' && (
+                  {tab === 'running' && (order.status === 'Accepted' || order.status === 'Preparing') && (
                     <button className="btn-primary px-3 py-1.5 text-xs" disabled={actingId === order.id} onClick={() => markReady(order)}>
                       {actingId === order.id ? 'Updating…' : 'Mark Ready'}
                     </button>
