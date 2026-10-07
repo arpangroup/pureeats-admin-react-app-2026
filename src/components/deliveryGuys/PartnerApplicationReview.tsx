@@ -57,6 +57,13 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
+        {partner.photoUrl ? (
+          <a href={partner.photoUrl} target="_blank" rel="noopener noreferrer" title="Partner photo - open full size">
+            <img src={partner.photoUrl} alt={partner.name} className="h-12 w-12 rounded-full object-cover ring-1 ring-slate-200 dark:ring-slate-700" />
+          </a>
+        ) : (
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-[10px] text-slate-400 dark:bg-slate-800">No photo</span>
+        )}
         <ApprovalBadge status={partner.approvalStatus} />
         {partner.approvalUpdatedAt && <span className="text-xs text-slate-400">since {formatDate(partner.approvalUpdatedAt)}</span>}
       </div>

@@ -378,6 +378,8 @@ export interface DeliveryGuyDetail {
   bankIfsc?: string | null
   upiId?: string | null
   phoneVerified?: boolean
+  /** Profile photo as a viewable URL (`photo` is the stored key). */
+  photoUrl?: string | null
   createdBy: Id | null
   updatedBy: Id | null
   createdAt: string
