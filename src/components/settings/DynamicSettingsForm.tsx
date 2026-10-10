@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
-import { AlertTriangle, ExternalLink, Info } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { AlertTriangle, ArrowRight, ExternalLink, Info } from 'lucide-react'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { Field, RadioGroup, Select, Switch, Textarea, TextInput } from '@/components/ui/FormControls'
 import type { SettingFieldDef, SettingGroupDef } from '@/config/settingsFieldsConfig'
@@ -21,7 +22,13 @@ function FieldNotes({ field }: { field: SettingFieldDef }) {
           <span>{field.warning}</span>
         </p>
       )}
-      {field.link && (
+      {field.link && field.link.href.startsWith('/') ? (
+        // A link to another part of the admin panel (e.g. another Settings tab) - same tab, client-side.
+        <Link to={field.link.href} className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">
+          <ArrowRight size={12} />
+          {field.link.label}
+        </Link>
+      ) : field.link && (
         <a
           href={field.link.href}
           target="_blank"

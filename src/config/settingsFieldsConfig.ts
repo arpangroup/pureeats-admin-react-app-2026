@@ -177,9 +177,9 @@ export const GENERAL_DISTANCE_GROUP: SettingGroupDef = {
         { label: 'Straight line (default, free)', value: 'STRAIGHT_LINE' },
         { label: 'Google Distance Matrix (real road distance & traffic)', value: 'GOOGLE_DISTANCE_MATRIX' },
       ],
-      info: 'Straight line is shorter than the real route (e.g. 3.06 km where the road is 6.7 km). Google gives the actual driving distance and time; billed by Google per lookup, cached for 10 minutes. Falls back to the straight line if Google is unavailable.',
+      info: "Straight line is shorter than the real route (e.g. 3.06 km where the road is 6.7 km). Google gives the actual driving distance and time; billed by Google per lookup, cached for 10 minutes. Uses the Google Maps API key under Settings → Google Map. Falls back to the straight line if Google is unavailable.",
+      link: { label: 'Google Maps API key (Settings → Google Map)', href: '/admin/settings/google-map' },
     },
-    { key: 'google_distance_matrix_api_key', label: 'Google Maps server API key', fieldType: 'password', defaultValue: '', placeholder: 'AIza…', info: 'A server key with the Distance Matrix API enabled. Never sent to the apps.' },
   ],
 }
 
