@@ -286,6 +286,8 @@ interface LiveOrderDetail {
   travelMinutes?: number | null
   etaMinutes?: number | null
   prepDueAt?: string | null
+  addressLandmark?: string | null
+  addressTag?: string | null
   orderFrom: string
   createdAt: string
   updatedAt: string
@@ -389,6 +391,8 @@ function liveDetailToRow(d: LiveOrderDetail): OrderRow {
     paymentMode: mapPaymentMode(d.paymentMode),
     orderComment: d.orderComment,
     prepDueAt: d.prepDueAt ?? null,
+    addressLandmark: d.addressLandmark ?? null,
+    addressTag: d.addressTag ?? null,
     timing: d.etaMinutes != null ? { prep: d.prepTimeMinutes ?? 0, riderToRestaurant: d.riderToRestaurantMinutes ?? 0, travel: d.travelMinutes ?? 0, eta: d.etaMinutes } : null,
     transactionId: d.transactionId,
     deliveryType: d.deliveryType === 1 ? 'pickup' : 'delivery',
