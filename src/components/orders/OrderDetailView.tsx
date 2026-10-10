@@ -8,6 +8,7 @@ import { Modal } from '@/components/ui/Modal'
 import { useAsync } from '@/hooks/useAsync'
 import { orderService } from '@/services/orderService'
 import { deliveryGuyService } from '@/services/deliveryGuyService'
+import { Countdown } from '@/components/ui/Countdown'
 import { users } from '@/mocks/fixtures'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { FEATURE_FLAGS } from '@/config/featureFlags'
@@ -29,7 +30,9 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
   const { data: journey } = useAsync(() => orderService.journey(orderId), [orderId, order?.statusName])
   const { data: timeline } = useAsync(() => orderService.timeline(orderId, order ?? undefined), [orderId, order?.statusName])
   const isAdmin = basePath.startsWith('/admin')
-  const { data: riders } = useAsync(() => (isAdmin ? deliveryGuyService.list({ perPage: 100 }) : Promise.resolve(null)), [isAdmin])
+  // Only partners who can take orders: approved, active profile, login account not blocked/deleted (the server refuses others too).
+  const { data: riders } = useAsync(() => (isAdmin ? deliveryGuyService.list({ perPage: 200 }, 'APPROVED') : Promise.resolve(null)), [isAdmin])
+  const assignable = (riders?.data ?? []).filter((r) => r.isActive && r.isUserActive !== false && (!r.accountStatus || r.accountStatus === 'ACTIVE'))
   const [assignModalOpen, setAssignModalOpen] = useState(false)
   const [selectedRiderId, setSelectedRiderId] = useState<number | ''>('')
   const [assigning, setAssigning] = useState(false)
@@ -249,6 +252,16 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
               <MapPin size={14} className="mt-0.5 shrink-0" /> {order.address}
             </p>
 
+            {order.timing && (
+              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                <span>Prep (T1) {order.timing.prep} min</span>
+                {order.timing.riderToRestaurant > 0 && <span>Partner to store (T2) {order.timing.riderToRestaurant} min</span>}
+                {order.timing.travel > 0 && <span>Store to customer (T3) {order.timing.travel} min</span>}
+                <span className="font-semibold text-slate-700 dark:text-slate-200">ETA {order.timing.eta} min</span>
+                {(order.statusName === 'Accepted' || order.statusName === 'Preparing') && order.prepDueAt && <Countdown to={order.prepDueAt} label="Food ready in" />}
+              </div>
+            )}
+
             {order.orderComment && (
               <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 dark:bg-amber-500/10">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">Order note / cooking instructions</p>
@@ -381,12 +394,13 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
         {assignError && <p className="mb-3 text-sm text-rose-600 dark:text-rose-400">{assignError}</p>}
         <Select value={selectedRiderId} onChange={(e) => setSelectedRiderId(e.target.value ? Number(e.target.value) : '')}>
           <option value="">Select a delivery partner…</option>
-          {(riders?.data ?? []).map((r) => (
+          {assignable.map((r) => (
             <option key={r.id} value={r.userId}>
-              {r.name} {r.vehicleNumber ? `(${r.vehicleNumber})` : ''}
+              {r.name} {r.vehicleNumber ? `(${r.vehicleNumber})` : ''} {r.isOnline ? '· online' : '· offline'}
             </option>
           ))}
         </Select>
+        <p className="mt-2 text-xs text-slate-400">Only approved, active partners are listed - pending, rejected, deactivated or blocked partners can't be assigned.</p>
       </Modal>
 
       <Modal

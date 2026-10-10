@@ -281,6 +281,11 @@ interface LiveOrderDetail {
   orderComment: string | null
   transactionId: string | null
   deliveryType: number
+  prepTimeMinutes?: number | null
+  riderToRestaurantMinutes?: number | null
+  travelMinutes?: number | null
+  etaMinutes?: number | null
+  prepDueAt?: string | null
   orderFrom: string
   createdAt: string
   updatedAt: string
@@ -383,6 +388,8 @@ function liveDetailToRow(d: LiveOrderDetail): OrderRow {
     payable: d.payable,
     paymentMode: mapPaymentMode(d.paymentMode),
     orderComment: d.orderComment,
+    prepDueAt: d.prepDueAt ?? null,
+    timing: d.etaMinutes != null ? { prep: d.prepTimeMinutes ?? 0, riderToRestaurant: d.riderToRestaurantMinutes ?? 0, travel: d.travelMinutes ?? 0, eta: d.etaMinutes } : null,
     transactionId: d.transactionId,
     deliveryType: d.deliveryType === 1 ? 'pickup' : 'delivery',
     deliveryPin: d.deliveryPin,

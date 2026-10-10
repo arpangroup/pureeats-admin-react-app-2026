@@ -223,6 +223,15 @@ export function RestaurantForm({ values, onChange, isAdmin = true, isNew = false
           <Field label="Delivery radius (km)" hint={'Capped at 50km — a much larger value is almost always a typo, and silently lets far-away orders through as "in range".'}>
             <TextInput type="number" min={0} max={50} value={values.deliveryRadius ?? 0} onChange={(e) => onChange('deliveryRadius', Number(e.target.value))} />
           </Field>
+          <Field label="Preparation time - T1 (min)" hint="How long the kitchen needs for an order. Empty = the platform default. Drives the kitchen countdown and every app's delivery time.">
+            <TextInput
+              type="number"
+              min={1}
+              value={values.preparationTime ?? ''}
+              placeholder="Platform default"
+              onChange={(e) => onChange('preparationTime', e.target.value ? Number(e.target.value) : null)}
+            />
+          </Field>
           <Field label="Prep + delivery time (min)">
             <TextInput type="number" value={values.deliveryTime ?? 0} onChange={(e) => onChange('deliveryTime', Number(e.target.value))} />
           </Field>

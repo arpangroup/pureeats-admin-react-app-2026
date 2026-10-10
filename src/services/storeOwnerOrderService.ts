@@ -13,6 +13,10 @@ export interface StoreOwnerOrderSummary {
   deliveryGuyName: string | null
   /** The customer's note for the order, or null. */
   orderComment?: string | null
+  /** T1 - preparation minutes. */
+  prepTimeMinutes?: number | null
+  /** When the food should be ready (acceptance + T1) - the kitchen countdown target. */
+  prepDueAt?: string | null
 }
 
 const RUNNING_STATUS_NAMES = ['Accepted', 'Preparing', 'Ready for Pickup', 'Rider Assigned', 'Picked Up', 'On the way', 'Arrived']

@@ -1,4 +1,5 @@
 import { StickyNote } from 'lucide-react'
+import { Countdown } from '@/components/ui/Countdown'
 import { useEffect, useState } from 'react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Badge, EmptyState, LoadingBlock } from '@/components/ui/Feedback'
@@ -125,6 +126,11 @@ export default function OwnerOrdersPage() {
                   {formatDate(order.createdAt)}
                   {order.deliveryGuyName && <> · Rider: {order.deliveryGuyName}</>}
                 </p>
+                {tab === 'running' && (order.status === 'Accepted' || order.status === 'Preparing') && order.prepDueAt && (
+                  <p className="mt-1">
+                    <Countdown to={order.prepDueAt} label={`Prep ${order.prepTimeMinutes ?? ''} min ·`} />
+                  </p>
+                )}
                 {order.orderComment && (
                   <p className="mt-1 flex max-w-md items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">
                     <StickyNote size={12} className="mt-0.5 shrink-0" />
