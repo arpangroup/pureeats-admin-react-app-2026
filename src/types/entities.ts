@@ -105,6 +105,8 @@ export interface Restaurant {
   images: string[]
   rating: number
   deliveryTime: number
+  /** T1 - minutes to prepare an order; empty = the platform default (Settings -> Delivery time estimates). */
+  preparationTime?: number | null
   priceRange: 1 | 2 | 3
   isPureveg: boolean
   address: string
@@ -311,6 +313,10 @@ export interface Order {
   items: OrderItem[]
   createdAt: string
   updatedAt: string
+  /** When the food should be ready (restaurant acceptance + T1). */
+  prepDueAt?: string | null
+  /** T1 prep / T2 partner to restaurant / T3 travel / base ETA, minutes (null for orders placed before timing existed). */
+  timing?: { prep: number; riderToRestaurant: number; travel: number; eta: number } | null
 }
 
 export interface AcceptDelivery {

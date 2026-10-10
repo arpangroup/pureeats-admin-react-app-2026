@@ -161,6 +161,18 @@ export const GENERAL_INFO_GROUPS: SettingGroupDef[] = [
   },
 ]
 
+/** T1 / T2 / customer slowdown - mirrors the backend's "Delivery time estimates" group. */
+export const GENERAL_ETA_GROUP: SettingGroupDef = {
+  title: 'Delivery time estimates',
+  description: 'How the delivery time each app shows is worked out: preparation (T1) + delivery partner to the restaurant (T2) + restaurant to the customer (T3, from the map).',
+  icon: Timer,
+  fields: [
+    { key: 'default_prep_time_minutes', label: 'Default preparation time - T1 (minutes)', fieldType: 'number', defaultValue: '20', info: "Used for stores that haven't set their own preparation time." },
+    { key: 'rider_to_restaurant_minutes', label: 'Delivery partner to restaurant - T2 (minutes)', fieldType: 'number', defaultValue: '10', info: 'Shown to the partner as a countdown after they accept.' },
+    { key: 'customer_eta_slowdown_factor', label: 'Customer countdown slowdown', fieldType: 'number', defaultValue: '1.5', info: "The customer's countdown runs this many times slower than real time (1.5: 90 seconds pass per minute counted) so small delays don't make it jump. 1 = real time." },
+  ],
+}
+
 export const GENERAL_TIMING_GROUP: SettingGroupDef = {
   title: 'Order timing',
   description: 'How long a restaurant or delivery partner has to respond before an order times out.',
@@ -862,6 +874,7 @@ export const SMS_CONFIG_GROUPS: SettingGroupDef[] = [
 
 const ALL_DYNAMIC_SETTING_GROUPS: SettingGroupDef[] = [
   GENERAL_TIMING_GROUP,
+  GENERAL_ETA_GROUP,
   ...CUSTOMER_APP_GROUPS,
   ...DELIVERY_APP_GROUPS,
   ...STORE_DASHBOARD_GROUPS,
