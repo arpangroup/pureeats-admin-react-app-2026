@@ -46,7 +46,7 @@ export default function DeliveryGuyRestaurantsPage() {
 
   return (
     <div>
-      <PageHeader title="Delivery Partner Restaurants" description="Restrict which restaurants each delivery partner can pick up orders from." />
+      <PageHeader title="Delivery Partner Restaurants" description="Link delivery partners to stores. With Settings → Delivery Application → New order alerts set to “Partners linked to the store” (the default), only linked partners get a store's new orders." />
 
       {isLoading ? (
         <LoadingBlock />

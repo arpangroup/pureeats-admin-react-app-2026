@@ -93,7 +93,8 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
           <Line label="Email" value={partner.email} />
           <Line label="Driving licence" value={partner.licenseNumber} />
           {!partner.licensePhotoUrl && <Line label="Licence photo" value={<span className="font-normal text-slate-400">Not uploaded</span>} />}
-          <Line label={partner.idProofType === 'PAN' ? 'PAN' : 'Aadhaar'} value={partner.idProofNumber} />
+          <Line label="Aadhaar" value={partner.aadhaarNumber ?? <span className="font-normal text-rose-600">Not provided</span>} />
+          <Line label="PAN" value={partner.panNumber ?? <span className="font-normal text-rose-600">Not provided</span>} />
           <Line label="Vehicle" value={[partner.vehicleType ? VEHICLE[partner.vehicleType] : null, partner.vehicleNumber].filter(Boolean).join(' · ')} />
           <Line
             label="Payout"

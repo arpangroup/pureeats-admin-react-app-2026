@@ -315,6 +315,9 @@ export interface Order {
   updatedAt: string
   /** When the food should be ready (restaurant acceptance + T1). */
   prepDueAt?: string | null
+  /** The delivery address's landmark and "Save as" label (Home / Work / ...) when the order was placed - null for older orders. */
+  addressLandmark?: string | null
+  addressTag?: string | null
   /** T1 prep / T2 partner to restaurant / T3 travel / base ETA, minutes (null for orders placed before timing existed). */
   timing?: { prep: number; riderToRestaurant: number; travel: number; eta: number } | null
 }
@@ -377,6 +380,9 @@ export interface DeliveryGuyDetail {
   licensePhotoUrl?: string | null
   idProofType?: 'AADHAAR' | 'PAN' | null
   idProofNumber?: string | null
+  /** Both are required now; null when the partner hasn't provided it (older single-ID applications). */
+  aadhaarNumber?: string | null
+  panNumber?: string | null
   vehicleType?: 'BIKE' | 'CYCLE' | 'EV' | null
   payoutMethod?: 'BANK' | 'UPI' | null
   bankAccountHolder?: string | null

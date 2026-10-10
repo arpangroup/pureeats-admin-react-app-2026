@@ -162,6 +162,27 @@ export const GENERAL_INFO_GROUPS: SettingGroupDef[] = [
 ]
 
 /** T1 / T2 / customer slowdown - mirrors the backend's "Delivery time estimates" group. */
+/** Mock-mode copy of the backend's "Distance & travel time" group (live mode renders the backend schema). */
+export const GENERAL_DISTANCE_GROUP: SettingGroupDef = {
+  title: 'Distance & travel time',
+  description: 'How the distance and travel time between a restaurant and a customer are worked out - delivery charges, the delivery-area check, restaurant lists, ETAs and the delivery partner\'s distances.',
+  icon: MapPin,
+  fields: [
+    {
+      key: 'distance_calculation_method',
+      label: 'Distance calculation',
+      fieldType: 'dropdown',
+      defaultValue: 'STRAIGHT_LINE',
+      options: [
+        { label: 'Straight line (default, free)', value: 'STRAIGHT_LINE' },
+        { label: 'Google Distance Matrix (real road distance & traffic)', value: 'GOOGLE_DISTANCE_MATRIX' },
+      ],
+      info: 'Straight line is shorter than the real route (e.g. 3.06 km where the road is 6.7 km). Google gives the actual driving distance and time; billed by Google per lookup, cached for 10 minutes. Falls back to the straight line if Google is unavailable.',
+    },
+    { key: 'google_distance_matrix_api_key', label: 'Google Maps server API key', fieldType: 'password', defaultValue: '', placeholder: 'AIza…', info: 'A server key with the Distance Matrix API enabled. Never sent to the apps.' },
+  ],
+}
+
 export const GENERAL_ETA_GROUP: SettingGroupDef = {
   title: 'Delivery time estimates',
   description: 'How the delivery time each app shows is worked out: preparation (T1) + delivery partner to the restaurant (T2) + restaurant to the customer (T3, from the map).',
@@ -310,6 +331,27 @@ export const CUSTOMER_APP_GROUPS: SettingGroupDef[] = [
 ]
 
 export const DELIVERY_APP_GROUPS: SettingGroupDef[] = [
+  {
+    title: 'New order alerts',
+    description: 'Which delivery partners are told about a new order and can accept it themselves. An admin can still assign any approved partner.',
+    icon: Bell,
+    fields: [
+      {
+        key: 'rider_order_dispatch_mode',
+        label: 'Who gets new orders',
+        fieldType: 'dropdown',
+        defaultValue: 'LINKED_STORES',
+        options: [
+          { label: 'Partners linked to the store (assigned by admin)', value: 'LINKED_STORES' },
+          { label: 'Partners near the store (by distance)', value: 'NEARBY' },
+          { label: 'All online partners', value: 'ALL' },
+        ],
+        info: 'Link partners to stores under Delivery partners → Rider ↔ Stores.',
+      },
+      { key: 'rider_order_dispatch_radius_km', label: 'Range for "near the store" (km)', fieldType: 'number', defaultValue: '5' },
+      { key: 'rider_order_dispatch_fallback_nearby', label: 'Stores with no linked partner: offer to nearby partners', fieldType: 'boolean', defaultValue: 'true' },
+    ],
+  },
   {
     title: 'Earnings',
     icon: Wallet,
@@ -875,6 +917,7 @@ export const SMS_CONFIG_GROUPS: SettingGroupDef[] = [
 const ALL_DYNAMIC_SETTING_GROUPS: SettingGroupDef[] = [
   GENERAL_TIMING_GROUP,
   GENERAL_ETA_GROUP,
+  GENERAL_DISTANCE_GROUP,
   ...CUSTOMER_APP_GROUPS,
   ...DELIVERY_APP_GROUPS,
   ...STORE_DASHBOARD_GROUPS,
