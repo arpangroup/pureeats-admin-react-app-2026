@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { TextInput } from '@/components/ui/FormControls'
 import { AlertTriangle, ListChecks, MapPin, ServerOff, User as UserIcon } from 'lucide-react'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { SectionCard } from '@/components/ui/SectionCard'
@@ -316,12 +317,12 @@ export default function CartSimulatorPage() {
                               {item.name} {!item.isActive && <span className="text-rose-500">(inactive)</span>}
                             </span>
                             <span className="shrink-0 text-xs text-slate-400">{formatCurrency(item.price)}</span>
-                            <input
+                            <TextInput
                               type="number"
                               min={1}
                               value={line.quantity}
                               onChange={(e) => updateLine(item.id, { quantity: Number(e.target.value) })}
-                              className="input !w-14 !py-1 text-center text-xs"
+                              className="!w-14 !py-1 text-center text-xs"
                               title="Quantity"
                             />
                           </div>

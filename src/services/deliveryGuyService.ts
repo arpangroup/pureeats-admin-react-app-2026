@@ -53,6 +53,23 @@ export const deliveryGuyService = {
     return data.data
   },
 
+  /** Uploads or replaces one of a partner's documents (photo or PDF). */
+  async uploadDocument(id: number, type: import('@/lib/partnerDocuments').PartnerDocType, file: File): Promise<DeliveryGuyRow> {
+    if (IS_MOCK) {
+      await mockDelay()
+      const d = deliveryGuyDetails.find((x) => x.id === id)
+      if (!d) throw { message: 'Delivery partner not found' }
+      const doc = { type, label: type, url: URL.createObjectURL(file), contentType: file.type, uploadedAt: new Date().toISOString() }
+      d.documents = [...(d.documents ?? []).filter((x) => x.type !== type), doc]
+      d.missingDocuments = (d.missingDocuments ?? []).filter((m) => m !== type)
+      return toRow(d)
+    }
+    const form = new FormData()
+    form.append('file', file)
+    const { data } = await apiClient.post<{ data: DeliveryGuyRow }>(`/admin/delivery-guys/${id}/documents/${type}`, form)
+    return data.data
+  },
+
   /** Applications waiting for review (for the nav badge). */
   async pendingApprovalCount(): Promise<number> {
     if (IS_MOCK) return deliveryGuyDetails.filter((d) => d.approvalStatus === 'PENDING').length

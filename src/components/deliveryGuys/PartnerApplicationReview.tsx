@@ -7,6 +7,8 @@ import { deliveryGuyService, type DeliveryGuyRow } from '@/services/deliveryGuyS
 import { formatDate } from '@/lib/format'
 import type { PartnerApprovalStatus } from '@/types/entities'
 import { PartnerDocumentsEditor } from '@/components/deliveryGuys/PartnerDocumentsEditor'
+import { PartnerDocumentsGallery } from '@/components/deliveryGuys/PartnerDocumentsGallery'
+import { DOC_LABELS } from '@/lib/partnerDocuments'
 
 const VEHICLE = { BIKE: 'Bike', CYCLE: 'Cycle', EV: 'EV' } as const
 
@@ -25,7 +27,7 @@ function Line({ label, value }: { label: string; value: ReactNode }) {
 }
 
 /**
- * A delivery partner's application (sign-up details + licence photo) with Approve / Reject. Only approved
+ * A delivery partner's application (sign-up details + every uploaded document) with Approve / Reject. Only approved
  * partners can go online and take orders; a rejection needs a reason, which the partner sees in the app
  * and can fix and resubmit. Used on the Approvals page and the partner's own page.
  */
@@ -53,6 +55,7 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
 
   const status = partner.approvalStatus ?? 'APPROVED'
   const hasSignUpDetails = !!(partner.licenseNumber || partner.idProofNumber || partner.payoutMethod)
+  const missing = hasSignUpDetails ? (partner.missingDocuments ?? []) : []
 
   return (
     <div className="space-y-3">
@@ -77,8 +80,7 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
         </p>
       )}
 
-      {/* The licence image only takes a column when there is one - no empty placeholder box. */}
-      <div className={partner.licensePhotoUrl ? 'grid gap-4 sm:grid-cols-[1fr_auto]' : ''}>
+      <div>
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
           <Line label="Name" value={partner.name} />
           <Line
@@ -90,9 +92,9 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
               </span>
             }
           />
-          <Line label="Email" value={partner.email} />
+          {/* Phone sign-ups have no real email (the server leaves their internal placeholder out). */}
+          {partner.email && <Line label="Email" value={partner.email} />}
           <Line label="Driving licence" value={partner.licenseNumber} />
-          {!partner.licensePhotoUrl && <Line label="Licence photo" value={<span className="font-normal text-slate-400">Not uploaded</span>} />}
           <Line label="Aadhaar" value={partner.aadhaarNumber ?? <span className="font-normal text-rose-600">Not provided</span>} />
           <Line label="PAN" value={partner.panNumber ?? <span className="font-normal text-rose-600">Not provided</span>} />
           <Line label="Vehicle" value={[partner.vehicleType ? VEHICLE[partner.vehicleType] : null, partner.vehicleNumber].filter(Boolean).join(' · ')} />
@@ -102,13 +104,14 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
           />
           <Line label={hasSignUpDetails ? 'Applied' : 'Joined'} value={formatDate(partner.createdAt)} />
         </div>
-        {partner.licensePhotoUrl && (
-          <a href={partner.licensePhotoUrl} target="_blank" rel="noopener noreferrer" className="block">
-            <img src={partner.licensePhotoUrl} alt="Driving licence" className="h-40 w-full rounded-lg object-cover ring-1 ring-slate-200 sm:w-60 dark:ring-slate-700" />
-            <span className="mt-1 block text-center text-[11px] text-slate-400">Driving licence - open full size</span>
-          </a>
-        )}
       </div>
+
+      {hasSignUpDetails && (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Documents</p>
+          <PartnerDocumentsGallery partner={partner} editable onChanged={onReviewed} />
+        </div>
+      )}
 
       {error && <p className="text-sm text-rose-600">{error}</p>}
       <div className="flex flex-wrap gap-2">
@@ -116,7 +119,12 @@ export function PartnerApplicationReview({ partner, onReviewed }: { partner: Del
           <Pencil size={15} /> Edit details
         </button>
         {status !== 'APPROVED' && (
-          <button className="btn-primary" onClick={() => act(true)} disabled={busy}>
+          <button
+            className="btn-primary"
+            onClick={() => act(true)}
+            disabled={busy || missing.length > 0}
+            title={missing.length > 0 ? `Missing: ${missing.map((m) => DOC_LABELS[m]).join(', ')}` : undefined}
+          >
             <CheckCircle2 size={15} /> Approve
           </button>
         )}
