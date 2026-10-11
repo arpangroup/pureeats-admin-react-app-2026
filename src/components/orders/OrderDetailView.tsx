@@ -19,6 +19,7 @@ import { OrderJourneyOverlay } from './OrderJourneyOverlay'
 import { PricingBreakdownCard } from './PricingBreakdownCard'
 import { OrderEarningsCard } from './OrderEarningsCard'
 import { PickupPhotosCard } from './PickupPhotosCard'
+import { RiderOffersCard } from './RiderOffersCard'
 
 export function OrderDetailView({ basePath }: { basePath: string }) {
   const { id } = useParams()
@@ -209,6 +210,7 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
 
           {/* Admin only: the endpoint is admin-gated and commission/rider rates aren't for store owners. */}
           {isAdmin && <OrderEarningsCard order={order} />}
+          {isAdmin && <RiderOffersCard order={order} />}
           {isAdmin && <PickupPhotosCard order={order} />}
 
           <div className="card p-4">
