@@ -24,7 +24,11 @@ export function OrderInvoice({ order }: { order: OrderRow }) {
           <p className="mt-1 font-medium text-slate-900">{order.customerName}</p>
           {order.customerEmail && <p className="text-slate-600">{order.customerEmail}</p>}
           {order.customerPhone && <p className="text-slate-600">{order.customerPhone}</p>}
-          <p className="mt-1 text-slate-600">{order.address}</p>
+          <p className="mt-1 text-slate-600">
+            {order.addressTag ? `${order.addressTag} - ` : ''}
+            {order.address}
+          </p>
+          {order.addressLandmark && <p className="text-slate-500">Landmark: {order.addressLandmark}</p>}
         </div>
         <div className="text-right">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">From</p>
