@@ -350,6 +350,26 @@ export const DELIVERY_APP_GROUPS: SettingGroupDef[] = [
       },
       { key: 'rider_order_dispatch_radius_km', label: 'Range for "near the store" (km)', fieldType: 'number', defaultValue: '5' },
       { key: 'rider_order_dispatch_fallback_nearby', label: 'Stores with no linked partner: offer to nearby partners', fieldType: 'boolean', defaultValue: 'true' },
+      { key: 'rider_reoffer_enabled', label: 'Alert again while nobody accepts', fieldType: 'boolean', defaultValue: 'true', info: 'Offered again - it comes back for partners who dismissed it. Checked every minute.' },
+      { key: 'rider_reoffer_interval_minutes', label: 'Alert again every (minutes)', fieldType: 'number', defaultValue: '2' },
+      {
+        key: 'rider_reoffer_mode',
+        label: 'Keep alerting',
+        fieldType: 'dropdown',
+        defaultValue: 'LIMITED',
+        options: [
+          { label: 'Up to the maximum below', value: 'LIMITED' },
+          { label: 'Until a partner accepts (no limit)', value: 'UNTIL_ASSIGNED' },
+        ],
+      },
+      { key: 'rider_reoffer_max_offers', label: 'Maximum alerts per order', fieldType: 'number', defaultValue: '5' },
+    ],
+  },
+  {
+    title: 'Wallet',
+    icon: Wallet,
+    fields: [
+      { key: 'driver_show_earning_breakdown', label: 'Show how each earning was calculated', fieldType: 'boolean', defaultValue: 'false', info: 'Off (default): the wallet shows what each delivery earned, not the commission % or what it was applied to.' },
     ],
   },
   {
