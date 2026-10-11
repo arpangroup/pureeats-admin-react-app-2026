@@ -415,9 +415,13 @@ export const DELIVERY_APP_GROUPS: SettingGroupDef[] = [
     fields: [
       { key: 'driver_edit_name', label: 'Name', fieldType: 'boolean', defaultValue: 'false' },
       { key: 'driver_edit_vehicle_number', label: 'Vehicle number', fieldType: 'boolean', defaultValue: 'false' },
-      { key: 'driver_edit_age', label: 'Age', fieldType: 'boolean', defaultValue: 'false' },
-      { key: 'driver_edit_gender', label: 'Gender', fieldType: 'boolean', defaultValue: 'false' },
-      { key: 'driver_edit_about', label: 'About', fieldType: 'boolean', defaultValue: 'false' },
+      {
+        key: 'driver_edit_photo',
+        label: 'Profile photo',
+        fieldType: 'boolean',
+        defaultValue: 'false',
+        info: "Off (default): once approved, a partner can't change their photo. Applicants can always change it until approved.",
+      },
       { key: 'driver_edit_phone', label: 'Mobile number', fieldType: 'boolean', defaultValue: 'false' },
       { key: 'driver_edit_email', label: 'Email', fieldType: 'boolean', defaultValue: 'false' },
       { key: 'driver_edit_license', label: 'Driving licence (number + photo)', fieldType: 'boolean', defaultValue: 'false' },

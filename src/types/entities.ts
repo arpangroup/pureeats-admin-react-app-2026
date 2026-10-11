@@ -390,6 +390,10 @@ export interface DeliveryGuyDetail {
   bankIfsc?: string | null
   upiId?: string | null
   phoneVerified?: boolean
+  /** Latest upload of each document type (licence, Aadhaar front/back, PAN, RC, passbook). */
+  documents?: { type: import('@/lib/partnerDocuments').PartnerDocType; label: string; url: string; contentType: string; uploadedAt: string }[]
+  /** Still needed before approval (document types and/or PHOTO) - approving is refused until it's empty. */
+  missingDocuments?: (import('@/lib/partnerDocuments').PartnerDocType | 'PHOTO')[]
   /** Profile photo as a viewable URL (`photo` is the stored key). */
   photoUrl?: string | null
   createdBy: Id | null
