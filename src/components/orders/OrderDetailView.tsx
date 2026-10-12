@@ -19,6 +19,7 @@ import { OrderJourneyOverlay } from './OrderJourneyOverlay'
 import { PricingBreakdownCard } from './PricingBreakdownCard'
 import { OrderEarningsCard } from './OrderEarningsCard'
 import { PickupPhotosCard } from './PickupPhotosCard'
+import { RiderOffersCard } from './RiderOffersCard'
 
 export function OrderDetailView({ basePath }: { basePath: string }) {
   const { id } = useParams()
@@ -209,6 +210,7 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
 
           {/* Admin only: the endpoint is admin-gated and commission/rider rates aren't for store owners. */}
           {isAdmin && <OrderEarningsCard order={order} />}
+          {isAdmin && <RiderOffersCard order={order} />}
           {isAdmin && <PickupPhotosCard order={order} />}
 
           <div className="card p-4">
@@ -248,9 +250,18 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
                 <Phone size={12} className="shrink-0" /> {order.customerPhone ?? customer?.phone}
               </p>
             )}
-            <p className="mt-2 flex items-start gap-1.5 text-sm text-slate-500 dark:text-slate-400">
-              <MapPin size={14} className="mt-0.5 shrink-0" /> {order.address}
-            </p>
+            <div className="mt-2 flex items-start gap-1.5 text-sm text-slate-500 dark:text-slate-400">
+              <MapPin size={14} className="mt-0.5 shrink-0" />
+              <div className="min-w-0">
+                {order.addressTag && (
+                  <span className="mb-1 inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700 dark:bg-brand-500/15 dark:text-brand-300">
+                    {order.addressTag}
+                  </span>
+                )}
+                <p>{order.address}</p>
+                {order.addressLandmark && <p className="text-xs text-slate-400">Landmark: {order.addressLandmark}</p>}
+              </div>
+            </div>
 
             {order.timing && (
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400">

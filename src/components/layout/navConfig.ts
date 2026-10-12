@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  BellRing,
   Scale,
   UserCheck,
   LayoutDashboard,
@@ -90,6 +91,7 @@ export const adminNav: NavSection[] = [
       { label: 'Delivery Partners', to: '/admin/delivery-guys', icon: Bike },
       { label: 'Partner Approvals', to: '/admin/delivery-guys/approvals', icon: UserCheck },
       { label: 'Rider ↔ Stores', to: '/admin/delivery-guys-restaurants', icon: LayoutGrid },
+      { label: 'Partner Alerts', to: '/admin/partner-alerts', icon: BellRing },
       { label: 'Delivery Simulator', to: '/admin/delivery-simulator', icon: Navigation },
     ],
   },

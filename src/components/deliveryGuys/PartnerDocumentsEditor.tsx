@@ -8,8 +8,8 @@ import type { DeliveryGuyDetail } from '@/types/entities'
 
 type Draft = {
   licenseNumber: string
-  idProofType: 'AADHAAR' | 'PAN'
-  idProofNumber: string
+  aadhaarNumber: string
+  panNumber: string
   vehicleType: 'BIKE' | 'CYCLE' | 'EV'
   vehicleNumber: string
   payoutMethod: 'BANK' | 'UPI'
@@ -28,8 +28,8 @@ export function PartnerDocumentsEditor({ partner, open, onClose, onSaved }: { pa
   const fileRef = useRef<HTMLInputElement>(null)
   const [draft, setDraft] = useState<Draft>(() => ({
     licenseNumber: partner.licenseNumber ?? '',
-    idProofType: partner.idProofType ?? 'AADHAAR',
-    idProofNumber: partner.idProofNumber ?? '',
+    aadhaarNumber: partner.aadhaarNumber ?? '',
+    panNumber: partner.panNumber ?? '',
     vehicleType: partner.vehicleType ?? 'BIKE',
     vehicleNumber: partner.vehicleNumber ?? '',
     payoutMethod: partner.payoutMethod ?? 'UPI',
@@ -65,7 +65,8 @@ export function PartnerDocumentsEditor({ partner, open, onClose, onSaved }: { pa
       const payload: Partial<DeliveryGuyDetail> = {
         vehicleNumber: draft.vehicleNumber.trim(),
         ...(draft.licenseNumber.trim() ? { licenseNumber: draft.licenseNumber.trim() } : {}),
-        ...(draft.idProofNumber.trim() ? { idProofType: draft.idProofType, idProofNumber: draft.idProofNumber.trim() } : {}),
+        ...(draft.aadhaarNumber.trim() ? { aadhaarNumber: draft.aadhaarNumber.trim() } : {}),
+        ...(draft.panNumber.trim() ? { panNumber: draft.panNumber.trim() } : {}),
         vehicleType: draft.vehicleType,
         payoutMethod: draft.payoutMethod,
         ...(draft.payoutMethod === 'UPI'
@@ -111,14 +112,11 @@ export function PartnerDocumentsEditor({ partner, open, onClose, onSaved }: { pa
           </button>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={pick} />
         </Field>
-        <Field label="ID proof">
-          <Select value={draft.idProofType} onChange={(e) => set({ idProofType: e.target.value as Draft['idProofType'] })}>
-            <option value="AADHAAR">Aadhaar</option>
-            <option value="PAN">PAN</option>
-          </Select>
+        <Field label="Aadhaar number" hint="12 digits - required.">
+          <TextInput value={draft.aadhaarNumber} onChange={(e) => set({ aadhaarNumber: e.target.value.replace(/[^\d ]/g, '') })} inputMode="numeric" placeholder="1234 5678 9012" />
         </Field>
-        <Field label={draft.idProofType === 'PAN' ? 'PAN' : 'Aadhaar number'}>
-          <TextInput value={draft.idProofNumber} onChange={(e) => set({ idProofNumber: e.target.value.toUpperCase() })} />
+        <Field label="PAN" hint="e.g. ABCDE1234F - required.">
+          <TextInput value={draft.panNumber} onChange={(e) => set({ panNumber: e.target.value.toUpperCase() })} placeholder="ABCDE1234F" />
         </Field>
         <Field label="Vehicle type">
           <Select value={draft.vehicleType} onChange={(e) => set({ vehicleType: e.target.value as Draft['vehicleType'] })}>

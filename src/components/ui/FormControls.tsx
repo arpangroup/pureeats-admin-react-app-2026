@@ -25,9 +25,31 @@ export function Field({ label, htmlFor, hint, error, required, children }: Field
   )
 }
 
+/**
+ * Text input. For type="number": focusing selects the current value, so typing replaces it instead of
+ * appending to it, and leading zeros are dropped as you type - a field showing 0 used to become "05" / "0100"
+ * (React keeps the typed text when it parses to the same number, so "05" stayed on screen).
+ */
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   const { className, ...rest } = props
-  return <input className={classNames('input', className)} {...rest} />
+  if (props.type !== 'number') return <input className={classNames('input', className)} {...rest} />
+  const { onFocus, onChange, ...numberRest } = rest
+  return (
+    <input
+      className={classNames('input', className)}
+      {...numberRest}
+      onFocus={(e) => {
+        e.currentTarget.select()
+        onFocus?.(e)
+      }}
+      onChange={(e) => {
+        const raw = e.target.value
+        const trimmed = raw.replace(/^(-?)0+(?=\d)/, '$1')
+        if (trimmed !== raw) e.target.value = trimmed
+        onChange?.(e)
+      }}
+    />
+  )
 }
 
 export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {

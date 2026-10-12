@@ -42,7 +42,10 @@ export function GoogleMapsConfigPanel() {
       {confirmOpen && <ConfirmPasswordDialog onConfirm={handleConfirm} onCancel={handleCancel} />}
       {saveError && <p className="mb-3 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">{saveError}</p>}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field label="API key" hint="Restrict this key to your app's domains in the Google Cloud console.">
+        <Field
+          label="API key"
+          hint="Used by the apps' maps and, when Settings → General → Distance & travel time is set to Google, by the server for road distances (enable the Distance Matrix API for this key). Restrict it by API in the Google Cloud console - a website-only (HTTP referrer) restriction blocks the server's lookups, which then fall back to straight-line distance."
+        >
           <TextInput
             type="password"
             autoComplete="off"

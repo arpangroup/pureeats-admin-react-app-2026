@@ -315,6 +315,9 @@ export interface Order {
   updatedAt: string
   /** When the food should be ready (restaurant acceptance + T1). */
   prepDueAt?: string | null
+  /** The delivery address's landmark and "Save as" label (Home / Work / ...) when the order was placed - null for older orders. */
+  addressLandmark?: string | null
+  addressTag?: string | null
   /** T1 prep / T2 partner to restaurant / T3 travel / base ETA, minutes (null for orders placed before timing existed). */
   timing?: { prep: number; riderToRestaurant: number; travel: number; eta: number } | null
 }
@@ -377,6 +380,9 @@ export interface DeliveryGuyDetail {
   licensePhotoUrl?: string | null
   idProofType?: 'AADHAAR' | 'PAN' | null
   idProofNumber?: string | null
+  /** Both are required now; null when the partner hasn't provided it (older single-ID applications). */
+  aadhaarNumber?: string | null
+  panNumber?: string | null
   vehicleType?: 'BIKE' | 'CYCLE' | 'EV' | null
   payoutMethod?: 'BANK' | 'UPI' | null
   bankAccountHolder?: string | null
@@ -384,6 +390,10 @@ export interface DeliveryGuyDetail {
   bankIfsc?: string | null
   upiId?: string | null
   phoneVerified?: boolean
+  /** Latest upload of each document type (licence, Aadhaar front/back, PAN, RC, passbook). */
+  documents?: { type: import('@/lib/partnerDocuments').PartnerDocType; label: string; url: string; contentType: string; uploadedAt: string }[]
+  /** Still needed before approval (document types and/or PHOTO) - approving is refused until it's empty. */
+  missingDocuments?: (import('@/lib/partnerDocuments').PartnerDocType | 'PHOTO')[]
   /** Profile photo as a viewable URL (`photo` is the stored key). */
   photoUrl?: string | null
   createdBy: Id | null

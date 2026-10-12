@@ -372,27 +372,27 @@ export function UserDetailView({ role, basePath }: { role: UserRole; basePath: s
                 </div>
                 <div className="flex items-center justify-between gap-3">
                   <span className="text-slate-500 dark:text-slate-400">Rating</span>
-                  <input
+                  <TextInput
                     type="number"
                     min={0}
                     max={5}
                     step={0.1}
                     value={rating}
                     onChange={(e) => setRating(Number(e.target.value))}
-                    className="input w-20 text-right"
+                    className="w-20 text-right"
                   />
                 </div>
                 <div id="commission" className="scroll-mt-24">
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-slate-500 dark:text-slate-400">Commission rate (%)</span>
-                    <input
+                    <TextInput
                       type="number"
                       min={0}
                       max={100}
                       step={0.5}
                       value={commissionRate}
                       onChange={(e) => setCommissionRate(Math.max(0, Number(e.target.value)))}
-                      className="input w-20 text-right"
+                      className="w-20 text-right"
                     />
                   </div>
                   <p className="mt-1 text-[11px] text-slate-400">

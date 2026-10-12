@@ -36,6 +36,7 @@ import PartnerWithdrawalsPage from '@/pages/admin/PartnerWithdrawalsPage'
 import SettlementsPage from '@/pages/admin/SettlementsPage'
 import DeliveryGuyRestaurantsPage from '@/pages/admin/DeliveryGuyRestaurantsPage'
 import DeliverySimulatorPage from '@/pages/admin/DeliverySimulatorPage'
+import PartnerAlertsPage from '@/pages/admin/PartnerAlertsPage'
 import RestaurantPayoutsPage from '@/pages/admin/RestaurantPayoutsPage'
 import WalletTransactionsPage from '@/pages/admin/WalletTransactionsPage'
 import DeliveryCollectionsPage from '@/pages/admin/DeliveryCollectionsPage'
@@ -126,6 +127,7 @@ export function AppRoutes() {
         <Route path="delivery-guys/:id" element={<DeliveryGuyDetailPage />} />
         <Route path="delivery-guys-restaurants" element={<DeliveryGuyRestaurantsPage />} />
         <Route path="delivery-simulator" element={<DeliverySimulatorPage />} />
+        <Route path="partner-alerts" element={<PartnerAlertsPage />} />
         <Route path="restaurant-payouts" element={<RestaurantPayoutsPage />} />
         <Route path="wallet-transactions" element={<WalletTransactionsPage />} />
         <Route path="delivery-collections" element={<DeliveryCollectionsPage />} />

@@ -46,8 +46,15 @@ export const settingsService = {
       await mockDelay()
       return [...settings]
     }
-    const { data } = await apiClient.get<{ data: Record<string, string> }>('/settings')
-    return mapToSettings(data.data)
+    // Admin endpoint first: it includes secret (password) fields, which the public GET /settings leaves out.
+    // Store owners can't read it (and an older backend doesn't have it) - fall back to the public values.
+    try {
+      const { data } = await apiClient.get<{ data: Record<string, string> }>('/admin/settings')
+      return mapToSettings(data.data)
+    } catch {
+      const { data } = await apiClient.get<{ data: Record<string, string> }>('/settings')
+      return mapToSettings(data.data)
+    }
   },
 
   /** The admin-uploaded new-order sound URL (public setting `order_alert_sound_url`), or null for the built-in chime. Never throws. */
