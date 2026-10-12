@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { HandCoins, Banknote, CheckCircle2, Wallet, AlertTriangle, RefreshCw } from 'lucide-react'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { Modal } from '@/components/ui/Modal'
@@ -174,6 +175,48 @@ export function RiderSettlementCard({
               </p>
             </div>
           </div>
+
+          {(summary.codOrdersToCollect?.length ?? 0) > 0 && (
+            <div className="mt-3 rounded-lg border border-amber-200 p-3 dark:border-amber-500/30">
+              <p className="mb-2 flex items-center gap-1 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                <Banknote size={12} /> Where the COD cash comes from
+              </p>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead className="text-[11px] uppercase tracking-wide text-slate-400">
+                    <tr>
+                      <th className="py-1 pr-3 font-medium">Order</th>
+                      <th className="py-1 pr-3 font-medium">Delivered</th>
+                      <th className="py-1 pr-3 text-right font-medium">Cash collected</th>
+                      <th className="py-1 text-right font-medium">To collect</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {summary.codOrdersToCollect!.map((o) => (
+                      <tr key={o.orderId}>
+                        <td className="py-1 pr-3">
+                          <Link to={`/admin/orders/${o.orderId}`} className="font-mono text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400">
+                            {o.uniqueOrderId ?? `#${o.orderId}`}
+                          </Link>
+                        </td>
+                        <td className="py-1 pr-3 text-xs text-slate-500 dark:text-slate-400">{formatDate(o.deliveredAt)}</td>
+                        <td className="py-1 pr-3 text-right">{formatCurrency(o.cashCollected)}</td>
+                        <td className="py-1 text-right font-semibold">{formatCurrency(o.cashToCollect)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-slate-200 dark:border-slate-700">
+                      <td colSpan={3} className="py-1 pr-3 text-right text-xs font-semibold text-slate-600 dark:text-slate-300">
+                        Total ({summary.codOrdersToCollect!.length} order{summary.codOrdersToCollect!.length === 1 ? '' : 's'})
+                      </td>
+                      <td className="py-1 text-right font-bold">{formatCurrency(summary.cashInHand)}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-slate-400 dark:text-slate-500">

@@ -56,6 +56,8 @@ export interface RiderSettlementSummary {
   /** What can be paid out now: wallet balance minus requested withdrawals. */
   availableToWithdraw: number
   payoutTo: string | null
+  /** The COD orders behind cashInHand - what the partner still holds from each, newest first. */
+  codOrdersToCollect?: { orderId: number; uniqueOrderId: string | null; cashCollected: number; cashToCollect: number; deliveredAt: string }[]
 }
 
 export interface SettleRiderPayload {

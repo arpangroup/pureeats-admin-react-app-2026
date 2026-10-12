@@ -12,6 +12,9 @@ export interface OrderRow extends Order {
   customerPhone: string | null
   restaurantName: string
   restaurantPhone: string | null
+  /** For the branded invoice - live mode only. */
+  restaurantAddress?: string | null
+  restaurantLicence?: string | null
   statusName: string
   deliveryGuyName: string | null
   /** Live mode only — which statuses this order may legally move to next; null in mock mode (all statuses stay selectable, as before). */
@@ -248,6 +251,8 @@ interface LiveOrderRestaurant {
   id: number
   name: string
   contactNumber: string | null
+  address?: string | null
+  licenceNumber?: string | null
 }
 
 interface LiveOrderCoupon {
@@ -434,6 +439,8 @@ function liveDetailToRow(d: LiveOrderDetail): OrderRow {
     customerPhone: d.customer.phone,
     restaurantName: d.restaurant.name,
     restaurantPhone: d.restaurant.contactNumber,
+    restaurantAddress: d.restaurant.address ?? null,
+    restaurantLicence: d.restaurant.licenceNumber ?? null,
     statusName: d.status,
     deliveryGuyName: d.deliveryGuyName,
     legalNextStatuses: d.legalNextStatuses,

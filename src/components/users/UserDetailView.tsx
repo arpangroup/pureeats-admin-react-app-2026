@@ -479,7 +479,15 @@ function AddressesPanel({ addresses }: { addresses: Address[] }) {
 
 function EarningsTable({ rows }: { rows: TripDetail[] }) {
   const columns: Column<TripDetail>[] = [
-    { key: 'order', header: 'Order', render: (row) => `#${row.orderId}` },
+    {
+      key: 'order',
+      header: 'Order',
+      render: (row) => (
+        <Link to={`/admin/orders/${row.orderId}`} className="font-mono text-xs font-semibold text-brand-600 hover:underline dark:text-brand-400">
+          {row.uniqueOrderId ?? `#${row.orderId}`}
+        </Link>
+      ),
+    },
     { key: 'distance', header: 'Distance', render: (row) => `${row.distanceTravelled.toFixed(1)} km` },
     { key: 'earning', header: 'Rider earning', render: (row) => formatCurrency(row.riderEarning) },
     { key: 'settled', header: 'Settled', render: (row) => <Badge tone={row.isSettlementDone ? 'green' : 'amber'}>{row.isSettlementDone ? 'Settled' : 'Pending'}</Badge> },

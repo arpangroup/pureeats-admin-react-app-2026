@@ -15,17 +15,35 @@ import { FEATURE_FLAGS } from '@/config/featureFlags'
 import type { OrderStatus } from '@/types/entities'
 import { OrderStatusBadge } from './OrderStatusBadge'
 import { OrderInvoice } from './OrderInvoice'
+import { BrandedOrderInvoice } from './BrandedOrderInvoice'
+import { settingsService } from '@/services/settingsService'
 import { OrderJourneyOverlay } from './OrderJourneyOverlay'
 import { PricingBreakdownCard } from './PricingBreakdownCard'
 import { OrderEarningsCard } from './OrderEarningsCard'
 import { PickupPhotosCard } from './PickupPhotosCard'
 import { RiderOffersCard } from './RiderOffersCard'
 
+/** Same default terms as the backend (Settings -> General -> Invoice) when none were saved yet. */
+const DEFAULT_INVOICE_TERMS = [
+  'Order Acceptance: PureEats reserves the right to accept or refuse orders. Price errors will be corrected.',
+  'Delivery: Estimated delivery times are approximations. Delays may occur due to traffic or weather.',
+  'Cancellations & Refunds: Cancellation must be requested within 5 minutes. Refunds are processed according to the full policy online.',
+  'Food Quality: Concerns must be reported within 24 hours of the order, with photos. PureEats is not liable for food quality but will mediate.',
+  'Data Privacy: Your data is handled per our privacy policy.',
+  "Liability: PureEats' liability is limited to the value of the order.",
+]
+
 export function OrderDetailView({ basePath }: { basePath: string }) {
   const { id } = useParams()
   const navigate = useNavigate()
   const orderId = Number(id)
   const { data: order, isLoading, reload } = useAsync(() => orderService.get(orderId), [orderId])
+  // Settings -> General -> Invoice: which invoice layout Print uses (the same one customers download).
+  const { data: invoiceSettings } = useAsync(async () => {
+    const all = await settingsService.getAll().catch(() => [])
+    const get = (key: string) => all.find((s) => s.key === key)?.value ?? ''
+    return { style: get('invoice_style') || 'SIMPLE', terms: get('invoice_terms'), platformLicence: get('invoice_platform_fssai') }
+  }, [])
   const [updating, setUpdating] = useState(false)
   const { data: statuses } = useAsync(() => orderService.statuses(), [])
   const { data: journey } = useAsync(() => orderService.journey(orderId), [orderId, order?.statusName])
@@ -102,7 +120,15 @@ export function OrderDetailView({ basePath }: { basePath: string }) {
 
   return (
     <div>
-      <OrderInvoice order={order} />
+      {invoiceSettings?.style === 'BRANDED' ? (
+        <BrandedOrderInvoice
+          order={order}
+          terms={invoiceSettings.terms ? invoiceSettings.terms.split(/\r?\n/) : DEFAULT_INVOICE_TERMS}
+          platformLicence={invoiceSettings.platformLicence}
+        />
+      ) : (
+        <OrderInvoice order={order} />
+      )}
       <div className="print:hidden">
       <button onClick={() => navigate(basePath)} className="btn-ghost mb-3 px-2 print:hidden">
         <ArrowLeft size={15} /> Back to orders

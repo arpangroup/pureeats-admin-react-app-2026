@@ -662,4 +662,6 @@ export interface TripDetail {
   isSettlementDone: boolean
   createdAt: string
   updatedAt: string
+  /** The order number customers see (e.g. PE-1A2B3C4D); orderId is the internal id for links. */
+  uniqueOrderId?: string | null
 }

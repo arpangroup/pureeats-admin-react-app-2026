@@ -12,6 +12,7 @@ import {
   GENERAL_TIMING_GROUP,
   GENERAL_ETA_GROUP,
   GENERAL_DISTANCE_GROUP,
+  GENERAL_INVOICE_GROUP,
   GOOGLE_ANALYTICS_GROUPS,
   GOOGLE_MAP_GROUPS,
   PAYMENT_GATEWAY_CONFIG_GROUPS,
@@ -80,7 +81,7 @@ function mapGroup(g: WireGroup): SettingGroupDef {
 // for real via RazorpayConfigPanel/FirebaseConfigPanel/GoogleMapsConfigPanel, each rendered
 // directly on its natural tab (Payment Gateways / Push Notifications / Google Map).
 const MOCK_SCHEMA: SettingSection[] = [
-  { key: 'general', title: 'General', icon: resolveSettingIcon('Settings'), groups: [...GENERAL_INFO_GROUPS, GENERAL_TIMING_GROUP, GENERAL_DISTANCE_GROUP, GENERAL_ETA_GROUP, GENERAL_ORDER_SOUND_GROUP] },
+  { key: 'general', title: 'General', icon: resolveSettingIcon('Settings'), groups: [...GENERAL_INFO_GROUPS, GENERAL_TIMING_GROUP, GENERAL_DISTANCE_GROUP, GENERAL_ETA_GROUP, GENERAL_INVOICE_GROUP, GENERAL_ORDER_SOUND_GROUP] },
   { key: 'payments', title: 'Payment Gateways', icon: resolveSettingIcon('CreditCard'), groups: PAYMENT_GATEWAY_CONFIG_GROUPS.filter((g) => g.title !== 'Razorpay') },
   { key: 'sms-gateways', title: 'SMS Gateways', icon: resolveSettingIcon('MessageSquare'), groups: SMS_CONFIG_GROUPS },
   { key: 'email-settings', title: 'Email Settings', icon: resolveSettingIcon('Mail'), groups: EMAIL_SETTINGS_GROUPS },

@@ -1,4 +1,5 @@
 import {
+  Receipt,
   BarChart3,
   Bell,
   Bike,
@@ -180,6 +181,27 @@ export const GENERAL_DISTANCE_GROUP: SettingGroupDef = {
       info: "Straight line is shorter than the real route (e.g. 3.06 km where the road is 6.7 km). Google gives the actual driving distance and time; billed by Google per lookup, cached for 10 minutes. Uses the Google Maps API key under Settings → Google Map. Falls back to the straight line if Google is unavailable.",
       link: { label: 'Google Maps API key (Settings → Google Map)', href: '/admin/settings/google-map' },
     },
+  ],
+}
+
+/** Mock-mode copy of the backend's "Invoice" group. */
+export const GENERAL_INVOICE_GROUP: SettingGroupDef = {
+  title: 'Invoice',
+  description: 'The invoice customers download from the app and admins print from an order page.',
+  icon: Receipt,
+  fields: [
+    {
+      key: 'invoice_style',
+      label: 'Invoice style',
+      fieldType: 'dropdown',
+      defaultValue: 'SIMPLE',
+      options: [
+        { label: 'Simple (black and white)', value: 'SIMPLE' },
+        { label: 'Branded (coloured summary and receipt)', value: 'BRANDED' },
+      ],
+    },
+    { key: 'invoice_terms', label: 'Terms & conditions (branded invoice)', fieldType: 'textarea', defaultValue: '', info: 'One term per line.' },
+    { key: 'invoice_platform_fssai', label: 'PureEats FSSAI licence number', fieldType: 'text', defaultValue: '' },
   ],
 }
 
@@ -942,6 +964,7 @@ const ALL_DYNAMIC_SETTING_GROUPS: SettingGroupDef[] = [
   GENERAL_TIMING_GROUP,
   GENERAL_ETA_GROUP,
   GENERAL_DISTANCE_GROUP,
+  GENERAL_INVOICE_GROUP,
   ...CUSTOMER_APP_GROUPS,
   ...DELIVERY_APP_GROUPS,
   ...STORE_DASHBOARD_GROUPS,

@@ -5,11 +5,21 @@ import { toPaginated, type PageResponse } from '@/lib/pageResponse'
 import { IS_MOCK } from '@/config/env'
 import { users, restaurantUsers, restaurants, loginSessions } from '@/mocks/fixtures'
 import { mockDelay as delay, nextMockId } from '@/lib/mockUtils'
-import { mapFrontendRole } from '@/types/auth'
+import { mapBackendRole, mapFrontendRole, type BackendRole } from '@/types/auth'
 import type { ListParams, Paginated, UserRole } from '@/types/common'
 import type { User, RestaurantUser, Restaurant, LoginSession, Address } from '@/types/entities'
 
 const base = createCrudService<User>(users, '/admin/users', ['name', 'email', 'phone'])
+
+/**
+ * The API speaks the backend's Role enum (DELIVERY, STORE_OWNER, ...) while every screen uses the app's own role names
+ * (delivery-guy, restaurant-owner, ...) - unmapped, a partner's page showed no current role and "Move to" sent a role
+ * the server couldn't read.
+ */
+function withAppRole(user: User): User {
+  const raw = user.role as string
+  return raw && raw === raw.toUpperCase() ? { ...user, role: mapBackendRole(raw as BackendRole) } : user
+}
 
 /** Users list scoped to one role — powers Users, Employees, Restaurant Owners and Delivery
  * Partners screens. `accountStatus` mirrors the backend's own filter semantics exactly: omitted
@@ -30,12 +40,26 @@ async function listByRole(role: UserRole, params: ListParams = {}, accountStatus
   const { data } = await apiClient.get<{ data: PageResponse<User> }>('/admin/users', {
     params: { userType: mapFrontendRole(role), search: params.search, accountStatus, page: (params.page ?? 1) - 1, size: params.perPage ?? 10 },
   })
-  return toPaginated(data.data)
+  const page = toPaginated(data.data)
+  return { ...page, data: page.data.map(withAppRole) }
 }
 
 export const userService = {
   ...base,
   listByRole,
+
+  async get(id: number): Promise<User | undefined> {
+    const user = await base.get(id)
+    return user ? withAppRole(user) : user
+  },
+
+  /** Same role translation on the way out (see withAppRole). */
+  async update(id: number, payload: Partial<User>): Promise<User> {
+    if (IS_MOCK) return base.update(id, payload)
+    const { role, ...rest } = payload
+    const updated = await base.update(id, { ...rest, ...(role ? { role: mapFrontendRole(role) } : {}) } as Partial<User>)
+    return withAppRole(updated)
+  },
 
   /** Backend expects the `Role` enum name (e.g. `STORE_OWNER`), not the frontend's kebab-case `role` field. */
   async create(payload: Partial<User>): Promise<User> {
